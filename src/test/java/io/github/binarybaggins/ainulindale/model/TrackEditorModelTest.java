@@ -12,13 +12,13 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class NoteEditorModelTest {
+public class TrackEditorModelTest {
 
-    private NoteEditorModel model;
+    private TrackEditorModel model;
 
     @BeforeEach
     public void setUp() {
-        model = new NoteEditorModel(new ArrayList<>());
+        model = new TrackEditorModel(new ArrayList<>());
     }
 
     @Test
@@ -482,7 +482,7 @@ public class NoteEditorModelTest {
     public void moveNotesAppliesSameBeatDeltaToAllNotes() {
         EditorNote first = new EditorNote(60, 1.0, 1.0);
         EditorNote second = new EditorNote(61, 3.0, 2.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         assertTrue(model.moveNotes(List.of(first, second), 0, 2.5));
 
@@ -494,7 +494,7 @@ public class NoteEditorModelTest {
     public void moveNotesAppliesSamePitchDeltaToAllNotes() {
         EditorNote first = new EditorNote(60, 0.0, 1.0);
         EditorNote second = new EditorNote(64, 2.0, 1.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         assertTrue(model.moveNotes(List.of(first, second), 5, 0.0));
 
@@ -506,7 +506,7 @@ public class NoteEditorModelTest {
     public void moveNotesClampsWholeGroupAtBeatZero() {
         EditorNote first = new EditorNote(60, 1.0, 1.0);
         EditorNote second = new EditorNote(61, 3.0, 1.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         assertTrue(model.moveNotes(List.of(first, second), 0, -5.0));
 
@@ -518,7 +518,7 @@ public class NoteEditorModelTest {
     public void moveNotesClampsWholeGroupAtMidiBounds() {
         EditorNote first = new EditorNote(10, 0.0, 1.0);
         EditorNote second = new EditorNote(100, 2.0, 1.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         assertTrue(model.moveNotes(List.of(first, second), -20, 0.0));
 
@@ -530,7 +530,7 @@ public class NoteEditorModelTest {
     public void moveNotesRejectsUnknownNoteWithoutChangingState() {
         EditorNote note = new EditorNote(60, 1.0, 1.0);
         EditorNote unknown = new EditorNote(64, 2.0, 1.0);
-        model = new NoteEditorModel(List.of(note));
+        model = new TrackEditorModel(List.of(note));
 
         assertThrows(IllegalArgumentException.class, () -> model.moveNotes(List.of(note, unknown), 2, 2.0));
 
@@ -544,7 +544,7 @@ public class NoteEditorModelTest {
         EditorNote second = new EditorNote(61, 2.0, 1.0);
         EditorNote obstacle = new EditorNote(60, 2.0, 1.0);
 
-        model = new NoteEditorModel(List.of(first, second, obstacle));
+        model = new TrackEditorModel(List.of(first, second, obstacle));
 
         assertFalse(model.moveNotes(List.of(first, second), 0, 2.0));
 
@@ -556,7 +556,7 @@ public class NoteEditorModelTest {
     public void resizeNotesLeftAppliesSameEdgeDelta() {
         EditorNote first = new EditorNote(60, 2.0, 2.0);
         EditorNote second = new EditorNote(61, 5.0, 3.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         assertTrue(model.resizeNotesLeft(List.of(first, second), -0.5));
 
@@ -570,7 +570,7 @@ public class NoteEditorModelTest {
     public void resizeNotesRightAppliesSameEdgeDelta() {
         EditorNote first = new EditorNote(60, 0.0, 2.0);
         EditorNote second = new EditorNote(61, 3.0, 3.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         assertTrue(model.resizeNotesRight(List.of(first, second), 0.5));
 
@@ -584,7 +584,7 @@ public class NoteEditorModelTest {
 
         EditorNote second = new EditorNote(61, 5.0, NoteEditorLayout.SNAP_BEATS * 2);
 
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         assertTrue(model.resizeNotesLeft(List.of(first, second), NoteEditorLayout.SNAP_BEATS * 3));
 
@@ -604,7 +604,7 @@ public class NoteEditorModelTest {
         EditorNote first = new EditorNote(60, 0.0, 1.0);
         EditorNote obstacle = new EditorNote(60, 2.0, 1.0);
         EditorNote second = new EditorNote(60, 4.0, 1.0);
-        model = new NoteEditorModel(List.of(first, obstacle, second));
+        model = new TrackEditorModel(List.of(first, obstacle, second));
 
         assertFalse(model.resizeNotesRight(List.of(first, second), 2.0));
 
@@ -617,7 +617,7 @@ public class NoteEditorModelTest {
         EditorNote first = new EditorNote(60, 0.0, 1.0);
         EditorNote second = new EditorNote(60, 2.0, 1.0);
 
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         assertFalse(model.resizeNotesRight(List.of(first, second), 2.0));
 
@@ -630,7 +630,7 @@ public class NoteEditorModelTest {
         EditorNote first = new EditorNote(60, 2.0, 2.0);
         EditorNote second = new EditorNote(64, 5.0, 3.0);
 
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         model.beginNoteStateChange(List.of(first, second));
 
@@ -657,7 +657,7 @@ public class NoteEditorModelTest {
     public void groupMoveUndoRestoresAllNotes() {
         EditorNote first = new EditorNote(60, 1.0, 1.0);
         EditorNote second = new EditorNote(64, 3.0, 1.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         model.beginNoteStateChange(List.of(first, second));
         assertTrue(model.moveNotes(List.of(first, second), 2, 1.5));
@@ -675,7 +675,7 @@ public class NoteEditorModelTest {
     public void groupMoveRedoRestoresAllNotes() {
         EditorNote first = new EditorNote(60, 1.0, 1.0);
         EditorNote second = new EditorNote(64, 3.0, 1.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         model.beginNoteStateChange(List.of(first, second));
         assertTrue(model.moveNotes(List.of(first, second), 2, 1.5));
@@ -694,7 +694,7 @@ public class NoteEditorModelTest {
     public void multipleGroupDragUpdatesCreateOneUndoAction() {
         EditorNote first = new EditorNote(60, 1.0, 1.0);
         EditorNote second = new EditorNote(64, 3.0, 1.0);
-        model = new NoteEditorModel(List.of(first, second));
+        model = new TrackEditorModel(List.of(first, second));
 
         model.beginNoteStateChange(List.of(first, second));
         assertTrue(model.moveNotes(List.of(first, second), 0, 0.25));
@@ -721,7 +721,7 @@ public class NoteEditorModelTest {
         EditorNote b = new EditorNote(61, 1.0, 1.0);
         EditorNote c = new EditorNote(62, 2.0, 1.0);
 
-        model = new NoteEditorModel(List.of(a, b, c));
+        model = new TrackEditorModel(List.of(a, b, c));
 
         assertTrue(model.deleteNotes(List.of(a, c)));
 
@@ -733,7 +733,7 @@ public class NoteEditorModelTest {
         EditorNote a = new EditorNote(60, 0.0, 1.0);
         EditorNote b = new EditorNote(61, 1.0, 1.0);
         EditorNote unknown = new EditorNote(62, 2.0, 1.0);
-        model = new NoteEditorModel(List.of(a, b));
+        model = new TrackEditorModel(List.of(a, b));
         assertFalse(model.deleteNotes(List.of(a, unknown)));
         assertEquals(List.of(a, b), model.getNotes());
     }
@@ -745,7 +745,7 @@ public class NoteEditorModelTest {
         EditorNote c = new EditorNote(62, 2.0, 1.0);
         EditorNote d = new EditorNote(63, 3.0, 1.0);
 
-        model = new NoteEditorModel(List.of(a, b, c, d));
+        model = new TrackEditorModel(List.of(a, b, c, d));
 
         assertTrue(model.deleteNotes(List.of(b, d)));
         assertTrue(model.undo());
@@ -762,7 +762,7 @@ public class NoteEditorModelTest {
         EditorNote a = new EditorNote(60, 0.0, 1.0);
         EditorNote b = new EditorNote(61, 1.0, 1.0);
 
-        model = new NoteEditorModel(List.of(a, b));
+        model = new TrackEditorModel(List.of(a, b));
 
         assertTrue(model.deleteNotes(List.of(a, b)));
         assertTrue(model.getNotes().isEmpty());
@@ -777,7 +777,7 @@ public class NoteEditorModelTest {
         EditorNote a = new EditorNote(60, 0.0, 1.0);
         EditorNote b = new EditorNote(61, 1.0, 1.0);
 
-        model = new NoteEditorModel(List.of(a, b));
+        model = new TrackEditorModel(List.of(a, b));
 
         assertTrue(model.deleteNotes(List.of(a, b)));
         assertTrue(model.undo());
@@ -794,7 +794,7 @@ public class NoteEditorModelTest {
         EditorNote c = new EditorNote(62, 2.0, 1.0);
         EditorNote d = new EditorNote(63, 3.0, 1.0);
 
-        model = new NoteEditorModel(List.of(a, b, c, d));
+        model = new TrackEditorModel(List.of(a, b, c, d));
 
         assertTrue(model.deleteNotes(List.of(d, b)));
 
@@ -809,7 +809,7 @@ public class NoteEditorModelTest {
 
         EditorNote unknown = new EditorNote(61, 1.0, 1.0);
 
-        model = new NoteEditorModel(List.of(note));
+        model = new TrackEditorModel(List.of(note));
 
         assertThrows(IllegalArgumentException.class, () -> model.beginNoteStateChange(List.of(note, unknown)));
 
