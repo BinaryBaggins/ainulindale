@@ -1,5 +1,6 @@
-package io.github.binarybaggins.ainulindale.model;
+package io.github.binarybaggins.ainulindale.interaction;
 
+import io.github.binarybaggins.ainulindale.model.EditorNote;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;

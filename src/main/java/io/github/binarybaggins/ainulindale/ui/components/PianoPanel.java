@@ -1,7 +1,7 @@
-package io.github.binarybaggins.ainulindale.components;
+package io.github.binarybaggins.ainulindale.ui.components;
 
-import io.github.binarybaggins.ainulindale.NoteEditorGeometry;
-import io.github.binarybaggins.ainulindale.NoteEditorLayout;
+import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
+import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;

@@ -1,6 +1,6 @@
 package io.github.binarybaggins.ainulindale.model;
 
-import io.github.binarybaggins.ainulindale.NoteEditorLayout;
+import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.undo.UndoHistory;
 import io.github.binarybaggins.ainulindale.undo.UndoableAction;
 import java.util.ArrayList;

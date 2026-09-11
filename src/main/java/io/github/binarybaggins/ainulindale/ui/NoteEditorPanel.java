@@ -1,7 +1,7 @@
-package io.github.binarybaggins.ainulindale;
+package io.github.binarybaggins.ainulindale.ui;
 
-import io.github.binarybaggins.ainulindale.components.EditorAreaPanel;
-import io.github.binarybaggins.ainulindale.components.ToolbarPanel;
+import io.github.binarybaggins.ainulindale.ui.components.EditorAreaPanel;
+import io.github.binarybaggins.ainulindale.ui.components.ToolbarPanel;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
 

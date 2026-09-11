@@ -1,6 +1,6 @@
 package io.github.binarybaggins.ainulindale.interaction;
 
-import io.github.binarybaggins.ainulindale.NoteEditorLayout;
+import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import java.util.Collection;
 import java.util.HashSet;
