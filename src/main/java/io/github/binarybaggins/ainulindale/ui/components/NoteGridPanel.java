@@ -1,16 +1,17 @@
-package io.github.binarybaggins.ainulindale.components;
+package io.github.binarybaggins.ainulindale.ui.components;
 
-import io.github.binarybaggins.ainulindale.NoteEditorGeometry;
-import io.github.binarybaggins.ainulindale.NoteEditorLayout;
-import io.github.binarybaggins.ainulindale.NoteEditorViewState;
-import io.github.binarybaggins.ainulindale.actions.NoteEditorKeyBindings;
-import io.github.binarybaggins.ainulindale.actions.NoteGridMouseListener;
+import io.github.binarybaggins.ainulindale.core.MidiConstraints;
+import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
+import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
+import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
+import io.github.binarybaggins.ainulindale.ui.actions.NoteEditorKeyBindings;
+import io.github.binarybaggins.ainulindale.ui.actions.NoteGridMouseListener;
 import io.github.binarybaggins.ainulindale.interaction.GroupMoveResolver;
 import io.github.binarybaggins.ainulindale.interaction.NoteDragState;
 import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
-import io.github.binarybaggins.ainulindale.model.DragMode;
+import io.github.binarybaggins.ainulindale.interaction.DragMode;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
-import io.github.binarybaggins.ainulindale.model.NoteSelectionModel;
+import io.github.binarybaggins.ainulindale.interaction.NoteSelectionModel;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.awt.Color;
@@ -92,7 +93,7 @@ public class NoteGridPanel extends JPanel {
     }
 
     private void paintPitchRows(Graphics g) {
-        for (int midiNote = 0; midiNote < NoteEditorLayout.MIDI_NOTE_COUNT; midiNote++) {
+        for (int midiNote = MidiConstraints.MIN_NOTE; midiNote <= MidiConstraints.MAX_NOTE; midiNote++) {
             int y = NoteEditorGeometry.getYForMidiNote(midiNote);
 
             if (NoteEditorGeometry.isBlackKey(midiNote)) {

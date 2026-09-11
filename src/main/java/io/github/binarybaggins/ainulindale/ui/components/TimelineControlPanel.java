@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.components;
+package io.github.binarybaggins.ainulindale.ui.components;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;

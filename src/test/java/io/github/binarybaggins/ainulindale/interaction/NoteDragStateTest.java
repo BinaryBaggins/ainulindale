@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.github.binarybaggins.ainulindale.model.DragMode;
+import io.github.binarybaggins.ainulindale.interaction.DragMode;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;

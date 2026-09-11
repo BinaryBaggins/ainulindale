@@ -1,5 +1,7 @@
 package io.github.binarybaggins.ainulindale;
 
+import io.github.binarybaggins.ainulindale.ui.NoteEditorFrame;
+
 public class Ainulindale {
 
     private Ainulindale() {}

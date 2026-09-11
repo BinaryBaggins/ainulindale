@@ -1,6 +1,6 @@
 package io.github.binarybaggins.ainulindale.model;
 
-import io.github.binarybaggins.ainulindale.NoteEditorLayout;
+import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import io.github.binarybaggins.ainulindale.undo.UndoHistory;
 import io.github.binarybaggins.ainulindale.undo.UndoableAction;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ public final class TrackEditorModel {
         midiNote = clampMidiNote(midiNote);
         startBeat = Math.max(0, startBeat);
 
-        if (durationBeats < NoteEditorLayout.SNAP_BEATS) {
+        if (durationBeats < EditorConstraints.MIN_NOTE_DURATION_BEATS) {
             return Optional.empty();
         }
 
@@ -161,7 +161,7 @@ public final class TrackEditorModel {
 
             minimumMidiDelta = Math.max(minimumMidiDelta, -base.midiNote());
 
-            maximumMidiDelta = Math.min(maximumMidiDelta, NoteEditorLayout.MIDI_NOTE_COUNT - 1 - base.midiNote());
+            maximumMidiDelta = Math.min(maximumMidiDelta, MidiConstraints.MAX_NOTE - base.midiNote());
 
             minimumBeatDelta = Math.max(minimumBeatDelta, -base.startBeat());
         }
@@ -228,7 +228,7 @@ public final class TrackEditorModel {
      * A positive delta moves each left edge right and shortens each note; a
      * negative delta moves each left edge left and lengthens each note. The
      * group is clamped so no note starts before beat zero or becomes shorter
-     * than the minimum snap duration. Collisions reject the whole operation.
+     * than the minimum note duration. Collisions reject the whole operation.
      *
      * @param notesToResize  notes to resize as one group
      * @param deltaStartBeat relative left-edge delta applied to every note
@@ -252,7 +252,7 @@ public final class TrackEditorModel {
             minimumDelta = Math.max(minimumDelta, -base.startBeat());
 
             // Duration cannot become shorter than minimum length.
-            maximumDelta = Math.min(maximumDelta, base.durationBeats() - NoteEditorLayout.SNAP_BEATS);
+            maximumDelta = Math.min(maximumDelta, base.durationBeats() - EditorConstraints.MIN_NOTE_DURATION_BEATS);
         }
 
         double appliedDelta = Math.max(minimumDelta, Math.min(deltaStartBeat, maximumDelta));
@@ -279,7 +279,7 @@ public final class TrackEditorModel {
      * Resizes all notes by moving their right edges by the same relative delta.
      * A positive delta lengthens each note and a negative delta shortens each
      * note. The group is clamped so no note becomes shorter than the minimum
-     * snap duration. Collisions reject the whole operation.
+     * note duration. Collisions reject the whole operation.
      *
      * @param notesToResize notes to resize as one group
      * @param deltaEndBeat  relative right-edge delta applied to every note
@@ -298,7 +298,7 @@ public final class TrackEditorModel {
         for (EditorNote note : resizedNotes) {
             NoteSnapshot base = getBaseState(note);
 
-            minimumDelta = Math.max(minimumDelta, NoteEditorLayout.SNAP_BEATS - base.durationBeats());
+            minimumDelta = Math.max(minimumDelta, EditorConstraints.MIN_NOTE_DURATION_BEATS - base.durationBeats());
         }
 
         double appliedDelta = Math.max(deltaEndBeat, minimumDelta);
@@ -355,15 +355,15 @@ public final class TrackEditorModel {
     private boolean canApplyStates(Map<EditorNote, NoteSnapshot> targetStates) {
         for (NoteSnapshot state : targetStates.values()) {
             // midi note must be in range
-            if (state.midiNote() < 0 || state.midiNote() >= NoteEditorLayout.MIDI_NOTE_COUNT) {
+            if (state.midiNote() < MidiConstraints.MIN_NOTE || state.midiNote() > MidiConstraints.MAX_NOTE) {
                 return false;
             }
             // start beat must be non-negative
             if (state.startBeat() < 0) {
                 return false;
             }
-            // duration must be at least the minimum snap beats
-            if (state.durationBeats() < NoteEditorLayout.SNAP_BEATS) {
+            // duration must be at least the minimum note duration
+            if (state.durationBeats() < EditorConstraints.MIN_NOTE_DURATION_BEATS) {
                 return false;
             }
         }
@@ -429,7 +429,7 @@ public final class TrackEditorModel {
     }
 
     private int clampMidiNote(int midiNote) {
-        return Math.max(0, Math.min(midiNote, NoteEditorLayout.MIDI_NOTE_COUNT - 1));
+        return Math.max(MidiConstraints.MIN_NOTE, Math.min(midiNote, MidiConstraints.MAX_NOTE));
     }
 
     private final class CreateNoteAction implements UndoableAction {
