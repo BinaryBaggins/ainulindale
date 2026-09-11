@@ -17,13 +17,4 @@ public class NoteEditorFrame extends JFrame {
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
-
-    public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(
-                new Runnable() {
-                    public void run() {
-                        new NoteEditorFrame().setVisible(true);
-                    }
-                });
-    }
 }
