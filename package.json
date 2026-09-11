@@ -1,23 +1,12 @@
 {
-  "name": "ainulindale",
-  "version": "1.0.0",
-  "description": "Ainulindalë is a standalone MIDI note editor for Java.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/BinaryBaggins/ainulindale.git"
-  },
-  "keywords": [],
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/BinaryBaggins/ainulindale/issues"
-  },
-  "homepage": "https://github.com/BinaryBaggins/ainulindale#readme",
-  "devDependencies": {
-    "prettier": "^3.9.6",
-    "prettier-plugin-java": "^2.10.3"
-  }
+    "name": "ainulindale",
+    "private": true,
+    "scripts": {
+        "format": "prettier --write \"src/**/*.java\"",
+        "format:check": "prettier --check \"src/**/*.java\""
+    },
+    "devDependencies": {
+        "prettier": "^3.9.6",
+        "prettier-plugin-java": "^2.10.3"
+    }
 }
