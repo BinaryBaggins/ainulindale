@@ -15,13 +15,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-public final class NoteEditorModel {
+public final class TrackEditorModel {
 
     private final UndoHistory undoHistory;
     private final List<EditorNote> notes;
     private Map<EditorNote, NoteSnapshot> activeStartStates;
 
-    public NoteEditorModel(List<EditorNote> notes) {
+    public TrackEditorModel(List<EditorNote> notes) {
         this.notes = new ArrayList<>(Objects.requireNonNull(notes));
         this.undoHistory = new UndoHistory();
     }

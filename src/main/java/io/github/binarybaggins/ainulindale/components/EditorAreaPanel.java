@@ -4,7 +4,7 @@ import io.github.binarybaggins.ainulindale.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.NoteEditorViewState;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
-import io.github.binarybaggins.ainulindale.model.NoteEditorModel;
+import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -34,7 +34,7 @@ public class EditorAreaPanel extends JPanel {
         track.addNote(new EditorNote(67, 5.0, 1.5));
         track.addNote(new EditorNote(72, 7.25, 0.5));
 
-        NoteEditorModel model = new NoteEditorModel(track.getNotes());
+        TrackEditorModel model = new TrackEditorModel(track.getNotes());
 
         viewState = new NoteEditorViewState();
         pianoPanel = new PianoPanel();

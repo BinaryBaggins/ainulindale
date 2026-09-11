@@ -10,7 +10,7 @@ import io.github.binarybaggins.ainulindale.interaction.NoteDragState;
 import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
 import io.github.binarybaggins.ainulindale.model.DragMode;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
-import io.github.binarybaggins.ainulindale.model.NoteEditorModel;
+import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import io.github.binarybaggins.ainulindale.model.NoteSelectionModel;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import java.awt.Color;
@@ -31,7 +31,7 @@ public class NoteGridPanel extends JPanel {
     private static final long serialVersionUID = 1L;
 
     // Model and view state
-    private final NoteEditorModel model;
+    private final TrackEditorModel model;
     private final NoteEditorViewState viewState;
     private final NoteSelectionModel selectionModel = new NoteSelectionModel();
 
@@ -42,7 +42,7 @@ public class NoteGridPanel extends JPanel {
 
     private NoteDragState dragState;
 
-    public NoteGridPanel(NoteEditorViewState viewSettings, NoteEditorModel model) {
+    public NoteGridPanel(NoteEditorViewState viewSettings, TrackEditorModel model) {
         this.viewState = viewSettings;
         this.model = model;
 
