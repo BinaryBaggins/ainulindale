@@ -10,9 +10,9 @@ import io.github.binarybaggins.ainulindale.interaction.NoteDragState;
 import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
 import io.github.binarybaggins.ainulindale.model.DragMode;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
-import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import io.github.binarybaggins.ainulindale.model.NoteSelectionModel;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
+import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -161,8 +161,8 @@ public class NoteGridPanel extends JPanel {
         int midiNote = NoteEditorGeometry.getMidiNoteForY(point.y);
 
         EditorNote note = model
-                .createNote(midiNote, startBeat, NoteEditorLayout.DEFAULT_NOTE_DURATION_BEATS)
-                .orElse(null);
+            .createNote(midiNote, startBeat, NoteEditorLayout.DEFAULT_NOTE_DURATION_BEATS)
+            .orElse(null);
 
         if (note == null) {
             return;
@@ -193,9 +193,11 @@ public class NoteGridPanel extends JPanel {
 
         int distanceFromRight = bounds.x + bounds.width - point.x;
 
-        if (distanceFromLeft >= 0 &&
-                distanceFromLeft <= NoteEditorLayout.NOTE_RESIZE_HANDLE_WIDTH &&
-                distanceFromLeft <= distanceFromRight) {
+        if (
+            distanceFromLeft >= 0 &&
+            distanceFromLeft <= NoteEditorLayout.NOTE_RESIZE_HANDLE_WIDTH &&
+            distanceFromLeft <= distanceFromRight
+        ) {
             return DragMode.RESIZE_LEFT;
         }
 
@@ -274,18 +276,19 @@ public class NoteGridPanel extends JPanel {
 
         List<NoteSnapshot> movingSnapshots = List.copyOf(dragState.snapshots());
         List<NoteSnapshot> blockingSnapshots = model
-                .getNotes()
-                .stream()
-                .filter(note -> !dragState.notes().contains(note))
-                .map(NoteSnapshot::new)
-                .toList();
+            .getNotes()
+            .stream()
+            .filter(note -> !dragState.notes().contains(note))
+            .map(NoteSnapshot::new)
+            .toList();
 
         Optional<ResolvedGroupMove> resolvedMove = GroupMoveResolver.resolve(
-                movingSnapshots,
-                blockingSnapshots,
-                deltaMidiNotes,
-                deltaBeat,
-                mouseBeat);
+            movingSnapshots,
+            blockingSnapshots,
+            deltaMidiNotes,
+            deltaBeat,
+            mouseBeat
+        );
         if (resolvedMove.isEmpty()) {
             return;
         }
@@ -332,8 +335,9 @@ public class NoteGridPanel extends JPanel {
         int x = NoteEditorGeometry.getXForBeat(note.getStartBeat(), viewState.getPixelsPerBeat());
 
         int endX = NoteEditorGeometry.getXForBeat(
-                note.getStartBeat() + note.getDurationBeats(),
-                viewState.getPixelsPerBeat());
+            note.getStartBeat() + note.getDurationBeats(),
+            viewState.getPixelsPerBeat()
+        );
 
         int rowY = NoteEditorGeometry.getYForMidiNote(note.getMidiNote());
 
@@ -378,13 +382,15 @@ public class NoteGridPanel extends JPanel {
      */
     private void clearSelectionIfMissing() {
         var existingSelection = selectionModel
-                .getSelectedNotes()
-                .stream()
-                .filter(selected -> model
-                        .getNotes()
-                        .stream()
-                        .anyMatch(note -> note == selected))
-                .toList();
+            .getSelectedNotes()
+            .stream()
+            .filter(selected ->
+                model
+                    .getNotes()
+                    .stream()
+                    .anyMatch(note -> note == selected)
+            )
+            .toList();
 
         selectionModel.setSelection(existingSelection);
     }
@@ -452,10 +458,10 @@ public class NoteGridPanel extends JPanel {
         Rectangle box = selectionBox.getBounds();
 
         Set<EditorNote> notesInBox = model
-                .getNotes()
-                .stream()
-                .filter(note -> box.intersects(getNoteBounds(note)))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+            .getNotes()
+            .stream()
+            .filter(note -> box.intersects(getNoteBounds(note)))
+            .collect(Collectors.toCollection(LinkedHashSet::new));
 
         if (additiveSelectionBox) {
             Set<EditorNote> newSelection = new LinkedHashSet<>(selectionBeforeBox);

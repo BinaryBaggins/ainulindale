@@ -15,12 +15,12 @@ import java.util.Set;
  * notes.
  */
 public record NoteDragState(
-        EditorNote grabbedNote,
-        Map<EditorNote, NoteSnapshot> startStates,
-        DragMode mode,
-        double pointerOffsetBeats,
-        int startY) {
-
+    EditorNote grabbedNote,
+    Map<EditorNote, NoteSnapshot> startStates,
+    DragMode mode,
+    double pointerOffsetBeats,
+    int startY
+) {
     public NoteDragState {
         Objects.requireNonNull(grabbedNote, "grabbedNote cannot be null");
         Objects.requireNonNull(startStates, "startStates cannot be null");
@@ -38,11 +38,12 @@ public record NoteDragState(
     }
 
     public static NoteDragState capture(
-            EditorNote grabbedNote,
-            Collection<EditorNote> selectedNotes,
-            DragMode mode,
-            double mouseBeat,
-            int startY) {
+        EditorNote grabbedNote,
+        Collection<EditorNote> selectedNotes,
+        DragMode mode,
+        double mouseBeat,
+        int startY
+    ) {
         Objects.requireNonNull(selectedNotes, "selectedNotes cannot be null");
 
         Map<EditorNote, NoteSnapshot> startStates = new LinkedHashMap<>();

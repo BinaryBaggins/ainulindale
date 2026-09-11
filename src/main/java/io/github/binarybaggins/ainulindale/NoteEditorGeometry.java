@@ -2,8 +2,7 @@ package io.github.binarybaggins.ainulindale;
 
 public final class NoteEditorGeometry {
 
-    private NoteEditorGeometry() {
-    }
+    private NoteEditorGeometry() {}
 
     /**
      * Returns the Y coordinate for the given MIDI note in the note editor.

@@ -176,11 +176,13 @@ public final class TrackEditorModel {
             NoteSnapshot base = getBaseState(note);
 
             targetStates.put(
-                    note,
-                    new NoteSnapshot(
-                            base.midiNote() + appliedMidiDelta,
-                            base.startBeat() + appliedBeatDelta,
-                            base.durationBeats()));
+                note,
+                new NoteSnapshot(
+                    base.midiNote() + appliedMidiDelta,
+                    base.startBeat() + appliedBeatDelta,
+                    base.durationBeats()
+                )
+            );
         }
 
         if (!canApplyStates(targetStates)) {
@@ -261,9 +263,9 @@ public final class TrackEditorModel {
             NoteSnapshot base = getBaseState(note);
 
             targetStates.put(
-                    note,
-                    new NoteSnapshot(base.midiNote(), base.startBeat() + appliedDelta,
-                            base.durationBeats() - appliedDelta));
+                note,
+                new NoteSnapshot(base.midiNote(), base.startBeat() + appliedDelta, base.durationBeats() - appliedDelta)
+            );
         }
 
         if (!canApplyStates(targetStates)) {
@@ -307,8 +309,9 @@ public final class TrackEditorModel {
             NoteSnapshot base = getBaseState(note);
 
             targetStates.put(
-                    note,
-                    new NoteSnapshot(base.midiNote(), base.startBeat(), base.durationBeats() + appliedDelta));
+                note,
+                new NoteSnapshot(base.midiNote(), base.startBeat(), base.durationBeats() + appliedDelta)
+            );
         }
 
         if (!canApplyStates(targetStates)) {
@@ -478,8 +481,10 @@ public final class TrackEditorModel {
         private final Map<EditorNote, NoteSnapshot> startStates;
         private final Map<EditorNote, NoteSnapshot> endStates;
 
-        private NoteStateChangeAction(Map<EditorNote, NoteSnapshot> startStates,
-                Map<EditorNote, NoteSnapshot> endStates) {
+        private NoteStateChangeAction(
+            Map<EditorNote, NoteSnapshot> startStates,
+            Map<EditorNote, NoteSnapshot> endStates
+        ) {
             this.startStates = new LinkedHashMap<>(startStates);
             this.endStates = new LinkedHashMap<>(endStates);
         }

@@ -12,8 +12,7 @@ import javax.swing.KeyStroke;
 
 public final class NoteEditorKeyBindings {
 
-    private NoteEditorKeyBindings() {
-    }
+    private NoteEditorKeyBindings() {}
 
     private static final int SHORTCUT_MASK = getShortcutMask();
 
@@ -27,10 +26,11 @@ public final class NoteEditorKeyBindings {
 
     public static void install(NoteGridPanel noteGridPanel) {
         bind(
-                noteGridPanel,
-                KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
-                "deleteSelectedNotes",
-                noteGridPanel::deleteSelectedNotes);
+            noteGridPanel,
+            KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
+            "deleteSelectedNotes",
+            noteGridPanel::deleteSelectedNotes
+        );
 
         bind(noteGridPanel, KeyStroke.getKeyStroke(KeyEvent.VK_Z, SHORTCUT_MASK), "undo", noteGridPanel::undo);
 
@@ -41,12 +41,13 @@ public final class NoteEditorKeyBindings {
         component.getInputMap(JComponent.WHEN_FOCUSED).put(keyStroke, actionName);
 
         component.getActionMap().put(
-                actionName,
-                new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        action.run();
-                    }
-                });
+            actionName,
+            new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    action.run();
+                }
+            }
+        );
     }
 }
