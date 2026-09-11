@@ -32,7 +32,13 @@ public class EditorTrack {
     }
 
     public int indexOfNote(EditorNote note) {
-        return notes.indexOf(note);
+        for (int i = 0; i < notes.size(); i++) {
+            if (notes.get(i) == note) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     public EditorNote getNote(int index) {
