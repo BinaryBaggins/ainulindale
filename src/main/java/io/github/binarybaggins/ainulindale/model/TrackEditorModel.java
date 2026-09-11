@@ -5,7 +5,6 @@ import io.github.binarybaggins.ainulindale.undo.UndoHistory;
 import io.github.binarybaggins.ainulindale.undo.UndoableAction;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -17,17 +16,17 @@ import java.util.Set;
 
 public final class TrackEditorModel {
 
+    private final EditorTrack track;
     private final UndoHistory undoHistory;
-    private final List<EditorNote> notes;
     private Map<EditorNote, NoteSnapshot> activeStartStates;
 
-    public TrackEditorModel(List<EditorNote> notes) {
-        this.notes = new ArrayList<>(Objects.requireNonNull(notes));
+    public TrackEditorModel(EditorTrack track) {
+        this.track = Objects.requireNonNull(track);
         this.undoHistory = new UndoHistory();
     }
 
     public List<EditorNote> getNotes() {
-        return Collections.unmodifiableList(notes);
+        return track.getNotes();
     }
 
     public Optional<EditorNote> createNote(int midiNote, double startBeat, double durationBeats) {
@@ -44,8 +43,8 @@ public final class TrackEditorModel {
 
         EditorNote note = new EditorNote(midiNote, startBeat, durationBeats);
 
-        int insertionIndex = notes.size();
-        notes.add(note);
+        int insertionIndex = track.size();
+        track.addNote(note);
         undoHistory.record(new CreateNoteAction(note, insertionIndex));
 
         return Optional.of(note);
@@ -63,7 +62,7 @@ public final class TrackEditorModel {
         List<DeletedNote> deletedNotes = new ArrayList<>();
 
         for (EditorNote note : uniqueNotes) {
-            int index = notes.indexOf(note);
+            int index = track.indexOfNote(note);
 
             if (index < 0) {
                 return false;
@@ -75,7 +74,7 @@ public final class TrackEditorModel {
         deletedNotes.sort(Comparator.comparingInt(DeletedNote::originalIndex));
 
         for (DeletedNote deleted : deletedNotes) {
-            notes.remove(deleted.note());
+            track.removeNote(deleted.note());
         }
 
         undoHistory.record(new DeleteNotesAction(deletedNotes));
@@ -100,7 +99,7 @@ public final class TrackEditorModel {
         }
 
         for (EditorNote note : uniqueNotes) {
-            if (!notes.contains(note)) {
+            if (!track.containsNote(note)) {
                 throw new IllegalArgumentException("Note does not exist in model");
             }
         }
@@ -197,7 +196,7 @@ public final class TrackEditorModel {
         Set<EditorNote> result = new LinkedHashSet<>(group);
 
         for (EditorNote note : result) {
-            if (!notes.contains(note)) {
+            if (!track.containsNote(note)) {
                 throw new IllegalArgumentException("Note does not exist in model");
             }
         }
@@ -324,7 +323,7 @@ public final class TrackEditorModel {
     private boolean canPlaceNote(EditorNote editedNote, int midiNote, double startBeat, double durationBeats) {
         double endBeat = startBeat + durationBeats;
 
-        for (EditorNote note : notes) {
+        for (EditorNote note : track.getNotes()) {
             if (note == editedNote) {
                 continue;
             }
@@ -368,12 +367,12 @@ public final class TrackEditorModel {
             }
         }
 
-        for (int i = 0; i < notes.size(); i++) {
-            EditorNote first = notes.get(i);
+        for (int i = 0; i < track.size(); i++) {
+            EditorNote first = track.getNote(i);
             NoteSnapshot firstState = targetStates.getOrDefault(first, new NoteSnapshot(first));
 
-            for (int j = i + 1; j < notes.size(); j++) {
-                EditorNote second = notes.get(j);
+            for (int j = i + 1; j < track.size(); j++) {
+                EditorNote second = track.getNote(j);
                 NoteSnapshot secondState = targetStates.getOrDefault(second, new NoteSnapshot(second));
 
                 if (firstState.midiNote() != secondState.midiNote()) {
@@ -444,12 +443,12 @@ public final class TrackEditorModel {
 
         @Override
         public void undo() {
-            notes.remove(note);
+            track.removeNote(note);
         }
 
         @Override
         public void redo() {
-            notes.add(insertionIndex, note);
+            track.addNote(insertionIndex, note);
         }
     }
 
@@ -464,14 +463,14 @@ public final class TrackEditorModel {
         @Override
         public void undo() {
             for (DeletedNote deleted : deletedNotes) {
-                notes.add(deleted.originalIndex(), deleted.note());
+                track.addNote(deleted.originalIndex(), deleted.note());
             }
         }
 
         @Override
         public void redo() {
             for (DeletedNote deleted : deletedNotes) {
-                notes.remove(deleted.note());
+                track.removeNote(deleted.note());
             }
         }
     }

@@ -8,6 +8,8 @@ import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.util.List;
+
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -28,13 +30,15 @@ public class EditorAreaPanel extends JPanel {
     private JScrollBar horizontalScrollBar;
 
     public EditorAreaPanel() {
-        EditorTrack track = new EditorTrack("Test Track");
-        track.addNote(new EditorNote(60, 1.0, 2.0));
-        track.addNote(new EditorNote(64, 3.5, 1.0));
-        track.addNote(new EditorNote(67, 5.0, 1.5));
-        track.addNote(new EditorNote(72, 7.25, 0.5));
+        EditorTrack track = new EditorTrack(
+                "Test Track",
+                List.of(
+                        new EditorNote(60, 1.0, 2.0),
+                        new EditorNote(64, 3.5, 1.0),
+                        new EditorNote(67, 5.0, 1.5),
+                        new EditorNote(72, 7.25, 0.5)));
 
-        TrackEditorModel model = new TrackEditorModel(track.getNotes());
+        TrackEditorModel model = new TrackEditorModel(track);
 
         viewState = new NoteEditorViewState();
         pianoPanel = new PianoPanel();

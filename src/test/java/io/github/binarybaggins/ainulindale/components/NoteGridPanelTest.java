@@ -6,6 +6,7 @@ import io.github.binarybaggins.ainulindale.NoteEditorGeometry;
 import io.github.binarybaggins.ainulindale.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.NoteEditorViewState;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
+import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 
 import java.awt.Point;
@@ -236,7 +237,9 @@ class NoteGridPanelTest {
     }
 
     private static NoteGridPanel panel(EditorNote... notes) {
-        TrackEditorModel model = new TrackEditorModel(List.of(notes));
+        EditorTrack track = new EditorTrack("Test Track", List.of(notes));
+        TrackEditorModel model = new TrackEditorModel(track);
+
         return new NoteGridPanel(new NoteEditorViewState(), model);
     }
 
