@@ -1,5 +1,7 @@
 package io.github.binarybaggins.ainulindale.ui;
 
+import io.github.binarybaggins.ainulindale.core.MidiConstraints;
+
 public final class NoteEditorGeometry {
 
     private NoteEditorGeometry() {}
@@ -11,7 +13,7 @@ public final class NoteEditorGeometry {
      * @return the Y coordinate for the given MIDI note in the note editor
      */
     public static int getYForMidiNote(int midiNote) {
-        return (NoteEditorLayout.MIDI_NOTE_COUNT - 1 - midiNote) * NoteEditorLayout.NOTE_HEIGHT;
+        return (MidiConstraints.MAX_NOTE - midiNote) * NoteEditorLayout.NOTE_HEIGHT;
     }
 
     /**
@@ -21,7 +23,7 @@ public final class NoteEditorGeometry {
      * @return the MIDI note number for the given Y coordinate in the note editor
      */
     public static int getMidiNoteForY(int y) {
-        return NoteEditorLayout.MIDI_NOTE_COUNT - 1 - y / NoteEditorLayout.NOTE_HEIGHT;
+        return MidiConstraints.MAX_NOTE - y / NoteEditorLayout.NOTE_HEIGHT;
     }
 
     /**

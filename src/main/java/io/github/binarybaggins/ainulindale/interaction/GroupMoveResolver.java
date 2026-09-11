@@ -1,6 +1,6 @@
 package io.github.binarybaggins.ainulindale.interaction;
 
-import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
+import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import java.util.Collection;
 import java.util.HashSet;
@@ -101,7 +101,7 @@ public final class GroupMoveResolver {
 
         for (NoteSnapshot state : movingNotes) {
             minimumDelta = Math.max(minimumDelta, -state.midiNote());
-            maximumDelta = Math.min(maximumDelta, NoteEditorLayout.MIDI_NOTE_COUNT - 1 - state.midiNote());
+            maximumDelta = Math.min(maximumDelta, MidiConstraints.MAX_NOTE - state.midiNote());
         }
 
         return Math.max(minimumDelta, Math.min(requestedDelta, maximumDelta));

@@ -1,15 +1,14 @@
 package io.github.binarybaggins.ainulindale.ui;
 
+import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import java.awt.Color;
 
 public final class NoteEditorLayout {
 
-    public static final int MIDI_NOTE_COUNT = 128;
-
     public static final int NOTE_HEIGHT = 16;
     public static final int PIANO_WIDTH = 80;
 
-    public static final int EDITOR_HEIGHT = MIDI_NOTE_COUNT * NOTE_HEIGHT;
+    public static final int EDITOR_HEIGHT = MidiConstraints.NOTE_COUNT * NOTE_HEIGHT;
     public static final int EDITOR_WIDTH = 3000;
 
     public static final int TIMELINE_HEIGHT = 32;

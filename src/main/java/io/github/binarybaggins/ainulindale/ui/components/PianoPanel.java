@@ -1,5 +1,6 @@
 package io.github.binarybaggins.ainulindale.ui.components;
 
+import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import java.awt.Color;
@@ -16,8 +17,6 @@ public class PianoPanel extends JPanel {
     private static final Color KEY_BORDER_COLOR = Color.GRAY;
 
     private static final double BLACK_KEY_WIDTH_RATIO = 0.65;
-
-    // private static final int MIDI_NOTE_COUNT = 128;
 
     public PianoPanel() {
         setPreferredSize(new Dimension(NoteEditorLayout.PIANO_WIDTH, NoteEditorLayout.EDITOR_HEIGHT));
@@ -38,7 +37,7 @@ public class PianoPanel extends JPanel {
         g.setColor(KEY_BORDER_COLOR);
         int blackKeyWidth = (int) (getWidth() * BLACK_KEY_WIDTH_RATIO);
 
-        for (int midiNote = 0; midiNote < NoteEditorLayout.MIDI_NOTE_COUNT; midiNote++) {
+        for (int midiNote = MidiConstraints.MIN_NOTE; midiNote <= MidiConstraints.MAX_NOTE; midiNote++) {
             int y = NoteEditorGeometry.getYForMidiNote(midiNote);
 
             if (NoteEditorGeometry.isBlackKey(midiNote)) {
@@ -47,7 +46,7 @@ public class PianoPanel extends JPanel {
                 int boundaryY = y + NoteEditorLayout.NOTE_HEIGHT / 2;
                 g.drawLine(blackKeyWidth, boundaryY, getWidth() - 1, boundaryY);
             } else if (
-                midiNote < NoteEditorLayout.MIDI_NOTE_COUNT - 1 && !NoteEditorGeometry.isBlackKey(midiNote + 1)
+                midiNote < MidiConstraints.MAX_NOTE && !NoteEditorGeometry.isBlackKey(midiNote + 1)
             ) {
                 // E-F and B-C white key boundaries have no black key between them
                 g.drawLine(0, y, getWidth() - 1, y);
@@ -63,7 +62,7 @@ public class PianoPanel extends JPanel {
 
     private void paintBlackKeys(Graphics g) {
         int blackKeyWidth = (int) (getWidth() * BLACK_KEY_WIDTH_RATIO);
-        for (int midiNote = 0; midiNote < NoteEditorLayout.MIDI_NOTE_COUNT; midiNote++) {
+        for (int midiNote = MidiConstraints.MIN_NOTE; midiNote <= MidiConstraints.MAX_NOTE; midiNote++) {
             if (NoteEditorGeometry.isBlackKey(midiNote)) {
                 int y = NoteEditorGeometry.getYForMidiNote(midiNote);
 

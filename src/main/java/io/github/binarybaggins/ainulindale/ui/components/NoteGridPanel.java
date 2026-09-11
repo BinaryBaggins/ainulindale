@@ -1,5 +1,6 @@
 package io.github.binarybaggins.ainulindale.ui.components;
 
+import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
@@ -92,7 +93,7 @@ public class NoteGridPanel extends JPanel {
     }
 
     private void paintPitchRows(Graphics g) {
-        for (int midiNote = 0; midiNote < NoteEditorLayout.MIDI_NOTE_COUNT; midiNote++) {
+        for (int midiNote = MidiConstraints.MIN_NOTE; midiNote <= MidiConstraints.MAX_NOTE; midiNote++) {
             int y = NoteEditorGeometry.getYForMidiNote(midiNote);
 
             if (NoteEditorGeometry.isBlackKey(midiNote)) {

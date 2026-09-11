@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
+import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,12 +71,12 @@ public class TrackEditorModelTest {
         EditorNote high = model.createNote(200, 2.0, 1.0).orElseThrow();
 
         assertEquals(0, low.getMidiNote());
-        assertEquals(NoteEditorLayout.MIDI_NOTE_COUNT - 1, high.getMidiNote());
+        assertEquals(MidiConstraints.MAX_NOTE, high.getMidiNote());
     }
 
     @Test
     public void createNoteRejectsDurationBelowMinimum() {
-        assertTrue(model.createNote(60, 0.0, NoteEditorLayout.SNAP_BEATS / 2.0).isEmpty());
+        assertTrue(model.createNote(60, 0.0, EditorConstraints.MIN_NOTE_DURATION_BEATS / 2.0).isEmpty());
     }
 
     @Test
@@ -137,9 +137,9 @@ public class TrackEditorModelTest {
 
         assertTrue(model.resizeNotesLeft(List.of(note), 5.0));
 
-        assertEquals(3.0 - NoteEditorLayout.SNAP_BEATS, note.getStartBeat(), 0.000001);
+        assertEquals(3.0 - EditorConstraints.MIN_NOTE_DURATION_BEATS, note.getStartBeat(), 0.000001);
 
-        assertEquals(NoteEditorLayout.SNAP_BEATS, note.getDurationBeats(), 0.000001);
+        assertEquals(EditorConstraints.MIN_NOTE_DURATION_BEATS, note.getDurationBeats(), 0.000001);
     }
 
     @Test
@@ -170,7 +170,7 @@ public class TrackEditorModelTest {
 
         assertTrue(model.resizeNotesRight(List.of(note), -2.0));
 
-        assertEquals(NoteEditorLayout.SNAP_BEATS, note.getDurationBeats(), 0.000001);
+        assertEquals(EditorConstraints.MIN_NOTE_DURATION_BEATS, note.getDurationBeats(), 0.000001);
     }
 
     @Test
@@ -581,21 +581,21 @@ public class TrackEditorModelTest {
     public void shortestSelectedNoteLimitsResizeForWholeGroup() {
         EditorNote first = new EditorNote(60, 2.0, 2.0);
 
-        EditorNote second = new EditorNote(61, 5.0, NoteEditorLayout.SNAP_BEATS * 2);
+        EditorNote second = new EditorNote(61, 5.0, EditorConstraints.MIN_NOTE_DURATION_BEATS * 2);
 
         model = createModel(first, second);
 
-        assertTrue(model.resizeNotesLeft(List.of(first, second), NoteEditorLayout.SNAP_BEATS * 3));
+        assertTrue(model.resizeNotesLeft(List.of(first, second), EditorConstraints.MIN_NOTE_DURATION_BEATS * 3));
 
-        // second can shrink by only one SNAP_BEATS,
+        // second can shrink by only one minimum-duration step,
         // therefore the entire group moves by exactly that amount.
-        assertEquals(2.0 + NoteEditorLayout.SNAP_BEATS, first.getStartBeat(), 0.000001);
+        assertEquals(2.0 + EditorConstraints.MIN_NOTE_DURATION_BEATS, first.getStartBeat(), 0.000001);
 
-        assertEquals(2.0 - NoteEditorLayout.SNAP_BEATS, first.getDurationBeats(), 0.000001);
+        assertEquals(2.0 - EditorConstraints.MIN_NOTE_DURATION_BEATS, first.getDurationBeats(), 0.000001);
 
-        assertEquals(5.0 + NoteEditorLayout.SNAP_BEATS, second.getStartBeat(), 0.000001);
+        assertEquals(5.0 + EditorConstraints.MIN_NOTE_DURATION_BEATS, second.getStartBeat(), 0.000001);
 
-        assertEquals(NoteEditorLayout.SNAP_BEATS, second.getDurationBeats(), 0.000001);
+        assertEquals(EditorConstraints.MIN_NOTE_DURATION_BEATS, second.getDurationBeats(), 0.000001);
     }
 
     @Test
