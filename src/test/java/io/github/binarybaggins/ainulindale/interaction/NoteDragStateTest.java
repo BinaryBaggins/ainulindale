@@ -6,7 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.binarybaggins.ainulindale.model.DragMode;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
+import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
+import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
+
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -26,14 +29,16 @@ class NoteDragStateTest {
     @Test
     void laterChangesToNoteDoNotAffectSnapshot() {
         EditorNote a = new EditorNote(60, 1.0, 2.0);
+        EditorTrack track = new EditorTrack("Test Track", List.of(a));
+        TrackEditorModel model = new TrackEditorModel(track);
 
         NoteDragState state = NoteDragState.capture(a, List.of(a), DragMode.MOVE, 1.0, 5);
 
-        a.setStartBeat(99.0);
-        a.setMidiNote(1);
-        a.setDurationBeats(50.0);
+        model.moveNotes(List.of(a), -59, 98.0);
+        model.resizeNotesRight(List.of(a), 48.0);
 
         NoteSnapshot snapshot = state.grabbedStartState();
+
         assertEquals(60, snapshot.midiNote());
         assertEquals(1.0, snapshot.startBeat(), 0.000001);
         assertEquals(2.0, snapshot.durationBeats(), 0.000001);
