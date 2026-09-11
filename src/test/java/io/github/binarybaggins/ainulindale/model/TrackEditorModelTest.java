@@ -803,6 +803,29 @@ public class TrackEditorModelTest {
     }
 
     @Test
+    void eachTrackEditorModelHasIndependentUndoHistory() {
+        EditorTrack firstTrack = new EditorTrack("First");
+        EditorTrack secondTrack = new EditorTrack("Second");
+
+        TrackEditorModel firstModel = new TrackEditorModel(firstTrack);
+        TrackEditorModel secondModel = new TrackEditorModel(secondTrack);
+
+        firstModel.createNote(60, 0.0, 1.0);
+        secondModel.createNote(64, 0.0, 1.0);
+
+        assertTrue(firstModel.canUndo());
+        assertTrue(secondModel.canUndo());
+
+        assertTrue(firstModel.undo());
+
+        assertEquals(0, firstTrack.size());
+        assertEquals(1, secondTrack.size());
+
+        assertFalse(firstModel.canUndo());
+        assertTrue(secondModel.canUndo());
+    }
+
+    @Test
     public void failedBeginStateChangeDoesNotLeaveActiveChange() {
         EditorNote note = new EditorNote(60, 0.0, 1.0);
 
