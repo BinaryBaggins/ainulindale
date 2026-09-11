@@ -46,8 +46,9 @@ public class PianoPanel extends JPanel {
                 // passes through the center of the black key row
                 int boundaryY = y + NoteEditorLayout.NOTE_HEIGHT / 2;
                 g.drawLine(blackKeyWidth, boundaryY, getWidth() - 1, boundaryY);
-            } else if (midiNote < NoteEditorLayout.MIDI_NOTE_COUNT - 1
-                    && !NoteEditorGeometry.isBlackKey(midiNote + 1)) {
+            } else if (
+                midiNote < NoteEditorLayout.MIDI_NOTE_COUNT - 1 && !NoteEditorGeometry.isBlackKey(midiNote + 1)
+            ) {
                 // E-F and B-C white key boundaries have no black key between them
                 g.drawLine(0, y, getWidth() - 1, y);
             }

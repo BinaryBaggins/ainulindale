@@ -841,7 +841,6 @@ public class TrackEditorModelTest {
     }
 
     private static TrackEditorModel createModel(EditorNote... notes) {
-        return new TrackEditorModel(
-                new EditorTrack("Test Track", List.of(notes)));
+        return new TrackEditorModel(new EditorTrack("Test Track", List.of(notes)));
     }
 }

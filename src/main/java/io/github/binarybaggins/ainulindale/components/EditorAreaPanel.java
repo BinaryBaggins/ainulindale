@@ -9,7 +9,6 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.List;
-
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -31,12 +30,14 @@ public class EditorAreaPanel extends JPanel {
 
     public EditorAreaPanel() {
         EditorTrack track = new EditorTrack(
-                "Test Track",
-                List.of(
-                        new EditorNote(60, 1.0, 2.0),
-                        new EditorNote(64, 3.5, 1.0),
-                        new EditorNote(67, 5.0, 1.5),
-                        new EditorNote(72, 7.25, 0.5)));
+            "Test Track",
+            List.of(
+                new EditorNote(60, 1.0, 2.0),
+                new EditorNote(64, 3.5, 1.0),
+                new EditorNote(67, 5.0, 1.5),
+                new EditorNote(72, 7.25, 0.5)
+            )
+        );
 
         TrackEditorModel model = new TrackEditorModel(track);
 
@@ -47,19 +48,22 @@ public class EditorAreaPanel extends JPanel {
         timelineControlPanel = new TimelineControlPanel();
 
         mainScrollPane = new JScrollPane(
-                noteGridPanel,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            noteGridPanel,
+            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+            JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        );
 
         mainScrollPane.setRowHeaderView(pianoPanel);
 
         timelineControlPanel.setPreferredSize(
-                new Dimension(NoteEditorLayout.PIANO_WIDTH, NoteEditorLayout.TIMELINE_HEIGHT));
+            new Dimension(NoteEditorLayout.PIANO_WIDTH, NoteEditorLayout.TIMELINE_HEIGHT)
+        );
 
         JScrollPane timelineScrollPane = new JScrollPane(
-                timelinePanel,
-                JScrollPane.VERTICAL_SCROLLBAR_NEVER,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            timelinePanel,
+            JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+            JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        );
         timelineScrollPane.setPreferredSize(new Dimension(0, NoteEditorLayout.TIMELINE_HEIGHT));
         timelineScrollPane.setRowHeaderView(timelineControlPanel);
         timelineControlPanel.addZoomInListener(e -> zoomIn());

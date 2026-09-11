@@ -60,5 +60,4 @@ public class EditorTrack {
     boolean removeNote(EditorNote note) {
         return notes.remove(note);
     }
-
 }

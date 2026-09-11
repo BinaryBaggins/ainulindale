@@ -8,7 +8,6 @@ import io.github.binarybaggins.ainulindale.NoteEditorViewState;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
-
 import java.awt.Point;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -260,8 +259,9 @@ class NoteGridPanelTest {
         Point press = pointAt(grabbed, 0.5);
         panel.beginNoteDrag(press);
         Point target = new Point(
-                press.x + (int) Math.round(deltaBeat * PIXELS_PER_BEAT),
-                press.y - deltaMidiNote * NoteEditorLayout.NOTE_HEIGHT);
+            press.x + (int) Math.round(deltaBeat * PIXELS_PER_BEAT),
+            press.y - deltaMidiNote * NoteEditorLayout.NOTE_HEIGHT
+        );
         panel.dragSelectedNoteTo(target);
         panel.endNoteDrag();
     }

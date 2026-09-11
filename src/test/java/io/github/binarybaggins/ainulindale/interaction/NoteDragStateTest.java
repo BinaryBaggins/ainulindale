@@ -9,7 +9,6 @@ import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
-
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -53,9 +52,7 @@ class NoteDragStateTest {
         NoteDragState state = NoteDragState.capture(b, List.of(a, b, c), DragMode.MOVE, 3.0, 5);
 
         assertIterableEquals(List.of(a, b, c), state.notes());
-        assertIterableEquals(
-                List.of(new NoteSnapshot(a), new NoteSnapshot(b), new NoteSnapshot(c)),
-                state.snapshots());
+        assertIterableEquals(List.of(new NoteSnapshot(a), new NoteSnapshot(b), new NoteSnapshot(c)), state.snapshots());
     }
 
     @Test
@@ -100,18 +97,16 @@ class NoteDragStateTest {
         EditorNote a = new EditorNote(60, 1.0, 2.0);
         EditorNote outsider = new EditorNote(61, 2.0, 1.0);
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> NoteDragState.capture(outsider, List.of(a), DragMode.MOVE, 1.0, 5));
+        assertThrows(IllegalArgumentException.class, () ->
+            NoteDragState.capture(outsider, List.of(a), DragMode.MOVE, 1.0, 5)
+        );
     }
 
     @Test
     void rejectsNoneDragMode() {
         EditorNote a = new EditorNote(60, 1.0, 2.0);
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> NoteDragState.capture(a, List.of(a), DragMode.NONE, 1.0, 5));
+        assertThrows(IllegalArgumentException.class, () -> NoteDragState.capture(a, List.of(a), DragMode.NONE, 1.0, 5));
     }
 
     @Test
@@ -121,11 +116,9 @@ class NoteDragStateTest {
         NoteDragState state = NoteDragState.capture(a, List.of(a), DragMode.MOVE, 1.0, 5);
 
         assertThrows(UnsupportedOperationException.class, () -> state.notes().add(new EditorNote(1, 0, 1)));
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> state.snapshots().add(new NoteSnapshot(1, 0, 1)));
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> state.startStates().put(new EditorNote(1, 0, 1), new NoteSnapshot(1, 0, 1)));
+        assertThrows(UnsupportedOperationException.class, () -> state.snapshots().add(new NoteSnapshot(1, 0, 1)));
+        assertThrows(UnsupportedOperationException.class, () ->
+            state.startStates().put(new EditorNote(1, 0, 1), new NoteSnapshot(1, 0, 1))
+        );
     }
 }

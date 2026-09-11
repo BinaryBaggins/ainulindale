@@ -10,8 +10,7 @@ import java.util.Set;
 
 public final class GroupMoveResolver {
 
-    private GroupMoveResolver() {
-    }
+    private GroupMoveResolver() {}
 
     /**
      * Resolves a requested group move using only captured note snapshots.
@@ -33,11 +32,12 @@ public final class GroupMoveResolver {
      * @return the fully resolved move, including clamped MIDI and beat deltas
      */
     public static Optional<ResolvedGroupMove> resolve(
-            Collection<NoteSnapshot> movingNotes,
-            Collection<NoteSnapshot> blockingNotes,
-            int requestedMidiDelta,
-            double requestedBeatDelta,
-            double mouseBeat) {
+        Collection<NoteSnapshot> movingNotes,
+        Collection<NoteSnapshot> blockingNotes,
+        int requestedMidiDelta,
+        double requestedBeatDelta,
+        double mouseBeat
+    ) {
         List<NoteSnapshot> moving = List.copyOf(movingNotes);
         List<NoteSnapshot> blockers = List.copyOf(blockingNotes);
 
@@ -118,10 +118,11 @@ public final class GroupMoveResolver {
     }
 
     private static Collision findCollision(
-            List<NoteSnapshot> movingNotes,
-            List<NoteSnapshot> blockingNotes,
-            int midiDelta,
-            double beatDelta) {
+        List<NoteSnapshot> movingNotes,
+        List<NoteSnapshot> blockingNotes,
+        int midiDelta,
+        double beatDelta
+    ) {
         for (int movingIndex = 0; movingIndex < movingNotes.size(); movingIndex++) {
             NoteSnapshot moving = movingNotes.get(movingIndex);
             int targetMidiNote = moving.midiNote() + midiDelta;
@@ -147,6 +148,5 @@ public final class GroupMoveResolver {
         return null;
     }
 
-    private record Collision(int movingIndex, int blockingIndex) {
-    }
+    private record Collision(int movingIndex, int blockingIndex) {}
 }
