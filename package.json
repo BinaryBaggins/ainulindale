@@ -1,0 +1,12 @@
+{
+    "name": "ainulindale",
+    "private": true,
+    "scripts": {
+        "format": "prettier --write \"src/**/*.java\"",
+        "format:check": "prettier --check \"src/**/*.java\""
+    },
+    "devDependencies": {
+        "prettier": "^3.9.6",
+        "prettier-plugin-java": "^2.10.3"
+    }
+}

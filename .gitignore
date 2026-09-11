@@ -1,6 +1,9 @@
 # Maven
 target/
 
+# Node.js
+node_modules/
+
 # IntelliJ IDEA
 .idea/
 *.iml
@@ -9,9 +12,6 @@ target/
 .classpath
 .project
 .settings/
-
-# VS Code
-.vscode/
 
 # OS files
 .DS_Store

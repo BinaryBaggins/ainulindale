@@ -1,0 +1,11 @@
+{
+    "editor.formatOnSave": false,
+    "editor.formatOnType": false,
+    "editor.formatOnPaste": false,
+
+    "prettier.documentSelectors": ["**/*.java"],
+
+    "[java]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+}
