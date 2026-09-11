@@ -1,7 +1,9 @@
 package io.github.binarybaggins.ainulindale.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class EditorTrack {
 
@@ -9,8 +11,12 @@ public class EditorTrack {
     private final List<EditorNote> notes;
 
     public EditorTrack(String name) {
-        this.name = name;
-        this.notes = new ArrayList<>();
+        this(name, List.of());
+    }
+
+    public EditorTrack(String name, List<EditorNote> initialNotes) {
+        this.name = Objects.requireNonNull(name);
+        this.notes = new ArrayList<>(Objects.requireNonNull(initialNotes));
     }
 
     public String getName() {
@@ -18,10 +24,35 @@ public class EditorTrack {
     }
 
     public List<EditorNote> getNotes() {
-        return notes;
+        return Collections.unmodifiableList(notes);
     }
 
-    public void addNote(EditorNote note) {
+    public boolean containsNote(EditorNote note) {
+        return notes.stream().anyMatch(existing -> existing == note);
+    }
+
+    public int indexOfNote(EditorNote note) {
+        return notes.indexOf(note);
+    }
+
+    public EditorNote getNote(int index) {
+        return notes.get(index);
+    }
+
+    public int size() {
+        return notes.size();
+    }
+
+    void addNote(EditorNote note) {
         notes.add(note);
     }
+
+    void addNote(int index, EditorNote note) {
+        notes.add(index, note);
+    }
+
+    boolean removeNote(EditorNote note) {
+        return notes.remove(note);
+    }
+
 }
