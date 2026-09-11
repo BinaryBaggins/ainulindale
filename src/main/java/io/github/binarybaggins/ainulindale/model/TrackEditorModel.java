@@ -215,9 +215,7 @@ public final class TrackEditorModel {
                 changed = true;
             }
 
-            note.setMidiNote(target.midiNote());
-            note.setStartBeat(target.startBeat());
-            note.setDurationBeats(target.durationBeats());
+            note.setState(target.midiNote(), target.startBeat(), target.durationBeats());
         }
 
         return changed;
@@ -501,9 +499,7 @@ public final class TrackEditorModel {
                 EditorNote note = entry.getKey();
                 NoteSnapshot state = entry.getValue();
 
-                note.setMidiNote(state.midiNote());
-                note.setStartBeat(state.startBeat());
-                note.setDurationBeats(state.durationBeats());
+                note.setState(state.midiNote(), state.startBeat(), state.durationBeats());
             }
         }
     }
