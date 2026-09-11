@@ -1,0 +1,820 @@
+package io.github.binarybaggins.ainulindale.model;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import io.github.binarybaggins.ainulindale.NoteEditorLayout;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+public class NoteEditorModelTest {
+
+    private NoteEditorModel model;
+
+    @BeforeEach
+    public void setUp() {
+        model = new NoteEditorModel(new ArrayList<>());
+    }
+
+    @Test
+    public void createNoteAddsValidNote() {
+        EditorNote note = model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        assertEquals(1, model.getNotes().size());
+        assertSame(note, model.getNotes().get(0));
+
+        assertEquals(60, note.getMidiNote());
+        assertEquals(1.0, note.getStartBeat(), 0.000001);
+        assertEquals(1.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void createNoteRejectsOverlap() {
+        model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        assertTrue(model.createNote(60, 1.5, 1.0).isEmpty());
+
+        assertEquals(1, model.getNotes().size());
+    }
+
+    @Test
+    public void adjacentNotesDoNotOverlap() {
+        model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.createNote(60, 1.0, 1.0).isPresent());
+
+        assertEquals(2, model.getNotes().size());
+    }
+
+    @Test
+    public void notesOnDifferentPitchesDoNotOverlap() {
+        model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.createNote(61, 0.0, 1.0).isPresent());
+    }
+
+    @Test
+    public void createNoteClampsStartBeatToZero() {
+        EditorNote note = model.createNote(60, -1.0, 1.0).orElseThrow();
+
+        assertEquals(0.0, note.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void createNoteClampsMidiPitch() {
+        EditorNote low = model.createNote(-10, 0.0, 1.0).orElseThrow();
+
+        EditorNote high = model.createNote(200, 2.0, 1.0).orElseThrow();
+
+        assertEquals(0, low.getMidiNote());
+        assertEquals(NoteEditorLayout.MIDI_NOTE_COUNT - 1, high.getMidiNote());
+    }
+
+    @Test
+    public void createNoteRejectsDurationBelowMinimum() {
+        assertTrue(model.createNote(60, 0.0, NoteEditorLayout.SNAP_BEATS / 2.0).isEmpty());
+    }
+
+    @Test
+    public void moveNotesChangesBeatAndPitch() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.moveNotes(List.of(note), 4, 2.0));
+
+        assertEquals(64, note.getMidiNote());
+        assertEquals(2.0, note.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void moveNotesRejectsOverlapWithoutChangingNote() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        model.createNote(60, 2.0, 1.0).orElseThrow();
+
+        assertFalse(model.moveNotes(List.of(note), 0, 1.5));
+
+        assertEquals(0.0, note.getStartBeat(), 0.000001);
+
+        assertEquals(60, note.getMidiNote());
+    }
+
+    @Test
+    public void moveNotesRejectsUnknownNote() {
+        EditorNote note = new EditorNote(60, 0.0, 1.0);
+
+        assertThrows(IllegalArgumentException.class, () -> model.moveNotes(List.of(note), 0, 2.0));
+
+        assertEquals(0.0, note.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void moveNotesClampsStartBeatToZero() {
+        EditorNote note = model.createNote(60, 2.0, 1.0).orElseThrow();
+
+        assertTrue(model.moveNotes(List.of(note), 0, -5.0));
+
+        assertEquals(0.0, note.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void resizeLeftChangesStartAndDuration() {
+        EditorNote note = model.createNote(60, 2.0, 2.0).orElseThrow();
+
+        assertTrue(model.resizeNotesLeft(List.of(note), -1.0));
+
+        assertEquals(1.0, note.getStartBeat(), 0.000001);
+
+        assertEquals(3.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void resizeLeftEnforcesMinimumDuration() {
+        EditorNote note = model.createNote(60, 2.0, 1.0).orElseThrow();
+
+        assertTrue(model.resizeNotesLeft(List.of(note), 5.0));
+
+        assertEquals(3.0 - NoteEditorLayout.SNAP_BEATS, note.getStartBeat(), 0.000001);
+
+        assertEquals(NoteEditorLayout.SNAP_BEATS, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void resizeLeftRejectsOverlap() {
+        model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        EditorNote note = model.createNote(60, 2.0, 1.0).orElseThrow();
+
+        assertFalse(model.resizeNotesLeft(List.of(note), -1.5));
+
+        assertEquals(2.0, note.getStartBeat(), 0.000001);
+
+        assertEquals(1.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void resizeRightChangesDuration() {
+        EditorNote note = model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        assertTrue(model.resizeNotesRight(List.of(note), 1.0));
+
+        assertEquals(2.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void resizeRightEnforcesMinimumDuration() {
+        EditorNote note = model.createNote(60, 2.0, 1.0).orElseThrow();
+
+        assertTrue(model.resizeNotesRight(List.of(note), -2.0));
+
+        assertEquals(NoteEditorLayout.SNAP_BEATS, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void resizeRightRejectsOverlap() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        model.createNote(60, 2.0, 1.0).orElseThrow();
+
+        assertFalse(model.resizeNotesRight(List.of(note), 1.5));
+
+        assertEquals(1.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void deleteNotesRemovesExistingNote() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.deleteNotes(List.of(note)));
+        assertTrue(model.getNotes().isEmpty());
+    }
+
+    @Test
+    public void deleteNotesReturnsFalseForUnknownNote() {
+        EditorNote note = new EditorNote(60, 0.0, 1.0);
+
+        assertFalse(model.deleteNotes(List.of(note)));
+    }
+
+    @Test
+    public void undoCreateRemovesNote() {
+        model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.canUndo());
+
+        assertTrue(model.undo());
+
+        assertTrue(model.getNotes().isEmpty());
+        assertFalse(model.canUndo());
+        assertTrue(model.canRedo());
+    }
+
+    @Test
+    public void redoCreateRestoresSameNoteInstance() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.undo());
+
+        assertTrue(model.canRedo());
+        assertTrue(model.redo());
+
+        assertEquals(1, model.getNotes().size());
+        assertSame(note, model.getNotes().get(0));
+
+        assertTrue(model.canUndo());
+        assertFalse(model.canRedo());
+    }
+
+    @Test
+    public void failedCreateDoesNotAffectUndoHistory() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.undo());
+        assertTrue(model.canRedo());
+
+        assertTrue(model.createNote(60, 0.0, 0.0).isEmpty());
+
+        assertTrue(model.canRedo());
+        assertTrue(model.redo());
+
+        assertSame(note, model.getNotes().get(0));
+    }
+
+    @Test
+    public void undoDeleteNotesRestoresSameNoteInstance() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.deleteNotes(List.of(note)));
+        assertTrue(model.getNotes().isEmpty());
+
+        assertTrue(model.undo());
+
+        assertEquals(1, model.getNotes().size());
+        assertSame(note, model.getNotes().get(0));
+    }
+
+    @Test
+    public void undoDeleteNotesRestoresOriginalPosition() {
+        EditorNote first = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        EditorNote second = model.createNote(61, 1.0, 1.0).orElseThrow();
+
+        EditorNote third = model.createNote(62, 2.0, 1.0).orElseThrow();
+
+        assertTrue(model.deleteNotes(List.of(second)));
+
+        assertTrue(model.undo());
+
+        assertSame(first, model.getNotes().get(0));
+        assertSame(second, model.getNotes().get(1));
+        assertSame(third, model.getNotes().get(2));
+    }
+
+    @Test
+    public void redoDeleteNotesRemovesSameNoteAgain() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.deleteNotes(List.of(note)));
+
+        assertTrue(model.undo());
+        assertTrue(model.redo());
+
+        assertTrue(model.getNotes().isEmpty());
+    }
+
+    @Test
+    public void failedDeleteNotesDoesNotAffectUndoHistory() {
+        EditorNote note = model.createNote(60, 0.0, 1.0).orElseThrow();
+
+        assertTrue(model.undo());
+        assertTrue(model.canRedo());
+
+        EditorNote unknownNote = new EditorNote(61, 0.0, 1.0);
+
+        assertFalse(model.deleteNotes(List.of(unknownNote)));
+
+        assertTrue(model.canRedo());
+
+        assertTrue(model.redo());
+
+        assertSame(note, model.getNotes().get(0));
+    }
+
+    @Test
+    public void undoMoveRestoresOriginalNoteState() {
+        EditorNote note = model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        model.beginNoteStateChange(note);
+
+        assertTrue(model.moveNotes(List.of(note), 4, 2.0));
+
+        model.endNoteStateChange();
+
+        assertEquals(64, note.getMidiNote());
+        assertEquals(3.0, note.getStartBeat(), 0.000001);
+
+        assertTrue(model.undo());
+
+        assertEquals(60, note.getMidiNote());
+        assertEquals(1.0, note.getStartBeat(), 0.000001);
+        assertEquals(1.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void redoMoveRestoresFinalNoteState() {
+        EditorNote note = model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        model.beginNoteStateChange(note);
+
+        assertTrue(model.moveNotes(List.of(note), 4, 2.0));
+
+        model.endNoteStateChange();
+
+        assertTrue(model.undo());
+        assertTrue(model.redo());
+
+        assertEquals(64, note.getMidiNote());
+        assertEquals(3.0, note.getStartBeat(), 0.000001);
+        assertEquals(1.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void multipleMoveDeltasAreRecordedAsSingleAction() {
+        EditorNote note = model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        model.beginNoteStateChange(note);
+
+        assertTrue(model.moveNotes(List.of(note), 0, 0.25));
+        assertTrue(model.moveNotes(List.of(note), 1, 0.50));
+        assertTrue(model.moveNotes(List.of(note), 2, 1.00));
+        assertTrue(model.moveNotes(List.of(note), 4, 1.50));
+
+        model.endNoteStateChange();
+
+        assertEquals(64, note.getMidiNote());
+        assertEquals(2.50, note.getStartBeat(), 0.000001);
+
+        assertTrue(model.undo());
+
+        assertEquals(60, note.getMidiNote());
+        assertEquals(1.0, note.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void unchangedNoteStateDoesNotCreateHistoryEntry() {
+        EditorNote note = model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        // Begin a note state change, but don't actually change the note
+        model.beginNoteStateChange(note);
+        model.endNoteStateChange();
+
+        // Undo should remove the note, since the create action is the only action in
+        // the history
+        assertTrue(model.undo());
+
+        // The note should be gone, and there should be no more undo history
+        assertTrue(model.getNotes().isEmpty());
+        assertFalse(model.canUndo());
+    }
+
+    @Test
+    public void beginNoteStateChangeRejectsUnknownNote() {
+        EditorNote note = new EditorNote(60, 0.0, 1.0);
+
+        assertThrows(IllegalArgumentException.class, () -> model.beginNoteStateChange(note));
+    }
+
+    @Test
+    public void undoResizeLeftRestoresOriginalState() {
+        EditorNote note = model.createNote(60, 2.0, 2.0).orElseThrow();
+
+        model.beginNoteStateChange(note);
+
+        assertTrue(model.resizeNotesLeft(List.of(note), -1.0));
+
+        model.endNoteStateChange();
+
+        assertEquals(1.0, note.getStartBeat(), 0.000001);
+        assertEquals(3.0, note.getDurationBeats(), 0.000001);
+
+        assertTrue(model.undo());
+
+        assertEquals(2.0, note.getStartBeat(), 0.000001);
+        assertEquals(2.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void undoResizeRightRestoresOriginalState() {
+        EditorNote note = model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        model.beginNoteStateChange(note);
+
+        assertTrue(model.resizeNotesRight(List.of(note), 1.0));
+
+        model.endNoteStateChange();
+
+        assertEquals(2.0, note.getDurationBeats(), 0.000001);
+
+        assertTrue(model.undo());
+
+        assertEquals(1.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void redoResizeLeftRestoresFinalState() {
+        EditorNote note = model.createNote(60, 2.0, 2.0).orElseThrow();
+
+        model.beginNoteStateChange(note);
+
+        assertTrue(model.resizeNotesLeft(List.of(note), -1.0));
+
+        model.endNoteStateChange();
+
+        assertTrue(model.undo());
+        assertTrue(model.redo());
+
+        assertEquals(1.0, note.getStartBeat(), 0.000001);
+        assertEquals(3.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void redoResizeRightRestoresFinalState() {
+        EditorNote note = model.createNote(60, 1.0, 1.0).orElseThrow();
+
+        model.beginNoteStateChange(note);
+
+        assertTrue(model.resizeNotesRight(List.of(note), 1.0));
+
+        model.endNoteStateChange();
+
+        assertTrue(model.undo());
+        assertTrue(model.redo());
+
+        assertEquals(2.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void multipleResizeDeltasAreRecordedAsSingleAction() {
+        EditorNote note = model.createNote(60, 2.0, 2.0).orElseThrow();
+
+        model.beginNoteStateChange(note);
+
+        assertTrue(model.resizeNotesLeft(List.of(note), -0.25));
+        assertTrue(model.resizeNotesLeft(List.of(note), -0.50));
+        assertTrue(model.resizeNotesLeft(List.of(note), -1.00));
+
+        model.endNoteStateChange();
+
+        assertEquals(1.0, note.getStartBeat(), 0.000001);
+        assertEquals(3.0, note.getDurationBeats(), 0.000001);
+
+        assertTrue(model.undo());
+
+        assertEquals(2.0, note.getStartBeat(), 0.000001);
+        assertEquals(2.0, note.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void moveNotesAppliesSameBeatDeltaToAllNotes() {
+        EditorNote first = new EditorNote(60, 1.0, 1.0);
+        EditorNote second = new EditorNote(61, 3.0, 2.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        assertTrue(model.moveNotes(List.of(first, second), 0, 2.5));
+
+        assertEquals(3.5, first.getStartBeat(), 0.000001);
+        assertEquals(5.5, second.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void moveNotesAppliesSamePitchDeltaToAllNotes() {
+        EditorNote first = new EditorNote(60, 0.0, 1.0);
+        EditorNote second = new EditorNote(64, 2.0, 1.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        assertTrue(model.moveNotes(List.of(first, second), 5, 0.0));
+
+        assertEquals(65, first.getMidiNote());
+        assertEquals(69, second.getMidiNote());
+    }
+
+    @Test
+    public void moveNotesClampsWholeGroupAtBeatZero() {
+        EditorNote first = new EditorNote(60, 1.0, 1.0);
+        EditorNote second = new EditorNote(61, 3.0, 1.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        assertTrue(model.moveNotes(List.of(first, second), 0, -5.0));
+
+        assertEquals(0.0, first.getStartBeat(), 0.000001);
+        assertEquals(2.0, second.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void moveNotesClampsWholeGroupAtMidiBounds() {
+        EditorNote first = new EditorNote(10, 0.0, 1.0);
+        EditorNote second = new EditorNote(100, 2.0, 1.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        assertTrue(model.moveNotes(List.of(first, second), -20, 0.0));
+
+        assertEquals(0, first.getMidiNote());
+        assertEquals(90, second.getMidiNote());
+    }
+
+    @Test
+    public void moveNotesRejectsUnknownNoteWithoutChangingState() {
+        EditorNote note = new EditorNote(60, 1.0, 1.0);
+        EditorNote unknown = new EditorNote(64, 2.0, 1.0);
+        model = new NoteEditorModel(List.of(note));
+
+        assertThrows(IllegalArgumentException.class, () -> model.moveNotes(List.of(note, unknown), 2, 2.0));
+
+        assertEquals(60, note.getMidiNote());
+        assertEquals(1.0, note.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void groupMoveCollisionChangesNoNote() {
+        EditorNote first = new EditorNote(60, 0.0, 1.0);
+        EditorNote second = new EditorNote(61, 2.0, 1.0);
+        EditorNote obstacle = new EditorNote(60, 2.0, 1.0);
+
+        model = new NoteEditorModel(List.of(first, second, obstacle));
+
+        assertFalse(model.moveNotes(List.of(first, second), 0, 2.0));
+
+        assertEquals(0.0, first.getStartBeat(), 0.000001);
+        assertEquals(2.0, second.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void resizeNotesLeftAppliesSameEdgeDelta() {
+        EditorNote first = new EditorNote(60, 2.0, 2.0);
+        EditorNote second = new EditorNote(61, 5.0, 3.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        assertTrue(model.resizeNotesLeft(List.of(first, second), -0.5));
+
+        assertEquals(1.5, first.getStartBeat(), 0.000001);
+        assertEquals(2.5, first.getDurationBeats(), 0.000001);
+        assertEquals(4.5, second.getStartBeat(), 0.000001);
+        assertEquals(3.5, second.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void resizeNotesRightAppliesSameEdgeDelta() {
+        EditorNote first = new EditorNote(60, 0.0, 2.0);
+        EditorNote second = new EditorNote(61, 3.0, 3.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        assertTrue(model.resizeNotesRight(List.of(first, second), 0.5));
+
+        assertEquals(2.5, first.getDurationBeats(), 0.000001);
+        assertEquals(3.5, second.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void shortestSelectedNoteLimitsResizeForWholeGroup() {
+        EditorNote first = new EditorNote(60, 2.0, 2.0);
+
+        EditorNote second = new EditorNote(61, 5.0, NoteEditorLayout.SNAP_BEATS * 2);
+
+        model = new NoteEditorModel(List.of(first, second));
+
+        assertTrue(model.resizeNotesLeft(List.of(first, second), NoteEditorLayout.SNAP_BEATS * 3));
+
+        // second can shrink by only one SNAP_BEATS,
+        // therefore the entire group moves by exactly that amount.
+        assertEquals(2.0 + NoteEditorLayout.SNAP_BEATS, first.getStartBeat(), 0.000001);
+
+        assertEquals(2.0 - NoteEditorLayout.SNAP_BEATS, first.getDurationBeats(), 0.000001);
+
+        assertEquals(5.0 + NoteEditorLayout.SNAP_BEATS, second.getStartBeat(), 0.000001);
+
+        assertEquals(NoteEditorLayout.SNAP_BEATS, second.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void groupResizeCollisionChangesNoNote() {
+        EditorNote first = new EditorNote(60, 0.0, 1.0);
+        EditorNote obstacle = new EditorNote(60, 2.0, 1.0);
+        EditorNote second = new EditorNote(60, 4.0, 1.0);
+        model = new NoteEditorModel(List.of(first, obstacle, second));
+
+        assertFalse(model.resizeNotesRight(List.of(first, second), 2.0));
+
+        assertEquals(1.0, first.getDurationBeats(), 0.000001);
+        assertEquals(1.0, second.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void groupResizeRejectsCollisionBetweenSelectedNotes() {
+        EditorNote first = new EditorNote(60, 0.0, 1.0);
+        EditorNote second = new EditorNote(60, 2.0, 1.0);
+
+        model = new NoteEditorModel(List.of(first, second));
+
+        assertFalse(model.resizeNotesRight(List.of(first, second), 2.0));
+
+        assertEquals(1.0, first.getDurationBeats(), 0.000001);
+        assertEquals(1.0, second.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void groupResizeUndoRestoresAllNotes() {
+        EditorNote first = new EditorNote(60, 2.0, 2.0);
+        EditorNote second = new EditorNote(64, 5.0, 3.0);
+
+        model = new NoteEditorModel(List.of(first, second));
+
+        model.beginNoteStateChange(List.of(first, second));
+
+        assertTrue(model.resizeNotesLeft(List.of(first, second), -0.5));
+
+        model.endNoteStateChange();
+
+        assertEquals(1.5, first.getStartBeat(), 0.000001);
+        assertEquals(2.5, first.getDurationBeats(), 0.000001);
+
+        assertEquals(4.5, second.getStartBeat(), 0.000001);
+        assertEquals(3.5, second.getDurationBeats(), 0.000001);
+
+        assertTrue(model.undo());
+
+        assertEquals(2.0, first.getStartBeat(), 0.000001);
+        assertEquals(2.0, first.getDurationBeats(), 0.000001);
+
+        assertEquals(5.0, second.getStartBeat(), 0.000001);
+        assertEquals(3.0, second.getDurationBeats(), 0.000001);
+    }
+
+    @Test
+    public void groupMoveUndoRestoresAllNotes() {
+        EditorNote first = new EditorNote(60, 1.0, 1.0);
+        EditorNote second = new EditorNote(64, 3.0, 1.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        model.beginNoteStateChange(List.of(first, second));
+        assertTrue(model.moveNotes(List.of(first, second), 2, 1.5));
+        model.endNoteStateChange();
+
+        assertTrue(model.undo());
+
+        assertEquals(60, first.getMidiNote());
+        assertEquals(1.0, first.getStartBeat(), 0.000001);
+        assertEquals(64, second.getMidiNote());
+        assertEquals(3.0, second.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void groupMoveRedoRestoresAllNotes() {
+        EditorNote first = new EditorNote(60, 1.0, 1.0);
+        EditorNote second = new EditorNote(64, 3.0, 1.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        model.beginNoteStateChange(List.of(first, second));
+        assertTrue(model.moveNotes(List.of(first, second), 2, 1.5));
+        model.endNoteStateChange();
+
+        assertTrue(model.undo());
+        assertTrue(model.redo());
+
+        assertEquals(62, first.getMidiNote());
+        assertEquals(2.5, first.getStartBeat(), 0.000001);
+        assertEquals(66, second.getMidiNote());
+        assertEquals(4.5, second.getStartBeat(), 0.000001);
+    }
+
+    @Test
+    public void multipleGroupDragUpdatesCreateOneUndoAction() {
+        EditorNote first = new EditorNote(60, 1.0, 1.0);
+        EditorNote second = new EditorNote(64, 3.0, 1.0);
+        model = new NoteEditorModel(List.of(first, second));
+
+        model.beginNoteStateChange(List.of(first, second));
+        assertTrue(model.moveNotes(List.of(first, second), 0, 0.25));
+        assertTrue(model.moveNotes(List.of(first, second), 1, 0.25));
+        assertTrue(model.moveNotes(List.of(first, second), 1, 0.5));
+        model.endNoteStateChange();
+
+        assertEquals(61, first.getMidiNote());
+        assertEquals(1.5, first.getStartBeat(), 0.000001);
+        assertEquals(65, second.getMidiNote());
+        assertEquals(3.5, second.getStartBeat(), 0.000001);
+
+        assertTrue(model.undo());
+        assertEquals(60, first.getMidiNote());
+        assertEquals(1.0, first.getStartBeat(), 0.000001);
+        assertEquals(64, second.getMidiNote());
+        assertEquals(3.0, second.getStartBeat(), 0.000001);
+        assertFalse(model.canUndo());
+    }
+
+    @Test
+    public void deleteNotesRemovesAllRequestedNotes() {
+        EditorNote a = new EditorNote(60, 0.0, 1.0);
+        EditorNote b = new EditorNote(61, 1.0, 1.0);
+        EditorNote c = new EditorNote(62, 2.0, 1.0);
+
+        model = new NoteEditorModel(List.of(a, b, c));
+
+        assertTrue(model.deleteNotes(List.of(a, c)));
+
+        assertEquals(List.of(b), model.getNotes());
+    }
+
+    @Test
+    public void deleteNotesRejectsUnknownNoteWithoutDeletingAnything() {
+        EditorNote a = new EditorNote(60, 0.0, 1.0);
+        EditorNote b = new EditorNote(61, 1.0, 1.0);
+        EditorNote unknown = new EditorNote(62, 2.0, 1.0);
+        model = new NoteEditorModel(List.of(a, b));
+        assertFalse(model.deleteNotes(List.of(a, unknown)));
+        assertEquals(List.of(a, b), model.getNotes());
+    }
+
+    @Test
+    public void undoBatchDeleteRestoresOriginalOrderAndInstances() {
+        EditorNote a = new EditorNote(60, 0.0, 1.0);
+        EditorNote b = new EditorNote(61, 1.0, 1.0);
+        EditorNote c = new EditorNote(62, 2.0, 1.0);
+        EditorNote d = new EditorNote(63, 3.0, 1.0);
+
+        model = new NoteEditorModel(List.of(a, b, c, d));
+
+        assertTrue(model.deleteNotes(List.of(b, d)));
+        assertTrue(model.undo());
+        assertEquals(4, model.getNotes().size());
+
+        assertSame(a, model.getNotes().get(0));
+        assertSame(b, model.getNotes().get(1));
+        assertSame(c, model.getNotes().get(2));
+        assertSame(d, model.getNotes().get(3));
+    }
+
+    @Test
+    public void batchDeleteCreatesSingleUndoAction() {
+        EditorNote a = new EditorNote(60, 0.0, 1.0);
+        EditorNote b = new EditorNote(61, 1.0, 1.0);
+
+        model = new NoteEditorModel(List.of(a, b));
+
+        assertTrue(model.deleteNotes(List.of(a, b)));
+        assertTrue(model.getNotes().isEmpty());
+
+        assertTrue(model.undo());
+        assertEquals(2, model.getNotes().size());
+        assertFalse(model.canUndo());
+    }
+
+    @Test
+    public void redoBatchDeleteRemovesAllNotesAgain() {
+        EditorNote a = new EditorNote(60, 0.0, 1.0);
+        EditorNote b = new EditorNote(61, 1.0, 1.0);
+
+        model = new NoteEditorModel(List.of(a, b));
+
+        assertTrue(model.deleteNotes(List.of(a, b)));
+        assertTrue(model.undo());
+        assertEquals(2, model.getNotes().size());
+        assertTrue(model.redo());
+
+        assertTrue(model.getNotes().isEmpty());
+    }
+
+    @Test
+    public void undoBatchDeleteRestoresOrderRegardlessOfDeleteOrder() {
+        EditorNote a = new EditorNote(60, 0.0, 1.0);
+        EditorNote b = new EditorNote(61, 1.0, 1.0);
+        EditorNote c = new EditorNote(62, 2.0, 1.0);
+        EditorNote d = new EditorNote(63, 3.0, 1.0);
+
+        model = new NoteEditorModel(List.of(a, b, c, d));
+
+        assertTrue(model.deleteNotes(List.of(d, b)));
+
+        assertTrue(model.undo());
+
+        assertEquals(List.of(a, b, c, d), model.getNotes());
+    }
+
+    @Test
+    public void failedBeginStateChangeDoesNotLeaveActiveChange() {
+        EditorNote note = new EditorNote(60, 0.0, 1.0);
+
+        EditorNote unknown = new EditorNote(61, 1.0, 1.0);
+
+        model = new NoteEditorModel(List.of(note));
+
+        assertThrows(IllegalArgumentException.class, () -> model.beginNoteStateChange(List.of(note, unknown)));
+
+        // Must still be possible afterwards.
+        model.beginNoteStateChange(note);
+        model.endNoteStateChange();
+    }
+}
