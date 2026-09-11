@@ -5,6 +5,11 @@ public class Ainulindale {
     }
 
     public static void main(String[] args) {
-        System.out.println("Ainulindalë");
+        javax.swing.SwingUtilities.invokeLater(
+                new Runnable() {
+                    public void run() {
+                        new NoteEditorFrame().setVisible(true);
+                    }
+                });
     }
 }
