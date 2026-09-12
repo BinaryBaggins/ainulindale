@@ -52,6 +52,6 @@ public class ResultTest {
         Result<Unit> result = Result.success(Unit.INSTANCE);
 
         Success<?> success = assertInstanceOf(Success.class, result);
-        assertEquals(Unit.INSTANCE, success.value());
+        assertSame(Unit.INSTANCE, success.value());
     }
 }

@@ -1,8 +1,10 @@
 package io.github.binarybaggins.ainulindale.core.result;
 
+import java.util.Objects;
+
 public record ResultError(String code) {
     public ResultError {
-        java.util.Objects.requireNonNull(code);
+        Objects.requireNonNull(code);
 
         if (code.isBlank()) {
             throw new IllegalArgumentException("code cannot be blank");
