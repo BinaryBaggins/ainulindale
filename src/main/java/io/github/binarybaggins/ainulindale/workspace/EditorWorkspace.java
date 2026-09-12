@@ -7,7 +7,7 @@ import java.util.List;
 
 public final class EditorWorkspace {
 
-    private static class TrackEntry {
+    private static final class TrackEntry {
 
         private final EditorTrack track;
         private final TrackEditorModel editorModel;
