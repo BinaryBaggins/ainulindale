@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.undo;
+package io.github.binarybaggins.ainulindale.core.undo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
