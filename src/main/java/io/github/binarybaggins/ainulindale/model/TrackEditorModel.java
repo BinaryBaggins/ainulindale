@@ -1,8 +1,9 @@
 package io.github.binarybaggins.ainulindale.model;
 
 import io.github.binarybaggins.ainulindale.core.MidiConstraints;
-import io.github.binarybaggins.ainulindale.undo.UndoHistory;
-import io.github.binarybaggins.ainulindale.undo.UndoableAction;
+import io.github.binarybaggins.ainulindale.core.undo.UndoHistory;
+import io.github.binarybaggins.ainulindale.core.undo.UndoableAction;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;

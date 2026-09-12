@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.undo;
+package io.github.binarybaggins.ainulindale.core.undo;
 
 public interface UndoableAction {
     void undo();
