@@ -1,6 +1,5 @@
 package io.github.binarybaggins.ainulindale.interaction;
 
-import io.github.binarybaggins.ainulindale.interaction.DragMode;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import java.util.Collection;
