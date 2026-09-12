@@ -1,5 +1,9 @@
 package io.github.binarybaggins.ainulindale.core.result;
 
-public record Success<T>(T value) implements ResultT<T> {
-    
+import java.util.Objects;
+
+public record Success<T>(T value) implements Result<T> {
+    public Success {
+        Objects.requireNonNull(value);
+    }
 }

@@ -1,3 +1,9 @@
 package io.github.binarybaggins.ainulindale.core.result;
 
-public record Failure<T>(ResultError error) implements ResultT<T> {}
+import java.util.Objects;
+
+public record Failure<T>(ResultError error) implements Result<T> {
+    public Failure {
+        Objects.requireNonNull(error);
+    }
+}
