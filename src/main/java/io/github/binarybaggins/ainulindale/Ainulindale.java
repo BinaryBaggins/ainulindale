@@ -22,20 +22,20 @@ public class Ainulindale {
 
                     new NoteEditorFrame(workspace).setVisible(true);
                 }
-
-                private EditorTrack createDemoTrack() {
-                    EditorTrack track = new EditorTrack(
-                        "Test Track",
-                        List.of(
-                            new EditorNote(60, 1.0, 2.0),
-                            new EditorNote(64, 3.5, 1.0),
-                            new EditorNote(67, 5.0, 1.5),
-                            new EditorNote(72, 7.25, 0.5)
-                        )
-                    );
-                    return track;
-                }
             }
         );
+    }
+
+    private static EditorTrack createDemoTrack() {
+        EditorTrack track = new EditorTrack(
+            "Test Track",
+            List.of(
+                new EditorNote(60, 1.0, 2.0),
+                new EditorNote(64, 3.5, 1.0),
+                new EditorNote(67, 5.0, 1.5),
+                new EditorNote(72, 7.25, 0.5)
+            )
+        );
+        return track;
     }
 }
