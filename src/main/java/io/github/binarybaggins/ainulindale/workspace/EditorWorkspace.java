@@ -48,6 +48,27 @@ public final class EditorWorkspace {
     }
 
     /**
+     * Removes a track from the workspace.
+     *
+     * @param track the track to remove
+     * @return a Result indicating success or failure
+     */
+    public Result<Unit> removeTrack(EditorTrack track) {
+        Objects.requireNonNull(track);
+        for (int i = 0; i < trackEntries.size(); i++) {
+            TrackEntry entry = trackEntries.get(i);
+            if (entry.track == track) {
+                if (entry == activeTrackEntry) {
+                    return Result.failure(WorkspaceErrors.ACTIVE_TRACK_CANNOT_BE_REMOVED);
+                }
+                trackEntries.remove(i);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+    }
+
+    /**
      * Returns a list of all tracks in the workspace.
      *
      * @return a list of all tracks
