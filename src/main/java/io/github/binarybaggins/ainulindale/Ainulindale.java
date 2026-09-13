@@ -26,7 +26,6 @@ public class Ainulindale {
     }
 
     private static EditorTrack createDemoTrack() {
-        EditorTrack track = DemoTrackGenerator.create(42L, 16);
-        return track;
+        return DemoTrackGenerator.create(42L, 16);
     }
 }
