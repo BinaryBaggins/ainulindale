@@ -9,6 +9,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Owns the editor workspace session state.
+ *
+ * <p>The workspace manages track membership, visibility, the active track,
+ * and the persistent {@link TrackEditorModel} associated with each track
+ * while that track belongs to the workspace.
+ *
+ * <p>Only the active track's editor model is exposed for editing.
+ * The workspace intentionally does not provide arbitrary access to editor
+ * models for inactive tracks.
+ *
+ * <p>UI and view state such as zoom, scrolling, selection presentation,
+ * layout, and theme settings do not belong to the workspace.
+ */
 public final class EditorWorkspace {
 
     private static final class TrackEntry {
@@ -100,7 +114,7 @@ public final class EditorWorkspace {
     }
 
     /**
-     * Returns the editor model of the active track, if any.
+     * Returns the persistent editor model of the active track, if any.
      *
      * @return an Optional containing the active track's editor model, or empty if no track is active
      */
