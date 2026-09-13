@@ -7,6 +7,7 @@ import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class EditorWorkspace {
 
@@ -28,6 +29,12 @@ public final class EditorWorkspace {
 
     public EditorWorkspace() {}
 
+    /**
+     * Adds a track to the workspace.
+     *
+     * @param track the track to add
+     * @return a Result indicating success or failure
+     */
     public Result<Unit> addTrack(EditorTrack track) {
         Objects.requireNonNull(track);
 
@@ -40,6 +47,11 @@ public final class EditorWorkspace {
         return Result.success(Unit.INSTANCE);
     }
 
+    /**
+     * Returns a list of all tracks in the workspace.
+     *
+     * @return a list of all tracks
+     */
     public List<EditorTrack> getTracks() {
         return trackEntries
             .stream()
@@ -47,7 +59,58 @@ public final class EditorWorkspace {
             .toList();
     }
 
+    /**
+     * Checks if the workspace contains the specified track.
+     *
+     * @param track the track to check for
+     * @return true if the track is present, false otherwise
+     */
     private boolean containsTrack(EditorTrack track) {
         return trackEntries.stream().anyMatch(entry -> entry.track == track);
+    }
+
+    /**
+     * Returns the active track in the workspace, if any.
+     *
+     * @return an Optional containing the active track, or empty if no track is active
+     */
+    public Optional<EditorTrack> getActiveTrack() {
+        return activeTrackEntry != null ? Optional.of(activeTrackEntry.track) : Optional.empty();
+    }
+
+    /**
+     * Returns the editor model of the active track, if any.
+     *
+     * @return an Optional containing the active track's editor model, or empty if no track is active
+     */
+    public Optional<TrackEditorModel> getActiveTrackEditor() {
+        return activeTrackEntry != null ? Optional.of(activeTrackEntry.editorModel) : Optional.empty();
+    }
+
+    /**
+     * Clears the active track in the workspace.
+     */
+    public void clearActiveTrack() {
+        activeTrackEntry = null;
+    }
+
+    /**
+     * Sets the active track in the workspace.
+     *
+     * @param track the track to set as active
+     * @return a Result indicating success or failure
+     */
+    public Result<Unit> setActiveTrack(EditorTrack track) {
+        Objects.requireNonNull(track);
+        for (TrackEntry entry : trackEntries) {
+            if (entry.track == track) {
+                if (!entry.visible) {
+                    return Result.failure(WorkspaceErrors.TRACK_NOT_VISIBLE);
+                }
+                activeTrackEntry = entry;
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
     }
 }
