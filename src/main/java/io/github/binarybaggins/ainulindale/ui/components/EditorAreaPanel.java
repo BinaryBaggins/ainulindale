@@ -1,14 +1,12 @@
 package io.github.binarybaggins.ainulindale.ui.components;
 
+import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
-import io.github.binarybaggins.ainulindale.model.EditorNote;
-import io.github.binarybaggins.ainulindale.model.EditorTrack;
-import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
+import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
-import java.util.List;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -28,18 +26,10 @@ public class EditorAreaPanel extends JPanel {
     private JScrollPane mainScrollPane;
     private JScrollBar horizontalScrollBar;
 
-    public EditorAreaPanel() {
-        EditorTrack track = new EditorTrack(
-            "Test Track",
-            List.of(
-                new EditorNote(60, 1.0, 2.0),
-                new EditorNote(64, 3.5, 1.0),
-                new EditorNote(67, 5.0, 1.5),
-                new EditorNote(72, 7.25, 0.5)
-            )
-        );
-
-        TrackEditorModel model = new TrackEditorModel(track);
+    public EditorAreaPanel(EditorWorkspace workspace) {
+        TrackEditorModel model = workspace
+            .getActiveTrackEditor()
+            .orElseThrow(() -> new IllegalStateException("No active track in the workspace"));
 
         viewState = new NoteEditorViewState();
         pianoPanel = new PianoPanel();
