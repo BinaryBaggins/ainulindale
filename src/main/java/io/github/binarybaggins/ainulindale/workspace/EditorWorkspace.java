@@ -113,4 +113,54 @@ public final class EditorWorkspace {
         }
         return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
     }
+
+    /**
+     * Checks if the specified track is visible in the workspace.
+     *
+     * @param track the track to check for visibility
+     * @return a Result containing true if the track is visible, false if not, or a failure if the track is not found
+     */
+    public Result<Boolean> isTrackVisible(EditorTrack track) {
+        Objects.requireNonNull(track);
+        for (TrackEntry entry : trackEntries) {
+            if (entry.track == track) {
+                return Result.success(entry.visible);
+            }
+        }
+        return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+    }
+
+    /**
+     * Returns a list of all visible tracks in the workspace.
+     *
+     * @return a list of visible tracks
+     */
+    public List<EditorTrack> getVisibleTracks() {
+        return trackEntries
+            .stream()
+            .filter(entry -> entry.visible)
+            .map(entry -> entry.track)
+            .toList();
+    }
+
+    /**
+     * Sets the visibility of the specified track in the workspace.
+     *
+     * @param track the track to set visibility for
+     * @param visible true to make the track visible, false to hide it
+     * @return a Result indicating success or failure
+     */
+    public Result<Unit> setTrackVisible(EditorTrack track, boolean visible) {
+        Objects.requireNonNull(track);
+        for (TrackEntry entry : trackEntries) {
+            if (entry.track == track) {
+                if (!visible && entry == activeTrackEntry) {
+                    return Result.failure(WorkspaceErrors.ACTIVE_TRACK_CANNOT_BE_HIDDEN);
+                }
+                entry.visible = visible;
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+    }
 }
