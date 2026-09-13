@@ -1,6 +1,7 @@
 package io.github.binarybaggins.ainulindale.ui;
 
 import javax.swing.JFrame;
+import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 
 public class NoteEditorFrame extends JFrame {
 
@@ -8,8 +9,8 @@ public class NoteEditorFrame extends JFrame {
 
     private final NoteEditorPanel editorPanel;
 
-    public NoteEditorFrame() {
-        editorPanel = new NoteEditorPanel();
+    public NoteEditorFrame(EditorWorkspace workspace) {
+        editorPanel = new NoteEditorPanel(workspace);
 
         setTitle("Maestro Note Editor");
         setContentPane(editorPanel);
