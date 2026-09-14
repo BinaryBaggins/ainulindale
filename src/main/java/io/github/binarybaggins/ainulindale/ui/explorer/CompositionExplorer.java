@@ -3,7 +3,9 @@ package io.github.binarybaggins.ainulindale.ui.explorer;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.util.Objects;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -24,6 +26,22 @@ public class CompositionExplorer extends JPanel {
 
         // Initial refresh of the track list
         refreshTrackList();
+
+        trackList.setCellRenderer(
+            new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(
+                    JList<?> list,
+                    Object value,
+                    int index,
+                    boolean isSelected,
+                    boolean cellHasFocus
+                ) {
+                    EditorTrack track = (EditorTrack) value;
+                    return super.getListCellRendererComponent(list, track.getName(), index, isSelected, cellHasFocus);
+                }
+            }
+        );
 
         trackList.addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) {

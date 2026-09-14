@@ -24,18 +24,28 @@ public class WorkspacePanel extends JPanel {
         compositionExplorer = new CompositionExplorer(workspace);
         projectExplorer = new ProjectExplorer();
 
-        workspace.getActiveTrackEditor().ifPresent(pianoRollPanel::setTrackEditorModel);
+        syncActiveTrackEditor(workspace);
 
-        workspace.addListener(() -> workspace.getActiveTrackEditor().ifPresent(pianoRollPanel::setTrackEditorModel));
+        workspace.addListener(() -> syncActiveTrackEditor(workspace));
 
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Composition Explorer", compositionExplorer);
-        tabbedPane.addTab("Project Explorer", projectExplorer);
+        tabbedPane.addTab("Composition", compositionExplorer);
+        tabbedPane.addTab("Project", projectExplorer);
 
         setLayout(new BorderLayout());
 
         add(editorToolbar, BorderLayout.NORTH);
         add(pianoRollPanel, BorderLayout.CENTER);
         add(tabbedPane, BorderLayout.WEST);
+    }
+
+    private void syncActiveTrackEditor(EditorWorkspace workspace) {
+        workspace.getActiveTrackEditor().ifPresentOrElse(
+            model -> {
+                pianoRollPanel.setTrackEditorModel(model);
+                pianoRollPanel.setVisible(true);
+            },
+            () -> pianoRollPanel.setVisible(false)
+        );
     }
 }
