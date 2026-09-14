@@ -44,6 +44,55 @@ public final class EditorWorkspace {
     public EditorWorkspace() {}
 
     /**
+     * Renames the specified track within the workspace.
+     * @param track the track to rename
+     * @param newName the new name for the track
+     * @return a Result indicating success or failure
+     */
+    public Result<Unit> renameTrack(EditorTrack track, String newName) {
+        Objects.requireNonNull(track);
+        Objects.requireNonNull(newName);
+
+        if (!containsTrack(track)) {
+            return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+        }
+
+        track.rename(newName);
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Moves a track to a new position within the workspace.
+     *
+     * @param track the track to move
+     * @param newIndex the new index for the track
+     * @return a Result indicating success or failure
+     */
+    public Result<Unit> moveTrack(EditorTrack track, int newIndex) {
+        Objects.requireNonNull(track);
+
+        int currentIndex = -1;
+        for (int i = 0; i < trackEntries.size(); i++) {
+            if (trackEntries.get(i).track == track) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex == -1) {
+            return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+        }
+
+        if (newIndex < 0 || newIndex >= trackEntries.size()) {
+            return Result.failure(WorkspaceErrors.INVALID_TRACK_INDEX);
+        }
+
+        TrackEntry entry = trackEntries.remove(currentIndex);
+        trackEntries.add(newIndex, entry);
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
      * Adds a track to the workspace.
      *
      * @param track the track to add

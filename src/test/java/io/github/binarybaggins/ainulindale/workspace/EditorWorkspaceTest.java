@@ -12,6 +12,7 @@ import io.github.binarybaggins.ainulindale.core.result.Failure;
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.ResultError;
 import io.github.binarybaggins.ainulindale.core.result.Success;
+import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.util.List;
@@ -23,12 +24,14 @@ public class EditorWorkspaceTest {
     private EditorWorkspace workspace;
     private EditorTrack trackA;
     private EditorTrack trackB;
+    private EditorTrack trackC;
 
     @BeforeEach
     public void setUp() {
         workspace = new EditorWorkspace();
         trackA = new EditorTrack("Track A");
         trackB = new EditorTrack("Track B");
+        trackC = new EditorTrack("Track C");
     }
 
     private static void assertFailure(Result<?> result, ResultError expectedError) {
@@ -106,7 +109,6 @@ public class EditorWorkspaceTest {
 
     @Test
     public void getVisibleTracksExcludesHiddenTracksButPreservesOrder() {
-        EditorTrack trackC = new EditorTrack("Track C");
         workspace.addTrack(trackA);
         workspace.addTrack(trackB);
         workspace.addTrack(trackC);
@@ -313,5 +315,73 @@ public class EditorWorkspaceTest {
         assertThrows(NullPointerException.class, () -> workspace.setActiveTrack(null));
         assertThrows(NullPointerException.class, () -> workspace.isTrackVisible(null));
         assertThrows(NullPointerException.class, () -> workspace.setTrackVisible(null, true));
+    }
+
+    // --- rename track tests ---
+    @Test
+    public void renamingTrackUpdatesItsName() {
+        workspace.addTrack(trackA);
+        Result<Unit> renameResult = workspace.renameTrack(trackA, "NewName");
+        assertInstanceOf(Success.class, renameResult);
+        assertEquals("NewName", trackA.getName());
+    }
+
+    @Test
+    public void renamingNonexistentTrackReturnsFailure() {
+        workspace.addTrack(trackB);
+        workspace.removeTrack(trackB);
+        Result<Unit> renameResult = workspace.renameTrack(trackB, "NewName");
+        assertInstanceOf(Failure.class, renameResult);
+        assertFailure(renameResult, WorkspaceErrors.TRACK_NOT_FOUND);
+    }
+
+    // --- move track tests ---
+    @Test
+    public void movingTrackUpdatesItsPosition() {
+        workspace.addTrack(trackA);
+        workspace.addTrack(trackB);
+        workspace.addTrack(trackC);
+
+        Result<Unit> moveResult = workspace.moveTrack(trackC, 0);
+        assertInstanceOf(Success.class, moveResult);
+    }
+
+    @Test
+    public void movingNonexistentTrackReturnsFailure() {
+        Result<Unit> moveResult = workspace.moveTrack(trackC, 0);
+        assertInstanceOf(Failure.class, moveResult);
+        assertFailure(moveResult, WorkspaceErrors.TRACK_NOT_FOUND);
+    }
+
+    @Test
+    public void movingTrackToInvalidIndexReturnsFailure() {
+        workspace.addTrack(trackA);
+        Result<Unit> moveResult = workspace.moveTrack(trackA, -1);
+        assertInstanceOf(Failure.class, moveResult);
+        assertFailure(moveResult, WorkspaceErrors.INVALID_TRACK_INDEX);
+
+        moveResult = workspace.moveTrack(trackA, 10);
+        assertInstanceOf(Failure.class, moveResult);
+        assertFailure(moveResult, WorkspaceErrors.INVALID_TRACK_INDEX);
+    }
+
+    @Test
+    public void movingTrackRetainsContext() {
+        workspace.addTrack(trackA);
+        workspace.addTrack(trackB);
+        workspace.addTrack(trackC);
+
+        workspace.setActiveTrack(trackA);
+
+        TrackEditorModel editorA = workspace.getActiveTrackEditor().orElseThrow();
+
+        editorA.createNote(60, 0.0, 1.0);
+
+        workspace.moveTrack(trackA, 2);
+
+        assertEquals(List.of(trackB, trackC, trackA), workspace.getTracks());
+        assertSame(trackA, workspace.getActiveTrack().orElseThrow());
+        assertSame(editorA, workspace.getActiveTrackEditor().orElseThrow());
+        assertTrue(editorA.canUndo());
     }
 }
