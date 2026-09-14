@@ -1,12 +1,10 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.awt.Point;
 import java.awt.Rectangle;
 import org.junit.jupiter.api.Test;
-
-import io.github.binarybaggins.ainulindale.ui.editor.SelectionBox;
 
 class SelectionBoxTest {
 

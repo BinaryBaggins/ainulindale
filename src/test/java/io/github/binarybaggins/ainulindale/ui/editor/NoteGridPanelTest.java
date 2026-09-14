@@ -1,11 +1,7 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github.binarybaggins.ainulindale.ui.editor.NoteEditorGeometry;
-import io.github.binarybaggins.ainulindale.ui.editor.NoteEditorLayout;
-import io.github.binarybaggins.ainulindale.ui.editor.NoteEditorViewState;
-import io.github.binarybaggins.ainulindale.ui.editor.NoteGridPanel;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
