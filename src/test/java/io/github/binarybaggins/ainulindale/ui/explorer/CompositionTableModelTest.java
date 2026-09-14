@@ -3,6 +3,7 @@ package io.github.binarybaggins.ainulindale.ui.explorer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.Success;
@@ -77,5 +78,23 @@ public class CompositionTableModelTest {
         model.setValueAt(false, 0, 0);
 
         assertEquals(1, eventCount.get());
+    }
+
+    @Test
+    public void nameColumnIsEditable() {
+        assertTrue(model.isCellEditable(0, 1));
+    }
+
+    @Test
+    public void renamingTrackThroughTableModelUpdatesWorkspace() {
+        model.setValueAt("Renamed Track", 0, 1);
+
+        assertEquals("Renamed Track", trackA.getName());
+        assertEquals("Renamed Track", model.getValueAt(0, 1));
+    }
+
+    @Test
+    public void visibilityColumnRemainsEditable() {
+        assertTrue(model.isCellEditable(0, 0));
     }
 }

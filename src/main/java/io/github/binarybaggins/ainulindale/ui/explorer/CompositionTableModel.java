@@ -33,7 +33,7 @@ final class CompositionTableModel extends AbstractTableModel {
     @Override
     public String getColumnName(int column) {
         return switch (column) {
-            case VISIBILITY_COLUMN -> "";
+            case VISIBILITY_COLUMN -> "visible"; // TODO: i18n
             case NAME_COLUMN -> "Track"; // TODO: i18n
             default -> throw new IndexOutOfBoundsException();
         };
@@ -69,21 +69,31 @@ final class CompositionTableModel extends AbstractTableModel {
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return columnIndex == VISIBILITY_COLUMN;
+        return columnIndex == VISIBILITY_COLUMN || columnIndex == NAME_COLUMN;
     }
 
     @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
-        if (columnIndex != VISIBILITY_COLUMN) {
-            return;
-        }
-
         EditorTrack track = workspace.getTracks().get(rowIndex);
-        boolean visible = (Boolean) value;
 
-        Result<Unit> result = workspace.setTrackVisible(track, visible);
-        if (result instanceof Failure<?>) {
-            fireTableCellUpdated(rowIndex, columnIndex);
+        switch (columnIndex) {
+            case VISIBILITY_COLUMN -> {
+                Result<Unit> result = workspace.setTrackVisible(track, (Boolean) value);
+
+                if (result instanceof Failure<?>) {
+                    fireTableCellUpdated(rowIndex, columnIndex);
+                }
+            }
+            case NAME_COLUMN -> {
+                Result<Unit> result = workspace.renameTrack(track, (String) value);
+
+                if (result instanceof Failure<?>) {
+                    fireTableCellUpdated(rowIndex, columnIndex);
+                }
+            }
+            default -> {
+                // not editable
+            }
         }
     }
 
