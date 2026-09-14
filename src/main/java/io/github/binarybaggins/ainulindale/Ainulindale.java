@@ -2,7 +2,7 @@ package io.github.binarybaggins.ainulindale;
 
 import io.github.binarybaggins.ainulindale.demo.DemoTrackGenerator;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorFrame;
+import io.github.binarybaggins.ainulindale.ui.AinulindaleFrame;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 
 public class Ainulindale {
@@ -19,7 +19,7 @@ public class Ainulindale {
                     workspace.addTrack(track);
                     workspace.setActiveTrack(track);
 
-                    new NoteEditorFrame(workspace).setVisible(true);
+                    new AinulindaleFrame(workspace).setVisible(true);
                 }
             }
         );

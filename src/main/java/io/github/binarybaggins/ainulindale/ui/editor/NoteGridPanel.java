@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import io.github.binarybaggins.ainulindale.interaction.DragMode;
@@ -9,11 +9,9 @@ import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
 import io.github.binarybaggins.ainulindale.ui.actions.NoteEditorKeyBindings;
 import io.github.binarybaggins.ainulindale.ui.actions.NoteGridMouseListener;
+
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;

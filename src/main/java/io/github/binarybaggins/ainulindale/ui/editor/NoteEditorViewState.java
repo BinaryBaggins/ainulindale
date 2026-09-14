@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 public class NoteEditorViewState {
 

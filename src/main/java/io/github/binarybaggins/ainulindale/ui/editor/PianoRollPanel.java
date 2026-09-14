@@ -1,8 +1,7 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -10,7 +9,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 
-public class EditorAreaPanel extends JPanel {
+public class PianoRollPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
@@ -18,19 +17,19 @@ public class EditorAreaPanel extends JPanel {
 
     private final NoteEditorViewState viewState;
 
-    private final PianoPanel pianoPanel;
+    private final PianoKeyboardPanel pianoKeyboardPanel;
     private final NoteGridPanel noteGridPanel;
-    private final TimelinePanel timelinePanel;
-    private final TimelineControlPanel timelineControlPanel;
+    private final TimelineRuler timelineRuler;
+    private final TimelineControls timelineControls;
     private JScrollPane mainScrollPane;
     private JScrollBar horizontalScrollBar;
 
-    public EditorAreaPanel() {
+    public PianoRollPanel() {
         viewState = new NoteEditorViewState();
-        pianoPanel = new PianoPanel();
+        pianoKeyboardPanel = new PianoKeyboardPanel();
         noteGridPanel = new NoteGridPanel(viewState);
-        timelinePanel = new TimelinePanel(viewState);
-        timelineControlPanel = new TimelineControlPanel();
+        timelineRuler = new TimelineRuler(viewState);
+        timelineControls = new TimelineControls();
 
         mainScrollPane = new JScrollPane(
             noteGridPanel,
@@ -38,21 +37,21 @@ public class EditorAreaPanel extends JPanel {
             JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
         );
 
-        mainScrollPane.setRowHeaderView(pianoPanel);
+        mainScrollPane.setRowHeaderView(pianoKeyboardPanel);
 
-        timelineControlPanel.setPreferredSize(
+        timelineControls.setPreferredSize(
             new Dimension(NoteEditorLayout.PIANO_WIDTH, NoteEditorLayout.TIMELINE_HEIGHT)
         );
 
         JScrollPane timelineScrollPane = new JScrollPane(
-            timelinePanel,
+            timelineRuler,
             JScrollPane.VERTICAL_SCROLLBAR_NEVER,
             JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
         );
         timelineScrollPane.setPreferredSize(new Dimension(0, NoteEditorLayout.TIMELINE_HEIGHT));
-        timelineScrollPane.setRowHeaderView(timelineControlPanel);
-        timelineControlPanel.addZoomInListener(e -> zoomIn());
-        timelineControlPanel.addZoomOutListener(e -> zoomOut());
+        timelineScrollPane.setRowHeaderView(timelineControls);
+        timelineControls.addZoomInListener(e -> zoomIn());
+        timelineControls.addZoomOutListener(e -> zoomOut());
 
         horizontalScrollBar = new JScrollBar(JScrollBar.HORIZONTAL);
         horizontalScrollBar.setModel(mainScrollPane.getHorizontalScrollBar().getModel());
@@ -126,9 +125,9 @@ public class EditorAreaPanel extends JPanel {
         viewState.setPixelsPerBeat(pixelsPerBeat);
 
         noteGridPanel.updateZoom();
-        timelinePanel.updateZoom();
+        timelineRuler.updateZoom();
 
-        timelineControlPanel.setZoomLabel(viewState.getZoomPercentage());
+        timelineControls.setZoomLabel(viewState.getZoomPercentage());
 
         updateHorizontalScrollIncrements();
     }

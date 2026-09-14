@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -10,7 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-public class TimelineControlPanel extends JPanel {
+public class TimelineControls extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
@@ -21,7 +21,7 @@ public class TimelineControlPanel extends JPanel {
     private final JButton zoomOutButton;
     private final JLabel zoomLabel;
 
-    public TimelineControlPanel() {
+    public TimelineControls() {
         zoomOutButton = new JButton("-");
         zoomLabel = new JLabel("100%", SwingConstants.CENTER);
         zoomInButton = new JButton("+");

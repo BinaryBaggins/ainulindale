@@ -1,6 +1,5 @@
 package io.github.binarybaggins.ainulindale.ui.actions;
 
-import io.github.binarybaggins.ainulindale.ui.components.NoteGridPanel;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -9,6 +8,8 @@ import java.awt.event.KeyEvent;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
+
+import io.github.binarybaggins.ainulindale.ui.editor.NoteGridPanel;
 
 public final class NoteEditorKeyBindings {
 

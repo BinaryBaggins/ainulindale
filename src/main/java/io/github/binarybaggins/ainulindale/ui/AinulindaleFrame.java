@@ -3,17 +3,17 @@ package io.github.binarybaggins.ainulindale.ui;
 import javax.swing.JFrame;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 
-public class NoteEditorFrame extends JFrame {
+public class AinulindaleFrame extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    private final NoteEditorPanel editorPanel;
+    private final WorkspacePanel workspacePanel;
 
-    public NoteEditorFrame(EditorWorkspace workspace) {
-        editorPanel = new NoteEditorPanel(workspace);
+    public AinulindaleFrame(EditorWorkspace workspace) {
+        workspacePanel = new WorkspacePanel(workspace);
 
         setTitle("Ainulindalë");
-        setContentPane(editorPanel);
+        setContentPane(workspacePanel);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);

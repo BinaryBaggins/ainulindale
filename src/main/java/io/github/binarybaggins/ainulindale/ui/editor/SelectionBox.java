@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import java.awt.Point;
 import java.awt.Rectangle;

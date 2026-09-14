@@ -6,6 +6,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import org.junit.jupiter.api.Test;
 
+import io.github.binarybaggins.ainulindale.ui.editor.SelectionBox;
+
 class SelectionBoxTest {
 
     @Test
