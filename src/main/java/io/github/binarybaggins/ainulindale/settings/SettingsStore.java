@@ -6,11 +6,10 @@ package io.github.binarybaggins.ainulindale.settings;
  * database).
  */
 public interface SettingsStore {
-
     /**
-     * Returns the value of the setting for the given key, or null if no value is
+     * Returns the value of the setting for the given key, and either defaults to the key's default value or null if no value is
      * set.
-     * 
+     *
      * @param key the setting key
      * @param <T> the type of the setting value
      * @return the value of the setting, or null if no value is set
@@ -19,16 +18,16 @@ public interface SettingsStore {
     <T> T get(SettingKey<T> key);
 
     /**
-     * Returns true if the store contains a value for the given key.
-     * 
+     * Returns true if the store contains a value for the given key. A default value does not count as a stored value.
+     *
      * @param key the setting key
      * @return true if the store contains a value for the key, false otherwise
      */
     boolean contains(SettingKey<?> key);
 
     /**
-     * Sets the value of the setting for the given key.
-     * 
+     * Sets the value of the setting for the given key. If the value is null, the setting may be removed depending on the implementation.
+     *
      * @param key   the setting key
      * @param value the value to set
      * @param <T>   the type of the setting value
@@ -38,7 +37,7 @@ public interface SettingsStore {
 
     /**
      * Removes the setting for the given key.
-     * 
+     *
      * @param key the setting key
      * @throws SettingsException if an error occurs while removing the setting
      */
@@ -46,7 +45,7 @@ public interface SettingsStore {
 
     /**
      * Removes all settings.
-     * 
+     *
      * @throws SettingsException if an error occurs while clearing the settings
      */
     void clear();

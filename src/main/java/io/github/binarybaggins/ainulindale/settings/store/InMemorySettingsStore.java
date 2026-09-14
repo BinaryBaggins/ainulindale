@@ -3,20 +3,19 @@ package io.github.binarybaggins.ainulindale.settings.store;
 import io.github.binarybaggins.ainulindale.settings.SettingKey;
 import io.github.binarybaggins.ainulindale.settings.SettingsException;
 import io.github.binarybaggins.ainulindale.settings.SettingsStore;
-import java.util.Objects;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An in-memory implementation of the SettingsStore interface. This store keeps
  * settings in memory and does not persist them.
  */
-public class InMemorySettingsStore implements SettingsStore {
+public final class InMemorySettingsStore implements SettingsStore {
 
     private final Map<String, String> values = new HashMap<>();
 
-    public InMemorySettingsStore() {
-    }
+    public InMemorySettingsStore() {}
 
     /**
      * Retrieves the value of the specified setting key from the store.
@@ -36,9 +35,7 @@ public class InMemorySettingsStore implements SettingsStore {
         if (value == null) {
             // Return the default value if the key has a default value, otherwise return
             // null
-            return key.hasDefaultValue()
-                    ? key.getDefaultValue()
-                    : null;
+            return key.hasDefaultValue() ? key.getDefaultValue() : null;
         }
         try {
             return key.deserialize(value);
@@ -113,5 +110,4 @@ public class InMemorySettingsStore implements SettingsStore {
     public void flush() {
         // No-op for in-memory store; nothing to flush
     }
-
 }

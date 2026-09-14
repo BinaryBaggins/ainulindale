@@ -7,6 +7,7 @@ import java.util.Objects;
  * value and its converter.
  */
 public final class SettingKey<T> {
+
     private final String key;
     private final T defaultValue;
     private final SettingConverter<T> converter;
@@ -25,6 +26,10 @@ public final class SettingKey<T> {
     private SettingKey(String key, T defaultValue, SettingConverter<T> converter, boolean hasDefaultValue) {
         this.key = Objects.requireNonNull(key, "key must not be null");
         this.converter = Objects.requireNonNull(converter, "converter must not be null");
+
+        if (key.isBlank()) {
+            throw new IllegalArgumentException("key must not be blank");
+        }
 
         // If hasDefaultValue is true, ensure that defaultValue is not null
         if (hasDefaultValue) {
@@ -48,7 +53,7 @@ public final class SettingKey<T> {
 
     /**
      * Creates a new SettingKey with the specified default value.
-     * 
+     *
      * @param key          the key for the setting
      * @param converter    the converter for the setting
      * @param defaultValue the default value for the setting
@@ -94,6 +99,7 @@ public final class SettingKey<T> {
      * @return the serialized string representation of the value
      */
     public String serialize(T value) {
+        Objects.requireNonNull(value);
         return converter.serialize(value);
     }
 
@@ -104,6 +110,7 @@ public final class SettingKey<T> {
      * @return the deserialized value
      */
     public T deserialize(String value) {
+        Objects.requireNonNull(value);
         return converter.deserialize(value);
     }
 }

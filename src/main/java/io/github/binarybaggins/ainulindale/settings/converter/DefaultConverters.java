@@ -41,7 +41,14 @@ public final class DefaultConverters {
 
         @Override
         public Boolean deserialize(String value) {
-            return Boolean.parseBoolean(value);
+            if ("false".equalsIgnoreCase(value)) {
+                return false;
+            }
+            if ("true".equalsIgnoreCase(value)) {
+                return true;
+            } else {
+                throw new IllegalArgumentException("Invalid boolean value: " + value);
+            }
         }
     };
 

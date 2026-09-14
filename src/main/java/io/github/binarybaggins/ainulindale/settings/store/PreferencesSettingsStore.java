@@ -64,7 +64,7 @@ public final class PreferencesSettingsStore implements SettingsStore {
     }
 
     /**
-     * Sets the value of the specified setting key.
+     * Sets the value of the specified setting key. If the value is null, the setting will be removed.
      *
      * @param key   the setting key
      * @param value the value to set, or null to remove the setting
@@ -74,11 +74,11 @@ public final class PreferencesSettingsStore implements SettingsStore {
     @Override
     public <T> void set(SettingKey<T> key, T value) {
         Objects.requireNonNull(key, "key cannot be null");
+        if (value == null) {
+            remove(key);
+            return;
+        }
         try {
-            if (value == null) {
-                remove(key);
-                return;
-            }
             preferences.put(key.getKey(), key.serialize(value));
         } catch (RuntimeException e) {
             throw new SettingsException("Failed to set setting for key: " + key.getKey(), e);
@@ -120,7 +120,7 @@ public final class PreferencesSettingsStore implements SettingsStore {
     public void flush() {
         try {
             preferences.flush();
-        } catch (BackingStoreException e) {
+        } catch (RuntimeException | BackingStoreException e) {
             throw new SettingsException("Failed to flush settings", e);
         }
     }
