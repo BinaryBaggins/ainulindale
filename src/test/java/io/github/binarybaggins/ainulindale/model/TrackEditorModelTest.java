@@ -854,6 +854,17 @@ public class TrackEditorModelTest {
         assertEquals(originalStartBeat, note.getStartBeat());
     }
 
+    @Test
+    public void cancelNoteStateChangeDoesNotCreateUndoEntry() {
+        EditorNote note = model.getNotes().getFirst();
+
+        model.beginNoteStateChange(note);
+        model.moveNotes(List.of(note), 2, 4.0);
+        model.cancelNoteStateChange();
+
+        assertFalse(model.canUndo());
+    }
+
     private static TrackEditorModel createModel(EditorNote... notes) {
         return new TrackEditorModel(new EditorTrack("Test Track", List.of(notes)));
     }

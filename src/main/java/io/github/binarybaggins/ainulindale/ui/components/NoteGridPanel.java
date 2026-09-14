@@ -60,6 +60,11 @@ public class NoteGridPanel extends JPanel {
 
     public void setModel(TrackEditorModel model) {
         Objects.requireNonNull(model);
+
+        if (this.model == model) {
+            return;
+        }
+
         if (dragState != null && this.model != null) {
             this.model.cancelNoteStateChange();
         }
