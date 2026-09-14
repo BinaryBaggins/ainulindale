@@ -7,7 +7,7 @@ import java.awt.event.MouseEvent;
 
 import io.github.binarybaggins.ainulindale.ui.editor.NoteGridPanel;
 
-public class NoteGridMouseListener extends MouseAdapter {
+public class NoteGridPanelMouseListener extends MouseAdapter {
 
     private static final int DRAG_THRESHOLD = 4;
 
@@ -18,7 +18,7 @@ public class NoteGridMouseListener extends MouseAdapter {
     private boolean dragging;
     private boolean ctrlDown;
 
-    public NoteGridMouseListener(NoteGridPanel noteGridPanel) {
+    public NoteGridPanelMouseListener(NoteGridPanel noteGridPanel) {
         this.noteGridPanel = noteGridPanel;
     }
 

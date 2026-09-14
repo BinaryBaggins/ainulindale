@@ -6,9 +6,9 @@ import java.awt.event.KeyEvent;
 import javax.swing.AbstractAction;
 import javax.swing.KeyStroke;
 
-public final class NoteEditorKeyBindings {
+public final class NoteGridPanelKeyBindings {
 
-    private NoteEditorKeyBindings() {}
+    private NoteGridPanelKeyBindings() {}
 
     public static void install(NoteGridPanel noteGridPanel) {
         KeyBindings.bindFocused(
