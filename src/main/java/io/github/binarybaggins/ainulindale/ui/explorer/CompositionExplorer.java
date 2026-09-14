@@ -76,4 +76,12 @@ public class CompositionExplorer extends JPanel {
             trackTable.setRowSelectionInterval(row, row);
         }
     }
+
+    /**
+     * Only for testing purposes.
+     * @return the JTable displaying the tracks
+     */
+    JTable getTrackTable() {
+        return trackTable;
+    }
 }
