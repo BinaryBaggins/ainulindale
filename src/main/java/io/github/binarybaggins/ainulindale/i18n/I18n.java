@@ -20,10 +20,22 @@ public final class I18n implements AutoCloseable {
 
     private ResourceBundle bundle;
 
+    /**
+     * Constructs an I18n instance with the specified locale manager and the default base name for the resource bundle.
+     * @param localeManager the locale manager to use
+     * @throws NullPointerException if localeManager is null
+     */
     public I18n(LocaleManager localeManager) {
         this(localeManager, DEFAULT_BASE_NAME);
     }
 
+    /**
+     * Constructs an I18n instance with the specified locale manager and base name for the resource bundle.
+     * @param localeManager the locale manager to use
+     * @param baseName the base name of the resource bundle
+     * @throws NullPointerException if localeManager or baseName is null
+     * @throws IllegalArgumentException if baseName is blank
+     */
     I18n(LocaleManager localeManager, String baseName) {
         this.localeManager = Objects.requireNonNull(localeManager, "localeManager must not be null");
 
@@ -40,12 +52,25 @@ public final class I18n implements AutoCloseable {
         localeManager.addLocaleChangeListener(localeChangeListener);
     }
 
+    /**
+     * Retrieves the message for the specified key from the resource bundle.
+     * @param key the key of the message to retrieve
+     * @return the message for the specified key
+     * @throws NullPointerException if key is null
+     */
     public String get(String key) {
         Objects.requireNonNull(key, "key must not be null");
 
         return bundle.getString(key);
     }
 
+    /**
+     * Formats a message for the specified key using the provided arguments.
+     * @param key the key of the message pattern
+     * @param arguments the arguments to format the message with
+     * @return the formatted message
+     * @throws NullPointerException if arguments is null
+     */
     public String format(String key, Object... arguments) {
         Objects.requireNonNull(arguments, "arguments must not be null");
 
@@ -54,10 +79,17 @@ public final class I18n implements AutoCloseable {
         return new MessageFormat(pattern, localeManager.getLocale()).format(arguments);
     }
 
+    /**
+     * Reloads the resource bundle for the specified locale.
+     * @param locale the locale to reload the resource bundle for
+     */
     private void reload(Locale locale) {
         bundle = ResourceBundle.getBundle(baseName, locale, BUNDLE_CONTROL);
     }
 
+    /**
+     * Closes this I18n instance, removing the locale change listener from the locale manager.
+     */
     @Override
     public void close() {
         localeManager.removeLocaleChangeListener(localeChangeListener);

@@ -22,6 +22,8 @@ public final class SettingKey<T> {
      * @param converter       the converter for the setting
      * @param hasDefaultValue true if this SettingKey has a default value, false
      *                        otherwise
+     * @throws NullPointerException if key or converter is null
+     * @throws IllegalArgumentException if key is blank
      */
     private SettingKey(String key, T defaultValue, SettingConverter<T> converter, boolean hasDefaultValue) {
         this.key = Objects.requireNonNull(key, "key must not be null");
@@ -97,6 +99,7 @@ public final class SettingKey<T> {
      *
      * @param value the value to serialize
      * @return the serialized string representation of the value
+     * @throws NullPointerException if the value is null or if the converter returns null
      */
     public String serialize(T value) {
         Objects.requireNonNull(value, "value must not be null");
@@ -108,6 +111,7 @@ public final class SettingKey<T> {
      *
      * @param value the string to deserialize
      * @return the deserialized value
+     * @throws NullPointerException if the value is null or if the converter returns null
      */
     public T deserialize(String value) {
         Objects.requireNonNull(value, "value must not be null");

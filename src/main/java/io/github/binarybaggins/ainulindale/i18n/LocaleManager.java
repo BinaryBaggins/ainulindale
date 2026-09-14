@@ -21,6 +21,11 @@ public final class LocaleManager {
 
     private Locale locale;
 
+    /**
+     * Constructs a LocaleManager with the given settings and the default system locale supplier.
+     * @param settings the application settings
+     * @throws NullPointerException if settings is null
+     */
     public LocaleManager(Settings settings) {
         this(settings, Locale::getDefault);
     }
@@ -31,6 +36,7 @@ public final class LocaleManager {
      *
      * @param settings the application settings
      * @param systemLocaleSupplier the supplier for the system locale
+     * @throws NullPointerException if settings or systemLocaleSupplier is null
      */
     LocaleManager(Settings settings, Supplier<Locale> systemLocaleSupplier) {
         this.settings = Objects.requireNonNull(settings, "settings must not be null");
@@ -113,6 +119,7 @@ public final class LocaleManager {
      * Resolves the system locale to one of the supported locales.
      * @param systemLocale the system locale
      * @return the resolved locale
+     * @throws NullPointerException if the system locale is null
      */
     static Locale resolveSystemLocale(Locale systemLocale) {
         Objects.requireNonNull(systemLocale, "systemLocale must not be null");
