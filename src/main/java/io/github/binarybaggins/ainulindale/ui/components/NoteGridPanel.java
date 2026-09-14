@@ -1,19 +1,19 @@
 package io.github.binarybaggins.ainulindale.ui.components;
 
 import io.github.binarybaggins.ainulindale.core.MidiConstraints;
+import io.github.binarybaggins.ainulindale.interaction.DragMode;
+import io.github.binarybaggins.ainulindale.interaction.GroupMoveResolver;
+import io.github.binarybaggins.ainulindale.interaction.NoteDragState;
+import io.github.binarybaggins.ainulindale.interaction.NoteSelectionModel;
+import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
+import io.github.binarybaggins.ainulindale.model.EditorNote;
+import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
+import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
 import io.github.binarybaggins.ainulindale.ui.actions.NoteEditorKeyBindings;
 import io.github.binarybaggins.ainulindale.ui.actions.NoteGridMouseListener;
-import io.github.binarybaggins.ainulindale.interaction.GroupMoveResolver;
-import io.github.binarybaggins.ainulindale.interaction.NoteDragState;
-import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
-import io.github.binarybaggins.ainulindale.interaction.DragMode;
-import io.github.binarybaggins.ainulindale.model.EditorNote;
-import io.github.binarybaggins.ainulindale.interaction.NoteSelectionModel;
-import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
-import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -32,7 +32,7 @@ public class NoteGridPanel extends JPanel {
     private static final long serialVersionUID = 1L;
 
     // Model and view state
-    private final TrackEditorModel model;
+    private TrackEditorModel model;
     private final NoteEditorViewState viewState;
     private final NoteSelectionModel selectionModel = new NoteSelectionModel();
 
@@ -43,9 +43,8 @@ public class NoteGridPanel extends JPanel {
 
     private NoteDragState dragState;
 
-    public NoteGridPanel(NoteEditorViewState viewSettings, TrackEditorModel model) {
+    public NoteGridPanel(NoteEditorViewState viewSettings) {
         this.viewState = viewSettings;
-        this.model = model;
 
         updatePreferredSize();
 
@@ -56,6 +55,10 @@ public class NoteGridPanel extends JPanel {
         NoteEditorKeyBindings.install(this);
 
         setFocusable(true);
+    }
+
+    public void setModel(TrackEditorModel model) {
+        this.model = model;
     }
 
     public void updateZoom() {

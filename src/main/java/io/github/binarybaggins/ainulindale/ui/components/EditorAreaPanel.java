@@ -3,7 +3,6 @@ package io.github.binarybaggins.ainulindale.ui.components;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
-import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -26,14 +25,10 @@ public class EditorAreaPanel extends JPanel {
     private JScrollPane mainScrollPane;
     private JScrollBar horizontalScrollBar;
 
-    public EditorAreaPanel(EditorWorkspace workspace) {
-        TrackEditorModel model = workspace
-            .getActiveTrackEditor()
-            .orElseThrow(() -> new IllegalStateException("No active track in the workspace"));
-
+    public EditorAreaPanel() {
         viewState = new NoteEditorViewState();
         pianoPanel = new PianoPanel();
-        noteGridPanel = new NoteGridPanel(viewState, model);
+        noteGridPanel = new NoteGridPanel(viewState);
         timelinePanel = new TimelinePanel(viewState);
         timelineControlPanel = new TimelineControlPanel();
 
@@ -136,5 +131,9 @@ public class EditorAreaPanel extends JPanel {
         timelineControlPanel.setZoomLabel(viewState.getZoomPercentage());
 
         updateHorizontalScrollIncrements();
+    }
+
+    public void setTrackEditorModel(TrackEditorModel trackEditorModel) {
+        noteGridPanel.setModel(trackEditorModel);
     }
 }

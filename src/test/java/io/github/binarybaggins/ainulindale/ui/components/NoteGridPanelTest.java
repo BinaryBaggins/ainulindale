@@ -238,8 +238,10 @@ class NoteGridPanelTest {
     private static NoteGridPanel panel(EditorNote... notes) {
         EditorTrack track = new EditorTrack("Test Track", List.of(notes));
         TrackEditorModel model = new TrackEditorModel(track);
+        NoteGridPanel panel = new NoteGridPanel(new NoteEditorViewState());
+        panel.setModel(model);
 
-        return new NoteGridPanel(new NoteEditorViewState(), model);
+        return panel;
     }
 
     private static EditorNote note(int midiNote, double startBeat) {

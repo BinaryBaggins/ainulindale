@@ -10,11 +10,11 @@ public class NoteEditorFrame extends JFrame {
     private final NoteEditorPanel editorPanel;
 
     public NoteEditorFrame(EditorWorkspace workspace) {
-        editorPanel = new NoteEditorPanel(workspace);
+        editorPanel = new NoteEditorPanel();
 
-        setTitle("Maestro Note Editor");
+        setTitle("Ainulindalë");
         setContentPane(editorPanel);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // later change to DISPOSE_ON_CLOSE
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
