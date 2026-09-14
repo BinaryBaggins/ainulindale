@@ -3,64 +3,63 @@ package io.github.binarybaggins.ainulindale.ui.explorer;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.util.Objects;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.table.TableColumn;
 
 public class CompositionExplorer extends JPanel {
 
-    private final EditorWorkspace workspace;
-    private final JList<EditorTrack> trackList;
+    private final CompositionTableModel tableModel;
+    private final JTable trackTable;
 
     public CompositionExplorer(EditorWorkspace workspace) {
-        this.workspace = Objects.requireNonNull(workspace);
-        this.trackList = new JList<>();
+        Objects.requireNonNull(workspace);
+
+        tableModel = new CompositionTableModel(workspace);
+        trackTable = new JTable(tableModel);
+
+        TableColumn visibilityColumn = trackTable.getColumnModel().getColumn(0);
+
+        visibilityColumn.setMinWidth(40);
+        visibilityColumn.setMaxWidth(40);
+        visibilityColumn.setPreferredWidth(40);
+
+        trackTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
         setLayout(new BorderLayout());
-        add(new JScrollPane(trackList), BorderLayout.CENTER);
+        add(new JScrollPane(trackTable), BorderLayout.CENTER);
 
-        // Listen for changes in the workspace and refresh the track list accordingly
-        workspace.addListener(this::refreshTrackList);
+        workspace.addListener(() -> refresh(workspace));
 
-        // Initial refresh of the track list
-        refreshTrackList();
-
-        trackList.setCellRenderer(
-            new DefaultListCellRenderer() {
-                @Override
-                public Component getListCellRendererComponent(
-                    JList<?> list,
-                    Object value,
-                    int index,
-                    boolean isSelected,
-                    boolean cellHasFocus
-                ) {
-                    EditorTrack track = (EditorTrack) value;
-                    return super.getListCellRendererComponent(list, track.getName(), index, isSelected, cellHasFocus);
-                }
-            }
-        );
-
-        trackList.addListSelectionListener(e -> {
+        trackTable.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) {
                 return;
             }
 
-            EditorTrack selectedTrack = trackList.getSelectedValue();
-            if (selectedTrack == null) {
+            int row = trackTable.getSelectedRow();
+            if (row < 0) {
                 return;
             }
 
-            workspace.setActiveTrack(selectedTrack);
+            EditorTrack track = workspace.getTracks().get(row);
+            workspace.setActiveTrack(track);
         });
+
+        refresh(workspace);
     }
 
-    private void refreshTrackList() {
-        // Refresh the track list with the current tracks from the workspace
-        trackList.setListData(workspace.getTracks().toArray(EditorTrack[]::new));
-        // Select the active track in the list, if any
-        workspace.getActiveTrack().ifPresent(track -> trackList.setSelectedValue(track, true));
+    private void refresh(EditorWorkspace workspace) {
+        tableModel.refresh();
+
+        workspace.getActiveTrack().ifPresent(activeTrack -> {
+            int row = workspace.getTracks().indexOf(activeTrack);
+
+            if (row >= 0) {
+                trackTable.setRowSelectionInterval(row, row);
+            }
+        });
     }
 }
