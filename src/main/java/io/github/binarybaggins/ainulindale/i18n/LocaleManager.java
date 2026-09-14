@@ -33,8 +33,11 @@ public final class LocaleManager {
      * @param systemLocaleSupplier the supplier for the system locale
      */
     LocaleManager(Settings settings, Supplier<Locale> systemLocaleSupplier) {
-        this.settings = Objects.requireNonNull(settings);
-        this.systemLocaleSupplier = Objects.requireNonNull(systemLocaleSupplier);
+        this.settings = Objects.requireNonNull(settings, "settings must not be null");
+        this.systemLocaleSupplier = Objects.requireNonNull(
+            systemLocaleSupplier,
+            "systemLocaleSupplier must not be null"
+        );
         this.locale = resolveInitialLocale();
     }
 
@@ -112,7 +115,7 @@ public final class LocaleManager {
      * @return the resolved locale
      */
     static Locale resolveSystemLocale(Locale systemLocale) {
-        Objects.requireNonNull(systemLocale);
+        Objects.requireNonNull(systemLocale, "systemLocale must not be null");
 
         if (GERMAN.getLanguage().equals(systemLocale.getLanguage())) {
             return GERMAN;
@@ -133,7 +136,7 @@ public final class LocaleManager {
      * @throws IllegalArgumentException if the locale is not supported
      */
     private static Locale requireSupported(Locale locale) {
-        Objects.requireNonNull(locale);
+        Objects.requireNonNull(locale, "locale must not be null");
 
         if (GERMAN.getLanguage().equals(locale.getLanguage())) {
             return GERMAN;
