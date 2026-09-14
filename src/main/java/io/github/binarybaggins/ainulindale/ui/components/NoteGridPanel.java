@@ -22,6 +22,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,7 +59,20 @@ public class NoteGridPanel extends JPanel {
     }
 
     public void setModel(TrackEditorModel model) {
+        Objects.requireNonNull(model);
+        if (dragState != null && this.model != null) {
+            this.model.cancelNoteStateChange();
+        }
+
         this.model = model;
+
+        selectionModel.clearSelection();
+        selectionBox = null;
+        selectionBeforeBox = Set.of();
+        additiveSelectionBox = false;
+        dragState = null;
+
+        repaint();
     }
 
     public void updateZoom() {

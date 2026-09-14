@@ -10,7 +10,7 @@ public class NoteEditorFrame extends JFrame {
     private final NoteEditorPanel editorPanel;
 
     public NoteEditorFrame(EditorWorkspace workspace) {
-        editorPanel = new NoteEditorPanel();
+        editorPanel = new NoteEditorPanel(workspace);
 
         setTitle("Ainulindalë");
         setContentPane(editorPanel);
