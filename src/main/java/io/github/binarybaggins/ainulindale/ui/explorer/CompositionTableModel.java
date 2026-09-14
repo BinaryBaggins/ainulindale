@@ -1,11 +1,13 @@
 package io.github.binarybaggins.ainulindale.ui.explorer;
 
+import io.github.binarybaggins.ainulindale.core.result.Result;
+import io.github.binarybaggins.ainulindale.core.result.Success;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.util.Objects;
 import javax.swing.table.AbstractTableModel;
 
-public class CompositionTableModel extends AbstractTableModel {
+final class CompositionTableModel extends AbstractTableModel {
 
     private static final int VISIBILITY_COLUMN = 0;
     private static final int NAME_COLUMN = 1;
@@ -49,8 +51,13 @@ public class CompositionTableModel extends AbstractTableModel {
         EditorTrack track = workspace.getTracks().get(rowIndex);
 
         switch (columnIndex) {
-            case VISIBILITY_COLUMN:
-                return workspace.isTrackVisible(track);
+            case VISIBILITY_COLUMN: {
+                Result<Boolean> result = workspace.isTrackVisible(track);
+                if (result instanceof Success<Boolean> success) {
+                    return success.value();
+                }
+                throw new IllegalStateException("Workspace track unexpectedly has no visibility state");
+            }
             case NAME_COLUMN:
                 return track.getName();
             default:

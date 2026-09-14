@@ -1,5 +1,8 @@
 package io.github.binarybaggins.ainulindale.ui.explorer;
 
+import io.github.binarybaggins.ainulindale.core.result.Failure;
+import io.github.binarybaggins.ainulindale.core.result.Result;
+import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
@@ -22,7 +25,6 @@ public class CompositionExplorer extends JPanel {
         trackTable = new JTable(tableModel);
 
         TableColumn visibilityColumn = trackTable.getColumnModel().getColumn(0);
-
         visibilityColumn.setMinWidth(40);
         visibilityColumn.setMaxWidth(40);
         visibilityColumn.setPreferredWidth(40);
@@ -45,7 +47,11 @@ public class CompositionExplorer extends JPanel {
             }
 
             EditorTrack track = workspace.getTracks().get(row);
-            workspace.setActiveTrack(track);
+            Result<Unit> result = workspace.setActiveTrack(track);
+
+            if (result instanceof Failure<?>) {
+                syncSelection(workspace);
+            }
         });
 
         refresh(workspace);
@@ -53,13 +59,21 @@ public class CompositionExplorer extends JPanel {
 
     private void refresh(EditorWorkspace workspace) {
         tableModel.refresh();
+        syncSelection(workspace);
+    }
 
-        workspace.getActiveTrack().ifPresent(activeTrack -> {
-            int row = workspace.getTracks().indexOf(activeTrack);
+    private void syncSelection(EditorWorkspace workspace) {
+        var activeTrack = workspace.getActiveTrack();
 
-            if (row >= 0) {
-                trackTable.setRowSelectionInterval(row, row);
-            }
-        });
+        if (activeTrack.isEmpty()) {
+            trackTable.clearSelection();
+            return;
+        }
+
+        int row = workspace.getTracks().indexOf(activeTrack.get());
+
+        if (row >= 0) {
+            trackTable.setRowSelectionInterval(row, row);
+        }
     }
 }
