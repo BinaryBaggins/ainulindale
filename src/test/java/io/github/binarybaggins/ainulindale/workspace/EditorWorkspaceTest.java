@@ -16,6 +16,7 @@ import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -387,5 +388,81 @@ public class EditorWorkspaceTest {
         assertSame(trackA, workspace.getActiveTrack().orElseThrow());
         assertSame(editorA, workspace.getActiveTrackEditor().orElseThrow());
         assertTrue(editorA.canUndo());
+    }
+
+    // --- listener notification tests ---
+    @Test
+    public void successfulWorkspaceMutationNotifiesListeners() {
+        AtomicInteger notificationCount = new AtomicInteger();
+
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.addTrack(trackA);
+
+        assertEquals(1, notificationCount.get());
+    }
+
+    @Test
+    public void failedWorkspaceMutationDoesNotNotifyListeners() {
+        workspace.addTrack(trackA);
+
+        AtomicInteger notificationCount = new AtomicInteger();
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.addTrack(trackA);
+
+        assertEquals(0, notificationCount.get());
+    }
+
+    @Test
+    public void settingAlreadyActiveTrackDoesNotNotifyListeners() {
+        workspace.addTrack(trackA);
+        workspace.setActiveTrack(trackA);
+
+        AtomicInteger notificationCount = new AtomicInteger();
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.setActiveTrack(trackA);
+
+        assertEquals(0, notificationCount.get());
+    }
+
+    @Test
+    public void removedListenerIsNotNotified() {
+        AtomicInteger notificationCount = new AtomicInteger();
+
+        EditorWorkspaceListener listener = notificationCount::incrementAndGet;
+
+        workspace.addListener(listener);
+        workspace.removeListener(listener);
+
+        workspace.addTrack(trackA);
+
+        assertEquals(0, notificationCount.get());
+    }
+
+    @Test
+    public void changingActiveTrackNotifiesListenerOnce() {
+        workspace.addTrack(trackA);
+        workspace.addTrack(trackB);
+        workspace.setActiveTrack(trackA);
+
+        AtomicInteger notificationCount = new AtomicInteger();
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.setActiveTrack(trackB);
+
+        assertEquals(1, notificationCount.get());
+        assertSame(trackB, workspace.getActiveTrack().orElseThrow());
+    }
+
+    @Test
+    public void clearingAlreadyEmptyActiveTrackDoesNotNotifyListeners() {
+        AtomicInteger notificationCount = new AtomicInteger();
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.clearActiveTrack();
+
+        assertEquals(0, notificationCount.get());
     }
 }

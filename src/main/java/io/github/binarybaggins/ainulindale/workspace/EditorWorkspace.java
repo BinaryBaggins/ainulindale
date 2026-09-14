@@ -194,6 +194,9 @@ public final class EditorWorkspace {
      * Clears the active track in the workspace.
      */
     public void clearActiveTrack() {
+        if (activeTrackEntry == null) {
+            return;
+        }
         activeTrackEntry = null;
         notifyListeners();
     }
