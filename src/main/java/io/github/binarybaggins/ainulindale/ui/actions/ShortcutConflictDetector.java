@@ -18,16 +18,16 @@ public final class ShortcutConflictDetector {
      * Constructs a new shortcut conflict detector.
      *
      * @param shortcutManager the shortcut manager to use for detecting conflicts
-     * @param definitions the action definitions to consider for conflicts
+     * @param catalog the action catalog containing action definitions to consider for conflicts
      * @throws NullPointerException if either argument is null or if the definitions iterable contains null
      * @throws IllegalArgumentException if there are duplicate action definitions
      */
-    public ShortcutConflictDetector(ShortcutManager shortcutManager, Iterable<ActionDefinition> definitions) {
+    public ShortcutConflictDetector(ShortcutManager shortcutManager, ActionCatalog catalog) {
         this.shortcutManager = Objects.requireNonNull(shortcutManager, "shortcutManager must not be null");
 
-        Objects.requireNonNull(definitions, "definitions must not be null");
+        Objects.requireNonNull(catalog, "catalog must not be null");
 
-        for (ActionDefinition definition : definitions) {
+        for (ActionDefinition definition : catalog.definitions()) {
             Objects.requireNonNull(definition, "definitions must not contain null");
 
             ActionDefinition previous = this.definitions.putIfAbsent(definition.id(), definition);

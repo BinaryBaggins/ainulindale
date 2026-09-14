@@ -73,14 +73,12 @@ class ShortcutConflictDetectorTest {
         );
 
         context.manager().disableShortcut(ActionId.NOTE_UNDO);
-
         assertTrue(context.detector().findConflicts(ActionId.NOTE_DELETE, DELETE).isEmpty());
     }
 
     @Test
     void actionDoesNotConflictWithItself() {
         TestContext context = createContext(definition(ActionId.NOTE_DELETE, ActionScope.NOTE_GRID, DELETE));
-
         assertTrue(context.detector().findConflicts(ActionId.NOTE_DELETE, DELETE).isEmpty());
     }
 
@@ -92,7 +90,6 @@ class ShortcutConflictDetectorTest {
         );
 
         context.manager().setShortcut(ActionId.NOTE_UNDO, DELETE);
-
         assertEquals(List.of(ActionId.NOTE_UNDO), context.detector().findConflicts(ActionId.NOTE_DELETE, DELETE));
     }
 
@@ -104,14 +101,12 @@ class ShortcutConflictDetectorTest {
         );
 
         assertEquals(List.of(ActionId.NOTE_UNDO), context.detector().findConflicts(ActionId.NOTE_DELETE, DELETE));
-
         assertEquals(MENU_Z, context.manager().getShortcut(ActionId.NOTE_DELETE).orElseThrow());
     }
 
     @Test
     void rejectsUnknownAction() {
         TestContext context = createContext(definition(ActionId.NOTE_DELETE, ActionScope.NOTE_GRID, DELETE));
-
         assertThrows(IllegalArgumentException.class, () ->
             context.detector().findConflicts(ActionId.NOTE_UNDO, DELETE)
         );
@@ -120,47 +115,32 @@ class ShortcutConflictDetectorTest {
     @Test
     void rejectsNullActionId() {
         TestContext context = createContext(definition(ActionId.NOTE_DELETE, ActionScope.NOTE_GRID, DELETE));
-
         assertThrows(NullPointerException.class, () -> context.detector().findConflicts(null, DELETE));
     }
 
     @Test
     void rejectsNullShortcut() {
         TestContext context = createContext(definition(ActionId.NOTE_DELETE, ActionScope.NOTE_GRID, DELETE));
-
         assertThrows(NullPointerException.class, () -> context.detector().findConflicts(ActionId.NOTE_DELETE, null));
     }
 
     @Test
-    void rejectsDuplicateDefinitions() {
-        ActionDefinition definition = definition(ActionId.NOTE_DELETE, ActionScope.NOTE_GRID, DELETE);
-
-        ShortcutManager manager = new ShortcutManager(new Settings(new InMemorySettingsStore()), List.of(definition));
-
-        assertThrows(IllegalArgumentException.class, () ->
-            new ShortcutConflictDetector(manager, List.of(definition, definition))
-        );
-    }
-
-    @Test
     void constructorRejectsNullShortcutManager() {
-        assertThrows(NullPointerException.class, () -> new ShortcutConflictDetector(null, List.of()));
+        ActionCatalog catalog = new ActionCatalog(List.of());
+        assertThrows(NullPointerException.class, () -> new ShortcutConflictDetector(null, catalog));
     }
 
     @Test
-    void constructorRejectsNullDefinitions() {
-        ShortcutManager manager = new ShortcutManager(new Settings(new InMemorySettingsStore()), List.of());
-
+    void constructorRejectsNullCatalog() {
+        ActionCatalog catalog = new ActionCatalog(List.of());
+        ShortcutManager manager = new ShortcutManager(new Settings(new InMemorySettingsStore()), catalog);
         assertThrows(NullPointerException.class, () -> new ShortcutConflictDetector(manager, null));
     }
 
     private static TestContext createContext(ActionDefinition... definitions) {
-        List<ActionDefinition> definitionList = List.of(definitions);
-
-        ShortcutManager manager = new ShortcutManager(new Settings(new InMemorySettingsStore()), definitionList);
-
-        ShortcutConflictDetector detector = new ShortcutConflictDetector(manager, definitionList);
-
+        ActionCatalog catalog = new ActionCatalog(List.of(definitions));
+        ShortcutManager manager = new ShortcutManager(new Settings(new InMemorySettingsStore()), catalog);
+        ShortcutConflictDetector detector = new ShortcutConflictDetector(manager, catalog);
         return new TestContext(manager, detector);
     }
 

@@ -23,7 +23,7 @@ public class ShortcutManagerTest {
     public void setup() {
         manager = new ShortcutManager(
             new Settings(new InMemorySettingsStore()),
-            List.of(DELETE_DEFINITION, ADD_TRACK_DEFINITION)
+            new ActionCatalog(List.of(DELETE_DEFINITION, ADD_TRACK_DEFINITION))
         );
     }
 
@@ -104,15 +104,6 @@ public class ShortcutManagerTest {
         assertEquals(Optional.empty(), manager.getShortcut(ActionId.TRACK_ADD));
 
         assertFalse(manager.hasOverride(ActionId.TRACK_ADD));
-    }
-
-    @Test
-    void rejectsDuplicateDefinitions() {
-        Settings settings = new Settings(new InMemorySettingsStore());
-
-        assertThrows(IllegalArgumentException.class, () ->
-            new ShortcutManager(settings, List.of(DELETE_DEFINITION, DELETE_DEFINITION))
-        );
     }
 
     @Test

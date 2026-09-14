@@ -19,19 +19,21 @@ public final class ShortcutManager {
     private final Map<ActionId, SettingKey<ShortcutOverride>> settingKeys;
 
     /**
-     * Constructs a ShortcutManager with the given settings and action definitions.
+     * Constructs a ShortcutManager with the given settings and action catalog.
      *
      * @param settings the settings instance
-     * @param definitions the action definitions
-     * @throws NullPointerException if settings or definitions are null
-     * @throws IllegalArgumentException if there are duplicate action definitions
+     * @param catalog the action catalog
+     * @throws NullPointerException if settings or catalog are null
+     * @throws IllegalArgumentException if there are duplicate action definitions in the catalog
      */
-    public ShortcutManager(Settings settings, Iterable<ActionDefinition> definitions) {
+    public ShortcutManager(Settings settings, ActionCatalog catalog) {
         this.settings = Objects.requireNonNull(settings, "settings must not be null");
-        Objects.requireNonNull(definitions, "definitions must not be null");
+        Objects.requireNonNull(catalog, "catalog must not be null");
 
         this.definitions = new EnumMap<>(ActionId.class);
         this.settingKeys = new EnumMap<>(ActionId.class);
+
+        Iterable<ActionDefinition> definitions = catalog.definitions();
 
         ShortcutOverrideConverter converter = new ShortcutOverrideConverter();
         for (ActionDefinition definition : definitions) {
