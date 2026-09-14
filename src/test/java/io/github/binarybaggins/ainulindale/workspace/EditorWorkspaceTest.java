@@ -315,6 +315,9 @@ public class EditorWorkspaceTest {
         assertThrows(NullPointerException.class, () -> workspace.setActiveTrack(null));
         assertThrows(NullPointerException.class, () -> workspace.isTrackVisible(null));
         assertThrows(NullPointerException.class, () -> workspace.setTrackVisible(null, true));
+        assertThrows(NullPointerException.class, () -> workspace.renameTrack(null, "Name"));
+        assertThrows(NullPointerException.class, () -> workspace.renameTrack(trackA, null));
+        assertThrows(NullPointerException.class, () -> workspace.moveTrack(null, 0));
     }
 
     // --- rename track tests ---
@@ -344,6 +347,7 @@ public class EditorWorkspaceTest {
 
         Result<Unit> moveResult = workspace.moveTrack(trackC, 0);
         assertInstanceOf(Success.class, moveResult);
+        assertEquals(List.of(trackC, trackA, trackB), workspace.getTracks());
     }
 
     @Test
