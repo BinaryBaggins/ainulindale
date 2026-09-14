@@ -99,8 +99,8 @@ public final class SettingKey<T> {
      * @return the serialized string representation of the value
      */
     public String serialize(T value) {
-        Objects.requireNonNull(value);
-        return converter.serialize(value);
+        Objects.requireNonNull(value, "value must not be null");
+        return Objects.requireNonNull(converter.serialize(value), "converter must not serialize to null");
     }
 
     /**
@@ -110,7 +110,7 @@ public final class SettingKey<T> {
      * @return the deserialized value
      */
     public T deserialize(String value) {
-        Objects.requireNonNull(value);
-        return converter.deserialize(value);
+        Objects.requireNonNull(value, "value must not be null");
+        return Objects.requireNonNull(converter.deserialize(value), "converter must not deserialize to null");
     }
 }
