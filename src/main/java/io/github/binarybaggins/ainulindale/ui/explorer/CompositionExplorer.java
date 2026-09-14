@@ -19,6 +19,10 @@ public class CompositionExplorer extends JPanel {
         setLayout(new BorderLayout());
         add(new JScrollPane(trackList), BorderLayout.CENTER);
 
+        // Listen for changes in the workspace and refresh the track list accordingly
+        workspace.addListener(this::refreshTrackList);
+
+        // Initial refresh of the track list
         refreshTrackList();
 
         trackList.addListSelectionListener(e -> {
