@@ -1,7 +1,9 @@
 package io.github.binarybaggins.ainulindale.ui.explorer;
 
+import io.github.binarybaggins.ainulindale.core.result.Failure;
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.Success;
+import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.util.Objects;
@@ -79,7 +81,10 @@ final class CompositionTableModel extends AbstractTableModel {
         EditorTrack track = workspace.getTracks().get(rowIndex);
         boolean visible = (Boolean) value;
 
-        workspace.setTrackVisible(track, visible);
+        Result<Unit> result = workspace.setTrackVisible(track, visible);
+        if (result instanceof Failure<?>) {
+            fireTableCellUpdated(rowIndex, columnIndex);
+        }
     }
 
     public void refresh() {
