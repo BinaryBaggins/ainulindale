@@ -13,10 +13,11 @@ public class Ainulindale {
         javax.swing.SwingUtilities.invokeLater(
             new Runnable() {
                 public void run() {
-                    EditorTrack track = createDemoTrack();
+                    EditorTrack track = createDemoTrack("Demo Track 1", 42, 16);
 
                     EditorWorkspace workspace = new EditorWorkspace();
                     workspace.addTrack(track);
+                    workspace.addTrack(createDemoTrack("Demo Track 2", 43, 16));
                     workspace.setActiveTrack(track);
 
                     new AinulindaleFrame(workspace).setVisible(true);
@@ -25,7 +26,7 @@ public class Ainulindale {
         );
     }
 
-    private static EditorTrack createDemoTrack() {
-        return DemoTrackGenerator.create(42L, 16);
+    private static EditorTrack createDemoTrack(String name, int seed, int noteCount) {
+        return DemoTrackGenerator.create(name, seed, noteCount);
     }
 }
