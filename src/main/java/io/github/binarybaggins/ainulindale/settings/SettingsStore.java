@@ -12,8 +12,8 @@ public interface SettingsStore {
      *
      * @param key the setting key
      * @param <T> the type of the setting value
-     * @return @return the stored value, the key's default value if no value is stored
-        and a default exists, otherwise null
+     * @return the stored value, the key's default value if no value is stored
+     *         and a default exists, otherwise null
      * @throws SettingsException if an error occurs while retrieving the setting
      */
     <T> T get(SettingKey<T> key);
