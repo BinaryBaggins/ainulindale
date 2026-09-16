@@ -1,18 +1,17 @@
 package io.github.binarybaggins.ainulindale.ui.components;
 
 import io.github.binarybaggins.ainulindale.core.MidiConstraints;
+import io.github.binarybaggins.ainulindale.interaction.DragMode;
+import io.github.binarybaggins.ainulindale.interaction.GroupMoveResolver;
+import io.github.binarybaggins.ainulindale.interaction.NoteDragState;
+import io.github.binarybaggins.ainulindale.interaction.NoteSelectionModel;
+import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
+import io.github.binarybaggins.ainulindale.model.EditorNote;
+import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
+import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
-import io.github.binarybaggins.ainulindale.ui.actions.NoteEditorKeyBindings;
-import io.github.binarybaggins.ainulindale.interaction.GroupMoveResolver;
-import io.github.binarybaggins.ainulindale.interaction.NoteDragState;
-import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
-import io.github.binarybaggins.ainulindale.interaction.DragMode;
-import io.github.binarybaggins.ainulindale.model.EditorNote;
-import io.github.binarybaggins.ainulindale.interaction.NoteSelectionModel;
-import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
-import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -51,9 +50,6 @@ public class NoteGridPanel extends JPanel {
         NoteGridMouseListener mouseListener = new NoteGridMouseListener(this);
         addMouseListener(mouseListener);
         addMouseMotionListener(mouseListener);
-
-        NoteEditorKeyBindings.install(this);
-
         setFocusable(true);
     }
 
