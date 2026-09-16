@@ -3,13 +3,17 @@ package io.github.binarybaggins.ainulindale.ui.swing;
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.ResultError;
 import io.github.binarybaggins.ainulindale.ui.shortcut.Key;
-
 import java.awt.event.KeyEvent;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Utility class for mapping custom Key enums to Swing key codes and vice versa.
+ * Provides a bidirectional mapping between Key and KeyEvent key codes.
+ *
+ */
 final class SwingKeyAdapter {
 
     private static final EnumMap<Key, Integer> KEY_CODES = new EnumMap<>(Key.class);

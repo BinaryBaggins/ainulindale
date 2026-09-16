@@ -1,13 +1,15 @@
 package io.github.binarybaggins.ainulindale.ui.swing;
 
+import io.github.binarybaggins.ainulindale.ui.shortcut.Shortcut;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.util.Objects;
 import javax.swing.KeyStroke;
 
-import io.github.binarybaggins.ainulindale.ui.shortcut.Shortcut;
-
+/**
+ * Utility class for mapping Shortcut objects to Swing KeyStroke instances.
+ */
 final class ShortcutKeyStrokeMapper {
 
     private final SwingModifierAdapter modifierAdapter;

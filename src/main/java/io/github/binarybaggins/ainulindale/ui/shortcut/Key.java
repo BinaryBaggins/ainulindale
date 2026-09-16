@@ -1,5 +1,8 @@
 package io.github.binarybaggins.ainulindale.ui.shortcut;
 
+/**
+ * Enum representing keyboard keys.
+ */
 public enum Key {
     //letters
     A,

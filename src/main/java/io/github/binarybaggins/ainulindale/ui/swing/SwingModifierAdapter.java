@@ -1,10 +1,13 @@
 package io.github.binarybaggins.ainulindale.ui.swing;
 
+import io.github.binarybaggins.ainulindale.ui.shortcut.Modifier;
 import java.awt.event.InputEvent;
 import java.util.Set;
 
-import io.github.binarybaggins.ainulindale.ui.shortcut.Modifier;
-
+/**
+ * Utility class for converting custom Modifier enums to Swing modifier masks.
+ * Provides methods to convert individual modifiers and sets of modifiers to Swing modifier masks.
+ */
 final class SwingModifierAdapter {
 
     private final int menuShortcutMask;

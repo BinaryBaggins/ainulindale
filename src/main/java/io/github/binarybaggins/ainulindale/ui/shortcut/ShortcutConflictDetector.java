@@ -20,6 +20,8 @@ public final class ShortcutConflictDetector {
 
     /**
      * Constructs a new shortcut conflict detector.
+     * This detector uses the provided shortcut manager to check for conflicts
+     * between the shortcuts of different actions defined in the given action catalog.
      *
      * @param shortcutManager the shortcut manager to use for detecting conflicts
      * @param catalog the action catalog containing action definitions to consider for conflicts
