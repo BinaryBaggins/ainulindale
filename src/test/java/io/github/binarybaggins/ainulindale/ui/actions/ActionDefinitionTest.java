@@ -8,6 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
+import io.github.binarybaggins.ainulindale.ui.shortcut.Key;
+import io.github.binarybaggins.ainulindale.ui.shortcut.Modifier;
+import io.github.binarybaggins.ainulindale.ui.shortcut.Shortcut;
+
 class ActionDefinitionTest {
 
     @Test

@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.shortcut;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -7,6 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.binarybaggins.ainulindale.settings.Settings;
 import io.github.binarybaggins.ainulindale.settings.store.InMemorySettingsStore;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionCatalog;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionDefinition;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionId;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionScope;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;

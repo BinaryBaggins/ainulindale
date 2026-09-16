@@ -1,10 +1,12 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.swing;
 
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.util.Objects;
 import javax.swing.KeyStroke;
+
+import io.github.binarybaggins.ainulindale.ui.shortcut.Shortcut;
 
 final class ShortcutKeyStrokeMapper {
 

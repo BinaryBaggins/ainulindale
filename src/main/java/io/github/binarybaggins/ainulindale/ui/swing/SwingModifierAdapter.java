@@ -1,7 +1,9 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.swing;
 
 import java.awt.event.InputEvent;
 import java.util.Set;
+
+import io.github.binarybaggins.ainulindale.ui.shortcut.Modifier;
 
 final class SwingModifierAdapter {
 

@@ -1,7 +1,9 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.swing;
 
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.ResultError;
+import io.github.binarybaggins.ainulindale.ui.shortcut.Key;
+
 import java.awt.event.KeyEvent;
 import java.util.EnumMap;
 import java.util.HashMap;

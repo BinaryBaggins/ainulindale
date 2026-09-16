@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.shortcut;
 
 import io.github.binarybaggins.ainulindale.settings.SettingConverter;
 import java.util.EnumSet;

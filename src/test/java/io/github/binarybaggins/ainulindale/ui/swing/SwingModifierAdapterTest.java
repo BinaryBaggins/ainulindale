@@ -1,7 +1,8 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.github.binarybaggins.ainulindale.ui.shortcut.Modifier;
 import java.awt.event.InputEvent;
 import java.util.Set;
 import org.junit.jupiter.api.Test;

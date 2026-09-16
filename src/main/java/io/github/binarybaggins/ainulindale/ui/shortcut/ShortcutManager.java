@@ -1,7 +1,11 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.shortcut;
 
 import io.github.binarybaggins.ainulindale.settings.SettingKey;
 import io.github.binarybaggins.ainulindale.settings.Settings;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionCatalog;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionDefinition;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionId;
+
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;

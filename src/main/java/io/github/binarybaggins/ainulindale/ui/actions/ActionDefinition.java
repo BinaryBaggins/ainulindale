@@ -3,6 +3,8 @@ package io.github.binarybaggins.ainulindale.ui.actions;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.github.binarybaggins.ainulindale.ui.shortcut.Shortcut;
+
 /**
  * A record representing the definition of an action, including its ID, scope, name, description, and optional default shortcut.
  */

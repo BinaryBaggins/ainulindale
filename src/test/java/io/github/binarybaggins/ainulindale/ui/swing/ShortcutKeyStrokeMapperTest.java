@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -7,6 +7,10 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.KeyStroke;
 import org.junit.jupiter.api.Test;
+
+import io.github.binarybaggins.ainulindale.ui.shortcut.Key;
+import io.github.binarybaggins.ainulindale.ui.shortcut.Modifier;
+import io.github.binarybaggins.ainulindale.ui.shortcut.Shortcut;
 
 public class ShortcutKeyStrokeMapperTest {
 

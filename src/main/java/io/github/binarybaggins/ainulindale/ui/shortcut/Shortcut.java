@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.shortcut;
 
 import java.util.Objects;
 import java.util.Set;

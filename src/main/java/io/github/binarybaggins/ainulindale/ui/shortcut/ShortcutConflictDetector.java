@@ -1,10 +1,14 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.shortcut;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import io.github.binarybaggins.ainulindale.ui.actions.ActionCatalog;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionDefinition;
+import io.github.binarybaggins.ainulindale.ui.actions.ActionId;
 
 /**
  * Detects conflicts between keyboard shortcuts for different actions.

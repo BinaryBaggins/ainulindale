@@ -1,6 +1,5 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.components;
 
-import io.github.binarybaggins.ainulindale.ui.components.NoteGridPanel;
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;

@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
+import io.github.binarybaggins.ainulindale.ui.shortcut.Key;
+import io.github.binarybaggins.ainulindale.ui.shortcut.Shortcut;
+
 public class ActionCatalogTest {
 
     private static final Shortcut DELETE = Shortcut.of(Key.DELETE);

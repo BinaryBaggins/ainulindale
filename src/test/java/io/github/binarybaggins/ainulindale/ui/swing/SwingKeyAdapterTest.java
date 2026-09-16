@@ -1,10 +1,12 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.ResultError;
+import io.github.binarybaggins.ainulindale.ui.shortcut.Key;
+
 import java.awt.event.KeyEvent;
 import org.junit.jupiter.api.Test;
 

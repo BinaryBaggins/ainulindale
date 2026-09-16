@@ -5,7 +5,6 @@ import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
 import io.github.binarybaggins.ainulindale.ui.actions.NoteEditorKeyBindings;
-import io.github.binarybaggins.ainulindale.ui.actions.NoteGridMouseListener;
 import io.github.binarybaggins.ainulindale.interaction.GroupMoveResolver;
 import io.github.binarybaggins.ainulindale.interaction.NoteDragState;
 import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
