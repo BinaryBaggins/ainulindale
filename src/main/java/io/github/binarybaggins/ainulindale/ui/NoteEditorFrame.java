@@ -13,9 +13,9 @@ public class NoteEditorFrame extends JFrame {
     public NoteEditorFrame(EditorWorkspace workspace, NoteGridActionInstaller actionInstaller) {
         editorPanel = new NoteEditorPanel(workspace, actionInstaller);
 
-        setTitle("Ainulindale Note Editor");
+        setTitle("Ainulindale");
         setContentPane(editorPanel);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // later change to DISPOSE_ON_CLOSE
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
