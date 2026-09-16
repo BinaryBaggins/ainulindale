@@ -1,7 +1,8 @@
 package io.github.binarybaggins.ainulindale.ui;
 
-import javax.swing.JFrame;
+import io.github.binarybaggins.ainulindale.ui.swing.NoteGridActionInstaller;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
+import javax.swing.JFrame;
 
 public class NoteEditorFrame extends JFrame {
 
@@ -9,12 +10,12 @@ public class NoteEditorFrame extends JFrame {
 
     private final NoteEditorPanel editorPanel;
 
-    public NoteEditorFrame(EditorWorkspace workspace) {
-        editorPanel = new NoteEditorPanel(workspace);
+    public NoteEditorFrame(EditorWorkspace workspace, NoteGridActionInstaller actionInstaller) {
+        editorPanel = new NoteEditorPanel(workspace, actionInstaller);
 
-        setTitle("Maestro Note Editor");
+        setTitle("Ainulindalë");
         setContentPane(editorPanel);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // later change to DISPOSE_ON_CLOSE
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
     }

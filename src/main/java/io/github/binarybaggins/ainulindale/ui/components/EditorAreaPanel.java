@@ -3,6 +3,7 @@ package io.github.binarybaggins.ainulindale.ui.components;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
 import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
+import io.github.binarybaggins.ainulindale.ui.swing.NoteGridActionInstaller;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -26,7 +27,7 @@ public class EditorAreaPanel extends JPanel {
     private JScrollPane mainScrollPane;
     private JScrollBar horizontalScrollBar;
 
-    public EditorAreaPanel(EditorWorkspace workspace) {
+    public EditorAreaPanel(EditorWorkspace workspace, NoteGridActionInstaller actionInstaller) {
         TrackEditorModel model = workspace
             .getActiveTrackEditor()
             .orElseThrow(() -> new IllegalStateException("No active track in the workspace"));
@@ -34,6 +35,7 @@ public class EditorAreaPanel extends JPanel {
         viewState = new NoteEditorViewState();
         pianoPanel = new PianoPanel();
         noteGridPanel = new NoteGridPanel(viewState, model);
+        actionInstaller.install(noteGridPanel);
         timelinePanel = new TimelinePanel(viewState);
         timelineControlPanel = new TimelineControlPanel();
 

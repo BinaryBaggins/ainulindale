@@ -2,6 +2,7 @@ package io.github.binarybaggins.ainulindale.ui;
 
 import io.github.binarybaggins.ainulindale.ui.components.EditorAreaPanel;
 import io.github.binarybaggins.ainulindale.ui.components.ToolbarPanel;
+import io.github.binarybaggins.ainulindale.ui.swing.NoteGridActionInstaller;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
@@ -13,9 +14,9 @@ public class NoteEditorPanel extends JPanel {
     private final ToolbarPanel toolbarPanel;
     private final EditorAreaPanel editorAreaPanel;
 
-    public NoteEditorPanel(EditorWorkspace workspace) {
+    public NoteEditorPanel(EditorWorkspace workspace, NoteGridActionInstaller actionInstaller) {
         toolbarPanel = new ToolbarPanel();
-        editorAreaPanel = new EditorAreaPanel(workspace);
+        editorAreaPanel = new EditorAreaPanel(workspace, actionInstaller);
 
         setLayout(new BorderLayout());
 
