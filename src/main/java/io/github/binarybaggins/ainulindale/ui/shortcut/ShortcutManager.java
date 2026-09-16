@@ -5,14 +5,18 @@ import io.github.binarybaggins.ainulindale.settings.Settings;
 import io.github.binarybaggins.ainulindale.ui.actions.ActionCatalog;
 import io.github.binarybaggins.ainulindale.ui.actions.ActionDefinition;
 import io.github.binarybaggins.ainulindale.ui.actions.ActionId;
-
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Manages keyboard shortcuts for actions, including retrieving, setting, and disabling shortcuts. Only ShortcutOverrides are stored in the settings. Defaults are defined in the action definitions.
+ * Manages keyboard shortcuts for actions.
+ *
+ * <p>Action definitions provide defaults; only explicit
+ * {@link ShortcutOverride shortcut overrides} are stored in settings. An
+ * override may replace the default with another shortcut or explicitly disable
+ * the action. Removing the override restores the definition's default.</p>
  */
 public final class ShortcutManager {
 
@@ -51,10 +55,17 @@ public final class ShortcutManager {
     }
 
     /**
-     * Retrieves the effective shortcut for the given action id, considering any overrides.
+     * Retrieves the effective shortcut for the given action ID.
      *
-     * @param id the action id
-     * @return an Optional containing the effective shortcut, or empty if none is set
+     * <p>An explicit override takes precedence over the action definition's
+     * default. An explicitly disabled override produces an empty result, as
+     * does an action with neither an override nor a default shortcut.</p>
+     *
+     * @param id the action ID
+     * @return an optional containing the effective shortcut, or empty if the
+     *         action is disabled or has no shortcut
+     * @throws NullPointerException if {@code id} is null
+     * @throws IllegalArgumentException if no definition exists for {@code id}
      */
     public Optional<Shortcut> getShortcut(ActionId id) {
         ActionDefinition definition = requireDefinition(id);
@@ -70,10 +81,13 @@ public final class ShortcutManager {
     }
 
     /**
-     * Checks if there is an override for the given action id.
+     * Checks whether an explicit override is stored for the given action ID.
+     * A disabled override counts as an override.
      *
-     * @param id the action id
+     * @param id the action ID
      * @return true if an override exists, false otherwise
+     * @throws NullPointerException if {@code id} is null
+     * @throws IllegalArgumentException if no definition exists for {@code id}
      */
     public boolean hasOverride(ActionId id) {
         requireDefinition(id);
@@ -81,10 +95,12 @@ public final class ShortcutManager {
     }
 
     /**
-     * Sets the shortcut for the given action id.
+     * Stores an explicit shortcut override for the given action ID.
      *
-     * @param id the action id
-     * @param shortcut the new shortcut
+     * @param id the action ID
+     * @param shortcut the shortcut to use instead of the default
+     * @throws NullPointerException if {@code id} or {@code shortcut} is null
+     * @throws IllegalArgumentException if no definition exists for {@code id}
      */
     public void setShortcut(ActionId id, Shortcut shortcut) {
         requireDefinition(id);
@@ -92,9 +108,11 @@ public final class ShortcutManager {
     }
 
     /**
-     * Disables the shortcut for the given action id.
+     * Stores an explicit disabled override for the given action ID.
      *
-     * @param id the action id
+     * @param id the action ID
+     * @throws NullPointerException if {@code id} is null
+     * @throws IllegalArgumentException if no definition exists for {@code id}
      */
     public void disableShortcut(ActionId id) {
         requireDefinition(id);
@@ -102,9 +120,12 @@ public final class ShortcutManager {
     }
 
     /**
-     * Resets the shortcut for the given action id to its default value.
+     * Removes the explicit override for the given action ID, restoring its
+     * action definition's default shortcut.
      *
-     * @param id the action id
+     * @param id the action ID
+     * @throws NullPointerException if {@code id} is null
+     * @throws IllegalArgumentException if no definition exists for {@code id}
      */
     public void resetShortcut(ActionId id) {
         requireDefinition(id);

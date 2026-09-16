@@ -6,6 +6,16 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
+/**
+ * Provides localized messages from a resource bundle managed by a
+ * {@link LocaleManager}.
+ *
+ * <p>The instance registers a locale-change listener and automatically reloads
+ * its bundle when the active locale changes. It must be closed when no longer
+ * needed so that listener can be removed. Missing bundles or message keys are
+ * reported by the underlying {@link ResourceBundle}; formatting uses the
+ * locale currently reported by the locale manager.</p>
+ */
 public final class I18n implements AutoCloseable {
 
     private static final String DEFAULT_BASE_NAME = "io.github.binarybaggins.ainulindale.i18n.messages";
@@ -56,7 +66,8 @@ public final class I18n implements AutoCloseable {
      * Retrieves the message for the specified key from the resource bundle.
      * @param key the key of the message to retrieve
      * @return the message for the specified key
-     * @throws NullPointerException if key is null
+     * @throws NullPointerException if {@code key} is null
+     * @throws java.util.MissingResourceException if the bundle or key is missing
      */
     public String get(String key) {
         Objects.requireNonNull(key, "key must not be null");
@@ -69,7 +80,8 @@ public final class I18n implements AutoCloseable {
      * @param key the key of the message pattern
      * @param arguments the arguments to format the message with
      * @return the formatted message
-     * @throws NullPointerException if arguments is null
+     * @throws NullPointerException if {@code key} or {@code arguments} is null
+     * @throws java.util.MissingResourceException if the bundle or key is missing
      */
     public String format(String key, Object... arguments) {
         Objects.requireNonNull(arguments, "arguments must not be null");

@@ -8,6 +8,11 @@ import java.util.StringJoiner;
 /**
  * Converts shortcut overrides to and from their persisted representation.
  *
+ * <p>A shortcut is serialized as an optional sequence of modifier names,
+ * followed by the key name, with components separated by {@code +}. Modifier
+ * order follows the {@link Modifier} enum declaration. {@code NONE} represents
+ * an explicitly disabled override.
+ *
  * <p>Examples:
  *
  * <pre>
@@ -56,7 +61,9 @@ public class ShortcutOverrideConverter implements SettingConverter<ShortcutOverr
      *
      * @param value the persisted shortcut override string
      * @return the corresponding {@link ShortcutOverride} object
-     * @throws IllegalArgumentException if the input string is invalid
+     * @throws NullPointerException if {@code value} is null
+     * @throws IllegalArgumentException if the value is blank, contains an
+     *         unknown key or modifier, or contains a duplicate modifier
      */
     @Override
     public ShortcutOverride deserialize(String value) {

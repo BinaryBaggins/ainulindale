@@ -3,7 +3,7 @@ package io.github.binarybaggins.ainulindale.settings;
 import java.util.Objects;
 
 /**
- * A class that provides access to application settings.
+ * Provides access to application settings through a backing store.
  */
 public final class Settings {
 
@@ -42,6 +42,8 @@ public final class Settings {
 
     /**
      * Sets the value associated with the specified key.
+     * A {@code null} value removes the stored value. A key's default is used
+     * when reading an absent value, but is not persisted automatically.
      *
      * @param key   the setting key
      * @param value the value to set
@@ -68,10 +70,9 @@ public final class Settings {
     }
 
     /**
-     * Flushes any changes to the underlying storage.
+     * Flushes any changes by delegating durability to the underlying store.
      */
     public void flush() {
         store.flush();
     }
-
 }

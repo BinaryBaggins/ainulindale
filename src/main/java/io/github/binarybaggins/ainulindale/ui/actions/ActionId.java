@@ -1,5 +1,12 @@
 package io.github.binarybaggins.ainulindale.ui.actions;
 
+/**
+ * Stable identifiers for application actions.
+ *
+ * <p>Each persistent ID is used as part of persisted settings keys. Once an
+ * ID has been released, it must not be changed; renaming an enum constant does
+ * not change its persistent ID.</p>
+ */
 public enum ActionId {
     NOTE_DELETE("note.delete"),
     NOTE_UNDO("note.undo"),
@@ -17,6 +24,11 @@ public enum ActionId {
         this.persistentId = persistentId;
     }
 
+    /**
+     * Returns the stable identifier used when action-related settings are persisted.
+     *
+     * @return the persistent action identifier
+     */
     public String persistentId() {
         return persistentId;
     }

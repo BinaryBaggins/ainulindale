@@ -9,6 +9,19 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * Manages the application's supported locale and its persisted preference.
+ *
+ * <p>A stored locale takes precedence over the system locale. When no locale
+ * is stored, the system locale is mapped to a supported locale. Calling
+ * {@link #setLocale(Locale)} stores an explicit preference; calling
+ * {@link #useSystemLocale()} removes that preference and follows the current
+ * system locale.</p>
+ *
+ * <p>Registered listeners are notified when the effective locale changes. A
+ * locale update that does not change the effective locale produces no
+ * notification.</p>
+ */
 public final class LocaleManager {
 
     private final Supplier<Locale> systemLocaleSupplier;
@@ -48,8 +61,9 @@ public final class LocaleManager {
     }
 
     /**
-     * Adds a listener that will be notified whenever the locale changes.
+     * Adds a listener that will be notified when the effective locale changes.
      * @param listener the listener to add
+     * @throws NullPointerException if {@code listener} is null
      */
     public void addLocaleChangeListener(Consumer<Locale> listener) {
         localeChangeListeners.add(Objects.requireNonNull(listener, "listener must not be null"));
@@ -58,6 +72,7 @@ public final class LocaleManager {
     /**
      * Removes a previously added locale change listener.
      * @param listener the listener to remove
+     * @throws NullPointerException if {@code listener} is null
      */
     public void removeLocaleChangeListener(Consumer<Locale> listener) {
         localeChangeListeners.remove(Objects.requireNonNull(listener, "listener must not be null"));
@@ -80,7 +95,7 @@ public final class LocaleManager {
     }
 
     /**
-     * Sets the currently active locale.
+     * Sets and persists the currently active locale as an explicit preference.
      * @param locale the locale to set
      * @throws NullPointerException if the locale is null
      * @throws IllegalArgumentException if the locale is not supported
@@ -93,7 +108,7 @@ public final class LocaleManager {
     }
 
     /**
-     * Switches to using the system locale.
+     * Removes the stored locale preference and switches to the current system locale.
      */
     public void useSystemLocale() {
         settings.remove(ApplicationSettingKeys.LOCALE);
