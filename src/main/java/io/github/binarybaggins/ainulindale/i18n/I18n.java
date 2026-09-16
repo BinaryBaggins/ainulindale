@@ -67,7 +67,7 @@ public final class I18n implements AutoCloseable {
      * @param key the key of the message to retrieve
      * @return the message for the specified key
      * @throws NullPointerException if {@code key} is null
-     * @throws java.util.MissingResourceException if the bundle or key is missing
+     * @throws java.util.MissingResourceException if the key is missing
      */
     public String get(String key) {
         Objects.requireNonNull(key, "key must not be null");
@@ -81,7 +81,7 @@ public final class I18n implements AutoCloseable {
      * @param arguments the arguments to format the message with
      * @return the formatted message
      * @throws NullPointerException if {@code key} or {@code arguments} is null
-     * @throws java.util.MissingResourceException if the bundle or key is missing
+     * @throws java.util.MissingResourceException if the key is missing
      */
     public String format(String key, Object... arguments) {
         Objects.requireNonNull(arguments, "arguments must not be null");
