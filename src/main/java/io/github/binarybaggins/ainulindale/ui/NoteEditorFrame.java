@@ -13,7 +13,7 @@ public class NoteEditorFrame extends JFrame {
     public NoteEditorFrame(EditorWorkspace workspace, NoteGridActionInstaller actionInstaller) {
         editorPanel = new NoteEditorPanel(workspace, actionInstaller);
 
-        setTitle("Ainulindale");
+        setTitle("Ainulindalë");
         setContentPane(editorPanel);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
