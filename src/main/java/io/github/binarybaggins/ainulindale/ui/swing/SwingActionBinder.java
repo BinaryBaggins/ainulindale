@@ -12,6 +12,10 @@ import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
 
+/**
+ * Binds Swing actions to components using the specified action catalog, action registry,
+ * shortcut manager, and key stroke mapper.
+ */
 public class SwingActionBinder {
 
     private final ActionCatalog actionCatalog;
@@ -19,6 +23,16 @@ public class SwingActionBinder {
     private final ShortcutManager shortcutManager;
     private final ShortcutKeyStrokeMapper keyStrokeMapper;
 
+    /**
+     * Constructs a new SwingActionBinder with the specified action catalog, action registry,
+     * shortcut manager, and key stroke mapper.
+     *
+     * @param actionCatalog the action catalog
+     * @param actionRegistry the action registry
+     * @param shortcutManager the shortcut manager
+     * @param keyStrokeMapper the key stroke mapper
+     * @throws NullPointerException if any of the parameters are null
+     */
     SwingActionBinder(
         ActionCatalog actionCatalog,
         ActionRegistry actionRegistry,
