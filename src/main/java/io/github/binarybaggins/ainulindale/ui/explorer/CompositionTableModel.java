@@ -11,8 +11,8 @@ import javax.swing.table.AbstractTableModel;
 
 final class CompositionTableModel extends AbstractTableModel {
 
-    private static final int VISIBILITY_COLUMN = 0;
-    private static final int NAME_COLUMN = 1;
+    static final int VISIBILITY_COLUMN = 0;
+    static final int NAME_COLUMN = 1;
 
     private final EditorWorkspace workspace;
 

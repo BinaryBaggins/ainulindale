@@ -6,12 +6,12 @@ import io.github.binarybaggins.ainulindale.ui.actions.ActionRegistry;
 import io.github.binarybaggins.ainulindale.ui.explorer.CompositionExplorer;
 import io.github.binarybaggins.ainulindale.ui.shortcut.ShortcutManager;
 import io.github.binarybaggins.ainulindale.ui.swing.action.TrackAddAction;
+import io.github.binarybaggins.ainulindale.ui.swing.action.TrackMoveDownAction;
+import io.github.binarybaggins.ainulindale.ui.swing.action.TrackMoveUpAction;
 import io.github.binarybaggins.ainulindale.ui.swing.action.TrackRemoveAction;
 import io.github.binarybaggins.ainulindale.ui.swing.action.TrackRenameAction;
-import io.github.binarybaggins.ainulindale.ui.swing.action.TrackMoveUpAction;
-import io.github.binarybaggins.ainulindale.ui.swing.action.TrackMoveDownAction;
-
 import java.util.Objects;
+import javax.swing.JComponent;
 
 public final class CompositionExplorerActionInstaller {
 
@@ -34,10 +34,12 @@ public final class CompositionExplorerActionInstaller {
         registry.register(ActionId.TRACK_MOVE_UP, new TrackMoveUpAction(compositionExplorer));
         registry.register(ActionId.TRACK_MOVE_DOWN, new TrackMoveDownAction(compositionExplorer));
 
-        binder.bind(compositionExplorer, ActionId.TRACK_ADD);
-        binder.bind(compositionExplorer, ActionId.TRACK_REMOVE);
-        binder.bind(compositionExplorer, ActionId.TRACK_RENAME);
-        binder.bind(compositionExplorer, ActionId.TRACK_MOVE_UP);
-        binder.bind(compositionExplorer, ActionId.TRACK_MOVE_DOWN);
+        JComponent bindingTarget = compositionExplorer.getActionBindingTarget();
+
+        binder.bind(bindingTarget, ActionId.TRACK_ADD);
+        binder.bind(bindingTarget, ActionId.TRACK_REMOVE);
+        binder.bind(bindingTarget, ActionId.TRACK_RENAME);
+        binder.bind(bindingTarget, ActionId.TRACK_MOVE_UP);
+        binder.bind(bindingTarget, ActionId.TRACK_MOVE_DOWN);
     }
 }

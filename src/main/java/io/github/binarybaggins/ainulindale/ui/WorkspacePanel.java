@@ -25,6 +25,7 @@ public class WorkspacePanel extends JPanel {
         editorToolbar = new EditorToolbar();
         pianoRollPanel = new PianoRollPanel(actionInstaller);
         compositionExplorer = new CompositionExplorer(workspace);
+        compositionExplorerActionInstaller.install(compositionExplorer);
         projectExplorer = new ProjectExplorer();
 
         syncActiveTrackEditor(workspace);
