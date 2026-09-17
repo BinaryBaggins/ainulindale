@@ -7,6 +7,8 @@ import io.github.binarybaggins.ainulindale.ui.toolbar.EditorToolbar;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
+
+import io.github.binarybaggins.ainulindale.ui.swing.CompositionExplorerActionInstaller;
 import io.github.binarybaggins.ainulindale.ui.swing.NoteGridActionInstaller;
 import javax.swing.JTabbedPane;
 
@@ -19,7 +21,7 @@ public class WorkspacePanel extends JPanel {
     private final CompositionExplorer compositionExplorer;
     private final ProjectExplorer projectExplorer;
 
-    public WorkspacePanel(EditorWorkspace workspace, NoteGridActionInstaller actionInstaller) {
+    public WorkspacePanel(EditorWorkspace workspace, NoteGridActionInstaller actionInstaller, CompositionExplorerActionInstaller compositionExplorerActionInstaller) {
         editorToolbar = new EditorToolbar();
         pianoRollPanel = new PianoRollPanel(actionInstaller);
         compositionExplorer = new CompositionExplorer(workspace);

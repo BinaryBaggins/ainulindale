@@ -4,12 +4,13 @@ import io.github.binarybaggins.ainulindale.demo.DemoTrackGenerator;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.settings.Settings;
 import io.github.binarybaggins.ainulindale.settings.store.PreferencesSettingsStore;
+import io.github.binarybaggins.ainulindale.ui.AinulindaleFrame;
 import io.github.binarybaggins.ainulindale.ui.actions.ActionCatalog;
 import io.github.binarybaggins.ainulindale.ui.actions.ActionRegistry;
 import io.github.binarybaggins.ainulindale.ui.actions.ApplicationActionCatalog;
 import io.github.binarybaggins.ainulindale.ui.shortcut.ShortcutManager;
+import io.github.binarybaggins.ainulindale.ui.swing.CompositionExplorerActionInstaller;
 import io.github.binarybaggins.ainulindale.ui.swing.NoteGridActionInstaller;
-import io.github.binarybaggins.ainulindale.ui.AinulindaleFrame;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.util.prefs.Preferences;
 
@@ -49,7 +50,12 @@ public class Ainulindale {
                         shortcutManager
                     );
 
-                    new AinulindaleFrame(workspace, actionInstaller).setVisible(true);
+                    CompositionExplorerActionInstaller compositionExplorerActionInstaller =
+                        new CompositionExplorerActionInstaller(actionCatalog, actionRegistry, shortcutManager);
+
+                    new AinulindaleFrame(workspace, actionInstaller, compositionExplorerActionInstaller).setVisible(
+                        true
+                    );
                 }
             }
         );
