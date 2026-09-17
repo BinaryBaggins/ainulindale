@@ -1,6 +1,7 @@
 package io.github.binarybaggins.ainulindale.ui;
 
 import javax.swing.JFrame;
+import io.github.binarybaggins.ainulindale.ui.swing.NoteGridActionInstaller;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 
 public class AinulindaleFrame extends JFrame {
@@ -9,8 +10,8 @@ public class AinulindaleFrame extends JFrame {
 
     private final WorkspacePanel workspacePanel;
 
-    public AinulindaleFrame(EditorWorkspace workspace) {
-        workspacePanel = new WorkspacePanel(workspace);
+    public AinulindaleFrame(EditorWorkspace workspace, NoteGridActionInstaller actionInstaller) {
+        workspacePanel = new WorkspacePanel(workspace, actionInstaller);
 
         setTitle("Ainulindalë");
         setContentPane(workspacePanel);

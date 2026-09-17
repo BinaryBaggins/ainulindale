@@ -9,8 +9,6 @@ import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
-import io.github.binarybaggins.ainulindale.ui.actions.NoteGridPanelKeyBindings;
-import io.github.binarybaggins.ainulindale.ui.actions.NoteGridPanelMouseListener;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -50,8 +48,6 @@ public class NoteGridPanel extends JPanel {
         NoteGridPanelMouseListener mouseListener = new NoteGridPanelMouseListener(this);
         addMouseListener(mouseListener);
         addMouseMotionListener(mouseListener);
-
-        NoteGridPanelKeyBindings.install(this);
 
         setFocusable(true);
     }

@@ -1,11 +1,9 @@
-package io.github.binarybaggins.ainulindale.ui.actions;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
-import io.github.binarybaggins.ainulindale.ui.editor.NoteGridPanel;
 
 public class NoteGridPanelMouseListener extends MouseAdapter {
 

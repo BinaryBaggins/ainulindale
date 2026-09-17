@@ -1,5 +1,5 @@
 package io.github.binarybaggins.ainulindale.ui.editor;
-
+import io.github.binarybaggins.ainulindale.ui.swing.NoteGridActionInstaller;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 
 import java.awt.BorderLayout;
@@ -24,13 +24,13 @@ public class PianoRollPanel extends JPanel {
     private JScrollPane mainScrollPane;
     private JScrollBar horizontalScrollBar;
 
-    public PianoRollPanel() {
+    public PianoRollPanel(NoteGridActionInstaller actionInstaller) {
         viewState = new NoteEditorViewState();
         pianoKeyboardPanel = new PianoKeyboardPanel();
         noteGridPanel = new NoteGridPanel(viewState);
         timelineRuler = new TimelineRuler(viewState);
         timelineControls = new TimelineControls();
-
+        actionInstaller.install(noteGridPanel);
         mainScrollPane = new JScrollPane(
             noteGridPanel,
             JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
