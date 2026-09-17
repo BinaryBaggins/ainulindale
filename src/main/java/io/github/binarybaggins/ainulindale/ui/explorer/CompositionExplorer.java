@@ -6,8 +6,11 @@ import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.workspace.EditorWorkspace;
 import java.awt.BorderLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -24,15 +27,14 @@ public class CompositionExplorer extends JPanel {
     private final CompositionTableModel tableModel;
     private final JTable trackTable;
 
-    private boolean activatingTrackFromSelection;
+    private boolean refreshing;
+    private EditorTrack selectedTrack;
 
     /**
      * Creates a new CompositionExplorer for the given workspace.
      * @param workspace the editor workspace
      */
     public CompositionExplorer(EditorWorkspace workspace) {
-        Objects.requireNonNull(workspace);
-
         this.workspace = Objects.requireNonNull(workspace);
         tableModel = new CompositionTableModel(this.workspace);
         trackTable = new JTable(tableModel);
@@ -47,60 +49,65 @@ public class CompositionExplorer extends JPanel {
         setLayout(new BorderLayout());
         add(new JScrollPane(trackTable), BorderLayout.CENTER);
 
-        workspace.addListener(() -> {
-            // If a track is being activated from the selection, only sync the selection.
-            if (activatingTrackFromSelection) {
-                syncSelection();
-            } else {
-                // Otherwise, refresh the entire table.
-                refresh();
-            }
-        });
+        workspace.addListener(this::refresh);
 
         trackTable.getSelectionModel().addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting()) {
+            if (e.getValueIsAdjusting() || refreshing) {
                 return;
             }
 
             int row = trackTable.getSelectedRow();
+
             if (row < 0) {
+                selectedTrack = null;
                 return;
             }
 
-            EditorTrack track = workspace.getTracks().get(row);
-
-            activatingTrackFromSelection = true;
-            try {
-                Result<Unit> result = workspace.setActiveTrack(track);
-
-                if (result instanceof Failure<?>) {
-                    syncSelection();
-                }
-            } finally {
-                activatingTrackFromSelection = false;
-            }
+            selectedTrack = workspace.getTracks().get(row);
         });
+
+        trackTable.addMouseListener(
+            new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (e.getClickCount() != 1) {
+                        return;
+                    }
+
+                    int row = trackTable.rowAtPoint(e.getPoint());
+                    int column = trackTable.columnAtPoint(e.getPoint());
+
+                    if (row < 0 || column != CompositionTableModel.NAME_COLUMN) {
+                        return;
+                    }
+
+                    EditorTrack track = workspace.getTracks().get(row);
+                    workspace.setActiveTrack(track);
+                }
+            }
+        );
 
         refresh();
     }
 
     private void refresh() {
-        tableModel.refresh();
-        syncSelection();
-    }
+        refreshing = true;
 
-    private void syncSelection() {
-        var activeTrack = workspace.getActiveTrack();
+        try {
+            tableModel.refresh();
 
-        if (activeTrack.isEmpty()) {
+            if (selectedTrack != null) {
+                int row = workspace.getTracks().indexOf(selectedTrack);
+
+                if (row >= 0) {
+                    trackTable.setRowSelectionInterval(row, row);
+                    return;
+                }
+            }
+
             trackTable.clearSelection();
-            return;
-        }
-
-        int row = workspace.getTracks().indexOf(activeTrack.get());
-
-        if (row >= 0) {
-            trackTable.setRowSelectionInterval(row, row);
+        } finally {
+            refreshing = false;
         }
     }
 
@@ -117,10 +124,20 @@ public class CompositionExplorer extends JPanel {
     }
 
     /**
+     *  Returns the currently selected track, if any.
+     * @return an Optional containing the selected track, or empty if no track is selected
+     */
+    private Optional<EditorTrack> getSelectedTrack() {
+        return Optional.ofNullable(selectedTrack);
+    }
+
+    /**
      * Renames the currently selected track.
      */
     public void renameTrack() {
-        int row = trackTable.getSelectedRow();
+        var selectedTrackOpt = getSelectedTrack();
+
+        int row = selectedTrackOpt.map(workspace.getTracks()::indexOf).orElse(-1);
 
         if (row < 0) {
             return;
@@ -135,13 +152,9 @@ public class CompositionExplorer extends JPanel {
         }
     }
 
-    /**
-     * Removes the currently selected track from the composition, updating the active track if necessary.
-     * If the removed track is the active track, a replacement track will be activated if available.
-     * If no replacement track is available, the active track will be cleared.
-     */
     public void removeTrack() {
-        int row = trackTable.getSelectedRow();
+        var selectedTrackOpt = getSelectedTrack();
+        int row = selectedTrackOpt.map(workspace.getTracks()::indexOf).orElse(-1);
 
         if (row < 0) {
             return;
@@ -160,7 +173,28 @@ public class CompositionExplorer extends JPanel {
             }
         }
 
-        workspace.removeTrack(track);
+        Result<Unit> result = workspace.removeTrack(track);
+
+        if (result instanceof Failure<?>) {
+            return;
+        }
+
+        selectNearestTrack(row);
+    }
+
+    private void selectNearestTrack(int formerRow) {
+        var tracks = workspace.getTracks();
+
+        if (tracks.isEmpty()) {
+            selectedTrack = null;
+            trackTable.clearSelection();
+            return;
+        }
+
+        int row = Math.min(formerRow, tracks.size() - 1);
+
+        selectedTrack = tracks.get(row);
+        trackTable.setRowSelectionInterval(row, row);
     }
 
     /**
@@ -208,7 +242,8 @@ public class CompositionExplorer extends JPanel {
     }
 
     private void moveSelectedTrackBy(int offset) {
-        int row = trackTable.getSelectedRow();
+        var selectedTrackOpt = getSelectedTrack();
+        int row = selectedTrackOpt.map(workspace.getTracks()::indexOf).orElse(-1);
 
         if (row < 0) {
             return;
@@ -236,6 +271,7 @@ public class CompositionExplorer extends JPanel {
             return;
         }
 
+        selectedTrack = track;
         workspace.setActiveTrack(track);
     }
 
