@@ -2,15 +2,16 @@ package io.github.binarybaggins.ainulindale.ui.swing.action;
 
 import io.github.binarybaggins.ainulindale.ui.explorer.CompositionExplorer;
 import java.awt.event.ActionEvent;
+import java.util.Objects;
 import javax.swing.AbstractAction;
 
-public class TrackAddAction extends AbstractAction {
+public final class TrackAddAction extends AbstractAction {
 
     private static final long serialVersionUID = 1L;
     private final CompositionExplorer compositionExplorer;
 
     public TrackAddAction(CompositionExplorer compositionExplorer) {
-        this.compositionExplorer = compositionExplorer;
+        this.compositionExplorer = Objects.requireNonNull(compositionExplorer);
     }
 
     @Override
