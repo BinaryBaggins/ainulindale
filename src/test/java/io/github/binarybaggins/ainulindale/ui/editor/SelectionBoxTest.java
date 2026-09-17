@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

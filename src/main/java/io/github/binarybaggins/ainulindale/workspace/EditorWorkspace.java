@@ -41,7 +41,74 @@ public final class EditorWorkspace {
     private final List<TrackEntry> trackEntries = new ArrayList<>();
     private TrackEntry activeTrackEntry;
 
+    private final List<EditorWorkspaceListener> listeners = new ArrayList<>();
+
     public EditorWorkspace() {}
+
+    public void addListener(EditorWorkspaceListener listener) {
+        listeners.add(Objects.requireNonNull(listener));
+    }
+
+    public void removeListener(EditorWorkspaceListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notifyListeners() {
+        for (EditorWorkspaceListener listener : List.copyOf(listeners)) {
+            listener.workspaceChanged();
+        }
+    }
+
+    /**
+     * Renames the specified track within the workspace.
+     * @param track the track to rename
+     * @param newName the new name for the track
+     * @return a Result indicating success or failure
+     */
+    public Result<Unit> renameTrack(EditorTrack track, String newName) {
+        Objects.requireNonNull(track);
+        Objects.requireNonNull(newName);
+
+        if (!containsTrack(track)) {
+            return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+        }
+
+        track.rename(newName);
+        notifyListeners();
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Moves a track to a new position within the workspace.
+     *
+     * @param track the track to move
+     * @param newIndex the new index for the track
+     * @return a Result indicating success or failure
+     */
+    public Result<Unit> moveTrack(EditorTrack track, int newIndex) {
+        Objects.requireNonNull(track);
+
+        int currentIndex = -1;
+        for (int i = 0; i < trackEntries.size(); i++) {
+            if (trackEntries.get(i).track == track) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex == -1) {
+            return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+        }
+
+        if (newIndex < 0 || newIndex >= trackEntries.size()) {
+            return Result.failure(WorkspaceErrors.INVALID_TRACK_INDEX);
+        }
+
+        TrackEntry entry = trackEntries.remove(currentIndex);
+        trackEntries.add(newIndex, entry);
+        notifyListeners();
+        return Result.success(Unit.INSTANCE);
+    }
 
     /**
      * Adds a track to the workspace.
@@ -57,7 +124,7 @@ public final class EditorWorkspace {
         }
 
         trackEntries.add(new TrackEntry(track, new TrackEditorModel(track), true));
-
+        notifyListeners();
         return Result.success(Unit.INSTANCE);
     }
 
@@ -69,17 +136,18 @@ public final class EditorWorkspace {
      */
     public Result<Unit> removeTrack(EditorTrack track) {
         Objects.requireNonNull(track);
-        for (int i = 0; i < trackEntries.size(); i++) {
-            TrackEntry entry = trackEntries.get(i);
-            if (entry.track == track) {
-                if (entry == activeTrackEntry) {
-                    return Result.failure(WorkspaceErrors.ACTIVE_TRACK_CANNOT_BE_REMOVED);
-                }
-                trackEntries.remove(i);
-                return Result.success(Unit.INSTANCE);
-            }
+        TrackEntry entry = findTrackEntry(track);
+        if (entry == null) {
+            return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
         }
-        return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+
+        if (entry == activeTrackEntry) {
+            return Result.failure(WorkspaceErrors.ACTIVE_TRACK_CANNOT_BE_REMOVED);
+        }
+
+        trackEntries.remove(entry);
+        notifyListeners();
+        return Result.success(Unit.INSTANCE);
     }
 
     /**
@@ -126,7 +194,11 @@ public final class EditorWorkspace {
      * Clears the active track in the workspace.
      */
     public void clearActiveTrack() {
+        if (activeTrackEntry == null) {
+            return;
+        }
         activeTrackEntry = null;
+        notifyListeners();
     }
 
     /**
@@ -137,16 +209,30 @@ public final class EditorWorkspace {
      */
     public Result<Unit> setActiveTrack(EditorTrack track) {
         Objects.requireNonNull(track);
-        for (TrackEntry entry : trackEntries) {
+
+        TrackEntry entry = findTrackEntry(track);
+        if (entry == null) {
+            return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+        }
+        if (!entry.visible) {
+            return Result.failure(WorkspaceErrors.TRACK_NOT_VISIBLE);
+        }
+        if (activeTrackEntry == entry) {
+            return Result.success(Unit.INSTANCE);
+        }
+        activeTrackEntry = entry;
+        notifyListeners();
+        return Result.success(Unit.INSTANCE);
+    }
+
+    private TrackEntry findTrackEntry(EditorTrack track) {
+        for (int i = 0; i < trackEntries.size(); i++) {
+            TrackEntry entry = trackEntries.get(i);
             if (entry.track == track) {
-                if (!entry.visible) {
-                    return Result.failure(WorkspaceErrors.TRACK_NOT_VISIBLE);
-                }
-                activeTrackEntry = entry;
-                return Result.success(Unit.INSTANCE);
+                return entry;
             }
         }
-        return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+        return null;
     }
 
     /**
@@ -157,10 +243,9 @@ public final class EditorWorkspace {
      */
     public Result<Boolean> isTrackVisible(EditorTrack track) {
         Objects.requireNonNull(track);
-        for (TrackEntry entry : trackEntries) {
-            if (entry.track == track) {
-                return Result.success(entry.visible);
-            }
+        TrackEntry entry = findTrackEntry(track);
+        if (entry != null) {
+            return Result.success(entry.visible);
         }
         return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
     }
@@ -187,15 +272,15 @@ public final class EditorWorkspace {
      */
     public Result<Unit> setTrackVisible(EditorTrack track, boolean visible) {
         Objects.requireNonNull(track);
-        for (TrackEntry entry : trackEntries) {
-            if (entry.track == track) {
-                if (!visible && entry == activeTrackEntry) {
-                    return Result.failure(WorkspaceErrors.ACTIVE_TRACK_CANNOT_BE_HIDDEN);
-                }
-                entry.visible = visible;
-                return Result.success(Unit.INSTANCE);
-            }
+        TrackEntry entry = findTrackEntry(track);
+        if (entry == null) {
+            return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
         }
-        return Result.failure(WorkspaceErrors.TRACK_NOT_FOUND);
+        if (!visible && entry == activeTrackEntry) {
+            return Result.failure(WorkspaceErrors.ACTIVE_TRACK_CANNOT_BE_HIDDEN);
+        }
+        entry.visible = visible;
+        notifyListeners();
+        return Result.success(Unit.INSTANCE);
     }
 }

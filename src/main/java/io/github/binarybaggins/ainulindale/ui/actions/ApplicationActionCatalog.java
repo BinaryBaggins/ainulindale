@@ -24,20 +24,56 @@ public final class ApplicationActionCatalog {
                     ActionScope.NOTE_GRID,
                     "action.note.undo.name",
                     "action.note.undo.description",
-                    Shortcut.of(
-                        Key.Z,
-                        Modifier.MENU
-                    )
+                    Shortcut.of(Key.Z, Modifier.MENU)
                 ),
                 new ActionDefinition(
                     ActionId.NOTE_REDO,
                     ActionScope.NOTE_GRID,
                     "action.note.redo.name",
                     "action.note.redo.description",
-                    Shortcut.of(
-                        Key.Y,
-                        Modifier.MENU
-                    )
+                    Shortcut.of(Key.Y, Modifier.MENU)
+                ),
+                new ActionDefinition(
+                    ActionId.TRACK_ADD,
+                    ActionScope.COMPOSITION_EXPLORER,
+                    "action.track.add.name",
+                    "action.track.add.description",
+                    Shortcut.of(Key.INSERT)
+                ),
+                new ActionDefinition(
+                    ActionId.TRACK_REMOVE,
+                    ActionScope.COMPOSITION_EXPLORER,
+                    "action.track.remove.name",
+                    "action.track.remove.description",
+                    Shortcut.of(Key.DELETE)
+                ),
+                new ActionDefinition(
+                    ActionId.TRACK_RENAME,
+                    ActionScope.COMPOSITION_EXPLORER,
+                    "action.track.rename.name",
+                    "action.track.rename.description",
+                    Shortcut.of(Key.F2)
+                ),
+                new ActionDefinition(
+                    ActionId.TRACK_ACTIVATE,
+                    ActionScope.COMPOSITION_EXPLORER,
+                    "action.track.activate.name",
+                    "action.track.activate.description",
+                    Shortcut.of(Key.ENTER)
+                ),
+                new ActionDefinition(
+                    ActionId.TRACK_MOVE_UP,
+                    ActionScope.COMPOSITION_EXPLORER,
+                    "action.track.move-up.name",
+                    "action.track.move-up.description",
+                    Shortcut.of(Key.UP, Modifier.ALT)
+                ),
+                new ActionDefinition(
+                    ActionId.TRACK_MOVE_DOWN,
+                    ActionScope.COMPOSITION_EXPLORER,
+                    "action.track.move-down.name",
+                    "action.track.move-down.description",
+                    Shortcut.of(Key.DOWN, Modifier.ALT)
                 )
             )
         );

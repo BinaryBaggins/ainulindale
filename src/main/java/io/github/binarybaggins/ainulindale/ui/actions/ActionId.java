@@ -15,6 +15,7 @@ public enum ActionId {
     TRACK_ADD("track.add"),
     TRACK_REMOVE("track.remove"),
     TRACK_RENAME("track.rename"),
+    TRACK_ACTIVATE("track.activate"),
     TRACK_MOVE_UP("track.move-up"),
     TRACK_MOVE_DOWN("track.move-down");
 

@@ -1,14 +1,13 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import io.github.binarybaggins.ainulindale.core.MidiConstraints;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import javax.swing.JPanel;
 
-public class PianoPanel extends JPanel {
+public class PianoKeyboardPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
@@ -18,7 +17,7 @@ public class PianoPanel extends JPanel {
 
     private static final double BLACK_KEY_WIDTH_RATIO = 0.65;
 
-    public PianoPanel() {
+    public PianoKeyboardPanel() {
         setPreferredSize(new Dimension(NoteEditorLayout.PIANO_WIDTH, NoteEditorLayout.EDITOR_HEIGHT));
     }
 

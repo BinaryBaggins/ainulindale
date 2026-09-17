@@ -3,7 +3,7 @@ package io.github.binarybaggins.ainulindale.ui.swing;
 import io.github.binarybaggins.ainulindale.ui.actions.ActionCatalog;
 import io.github.binarybaggins.ainulindale.ui.actions.ActionId;
 import io.github.binarybaggins.ainulindale.ui.actions.ActionRegistry;
-import io.github.binarybaggins.ainulindale.ui.components.NoteGridPanel;
+import io.github.binarybaggins.ainulindale.ui.editor.NoteGridPanel;
 import io.github.binarybaggins.ainulindale.ui.shortcut.ShortcutManager;
 import io.github.binarybaggins.ainulindale.ui.swing.action.DeleteSelectedNotesAction;
 import io.github.binarybaggins.ainulindale.ui.swing.action.RedoAction;

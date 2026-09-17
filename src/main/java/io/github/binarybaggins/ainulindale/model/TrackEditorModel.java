@@ -3,7 +3,6 @@ package io.github.binarybaggins.ainulindale.model;
 import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import io.github.binarybaggins.ainulindale.core.undo.UndoHistory;
 import io.github.binarybaggins.ainulindale.core.undo.UndoableAction;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -127,6 +126,14 @@ public final class TrackEditorModel {
             undoHistory.record(new NoteStateChangeAction(activeStartStates, endStates));
         }
 
+        activeStartStates = null;
+    }
+
+    public void cancelNoteStateChange() {
+        if (activeStartStates == null) {
+            throw new IllegalStateException("No note state change is active");
+        }
+        applyTargetStates(activeStartStates);
         activeStartStates = null;
     }
 

@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public class EditorTrack {
 
-    private final String name;
+    private String name;
     private final List<EditorNote> notes;
 
     public EditorTrack(String name) {
@@ -21,6 +21,12 @@ public class EditorTrack {
 
     public String getName() {
         return name;
+    }
+
+    // TODO: Track metadata mutations should go through EditorWorkspace.
+    // Visibility can be restricted further once package boundaries are refactored.
+    public void rename(String newName) {
+        this.name = Objects.requireNonNull(newName);
     }
 
     public List<EditorNote> getNotes() {

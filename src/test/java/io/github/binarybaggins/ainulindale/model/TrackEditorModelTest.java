@@ -840,6 +840,34 @@ public class TrackEditorModelTest {
         model.endNoteStateChange();
     }
 
+    @Test
+    public void cancelNoteStateChangeRestoresOriginalState() {
+        EditorNote note = new EditorNote(60, 1.0, 1.0);
+        model = createModel(note);
+
+        int originalMidiNote = note.getMidiNote();
+        double originalStartBeat = note.getStartBeat();
+
+        model.beginNoteStateChange(note);
+        model.moveNotes(List.of(note), 2, 4.0);
+        model.cancelNoteStateChange();
+
+        assertEquals(originalMidiNote, note.getMidiNote());
+        assertEquals(originalStartBeat, note.getStartBeat());
+    }
+
+    @Test
+    public void cancelNoteStateChangeDoesNotCreateUndoEntry() {
+        EditorNote note = new EditorNote(60, 1.0, 1.0);
+        model = createModel(note);
+
+        model.beginNoteStateChange(note);
+        model.moveNotes(List.of(note), 2, 4.0);
+        model.cancelNoteStateChange();
+
+        assertFalse(model.canUndo());
+    }
+
     private static TrackEditorModel createModel(EditorNote... notes) {
         return new TrackEditorModel(new EditorTrack("Test Track", List.of(notes)));
     }

@@ -1,10 +1,7 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
@@ -238,8 +235,10 @@ class NoteGridPanelTest {
     private static NoteGridPanel panel(EditorNote... notes) {
         EditorTrack track = new EditorTrack("Test Track", List.of(notes));
         TrackEditorModel model = new TrackEditorModel(track);
+        NoteGridPanel panel = new NoteGridPanel(new NoteEditorViewState());
+        panel.setModel(model);
 
-        return new NoteGridPanel(new NoteEditorViewState(), model);
+        return panel;
     }
 
     private static EditorNote note(int midiNote, double startBeat) {

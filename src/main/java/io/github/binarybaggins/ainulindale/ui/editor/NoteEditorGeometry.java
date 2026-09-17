@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 

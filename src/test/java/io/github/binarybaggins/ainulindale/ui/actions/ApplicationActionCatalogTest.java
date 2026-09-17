@@ -27,4 +27,29 @@ public class ApplicationActionCatalogTest {
             catalog.get(ActionId.NOTE_REDO).defaultShortcut().orElseThrow()
         );
     }
+
+    @Test
+    void createsExpectedCompositionExplorerActions() {
+        ActionCatalog catalog = ApplicationActionCatalog.create();
+
+        assertEquals(ActionScope.COMPOSITION_EXPLORER, catalog.get(ActionId.TRACK_ADD).scope());
+
+        assertEquals(Shortcut.of(Key.INSERT), catalog.get(ActionId.TRACK_ADD).defaultShortcut().orElseThrow());
+
+        assertEquals(Shortcut.of(Key.DELETE), catalog.get(ActionId.TRACK_REMOVE).defaultShortcut().orElseThrow());
+
+        assertEquals(Shortcut.of(Key.F2), catalog.get(ActionId.TRACK_RENAME).defaultShortcut().orElseThrow());
+
+        assertEquals(Shortcut.of(Key.ENTER), catalog.get(ActionId.TRACK_ACTIVATE).defaultShortcut().orElseThrow());
+
+        assertEquals(
+            Shortcut.of(Key.UP, Modifier.ALT),
+            catalog.get(ActionId.TRACK_MOVE_UP).defaultShortcut().orElseThrow()
+        );
+
+        assertEquals(
+            Shortcut.of(Key.DOWN, Modifier.ALT),
+            catalog.get(ActionId.TRACK_MOVE_DOWN).defaultShortcut().orElseThrow()
+        );
+    }
 }

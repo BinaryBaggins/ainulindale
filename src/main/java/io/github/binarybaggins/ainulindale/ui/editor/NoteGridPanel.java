@@ -1,4 +1,4 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
 import io.github.binarybaggins.ainulindale.core.MidiConstraints;
 import io.github.binarybaggins.ainulindale.interaction.DragMode;
@@ -9,9 +9,7 @@ import io.github.binarybaggins.ainulindale.interaction.ResolvedGroupMove;
 import io.github.binarybaggins.ainulindale.model.EditorNote;
 import io.github.binarybaggins.ainulindale.model.NoteSnapshot;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
+
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -20,6 +18,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +29,7 @@ public class NoteGridPanel extends JPanel {
     private static final long serialVersionUID = 1L;
 
     // Model and view state
-    private final TrackEditorModel model;
+    private TrackEditorModel model;
     private final NoteEditorViewState viewState;
     private final NoteSelectionModel selectionModel = new NoteSelectionModel();
 
@@ -41,16 +40,38 @@ public class NoteGridPanel extends JPanel {
 
     private NoteDragState dragState;
 
-    public NoteGridPanel(NoteEditorViewState viewSettings, TrackEditorModel model) {
+    public NoteGridPanel(NoteEditorViewState viewSettings) {
         this.viewState = viewSettings;
-        this.model = model;
 
         updatePreferredSize();
 
-        NoteGridMouseListener mouseListener = new NoteGridMouseListener(this);
+        NoteGridPanelMouseListener mouseListener = new NoteGridPanelMouseListener(this);
         addMouseListener(mouseListener);
         addMouseMotionListener(mouseListener);
+
         setFocusable(true);
+    }
+
+    public void setModel(TrackEditorModel model) {
+        Objects.requireNonNull(model);
+
+        if (this.model == model) {
+            return;
+        }
+
+        if (dragState != null && this.model != null) {
+            this.model.cancelNoteStateChange();
+        }
+
+        this.model = model;
+
+        selectionModel.clearSelection();
+        selectionBox = null;
+        selectionBeforeBox = Set.of();
+        additiveSelectionBox = false;
+        dragState = null;
+
+        repaint();
     }
 
     public void updateZoom() {

@@ -1,21 +1,18 @@
-package io.github.binarybaggins.ainulindale.ui.components;
+package io.github.binarybaggins.ainulindale.ui.editor;
 
-import io.github.binarybaggins.ainulindale.ui.NoteEditorGeometry;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorLayout;
-import io.github.binarybaggins.ainulindale.ui.NoteEditorViewState;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import javax.swing.JPanel;
 import javax.swing.Scrollable;
 
-public class TimelinePanel extends JPanel implements Scrollable {
+public class TimelineRuler extends JPanel implements Scrollable {
 
     private static final long serialVersionUID = 1L;
 
     private final NoteEditorViewState viewState;
 
-    public TimelinePanel(NoteEditorViewState viewSettings) {
+    public TimelineRuler(NoteEditorViewState viewSettings) {
         this.viewState = viewSettings;
         updatePreferredSize();
     }

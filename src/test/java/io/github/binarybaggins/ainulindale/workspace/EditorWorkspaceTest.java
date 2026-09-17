@@ -12,9 +12,11 @@ import io.github.binarybaggins.ainulindale.core.result.Failure;
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.ResultError;
 import io.github.binarybaggins.ainulindale.core.result.Success;
+import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.model.EditorTrack;
 import io.github.binarybaggins.ainulindale.model.TrackEditorModel;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,12 +25,14 @@ public class EditorWorkspaceTest {
     private EditorWorkspace workspace;
     private EditorTrack trackA;
     private EditorTrack trackB;
+    private EditorTrack trackC;
 
     @BeforeEach
     public void setUp() {
         workspace = new EditorWorkspace();
         trackA = new EditorTrack("Track A");
         trackB = new EditorTrack("Track B");
+        trackC = new EditorTrack("Track C");
     }
 
     private static void assertFailure(Result<?> result, ResultError expectedError) {
@@ -106,7 +110,6 @@ public class EditorWorkspaceTest {
 
     @Test
     public void getVisibleTracksExcludesHiddenTracksButPreservesOrder() {
-        EditorTrack trackC = new EditorTrack("Track C");
         workspace.addTrack(trackA);
         workspace.addTrack(trackB);
         workspace.addTrack(trackC);
@@ -313,5 +316,153 @@ public class EditorWorkspaceTest {
         assertThrows(NullPointerException.class, () -> workspace.setActiveTrack(null));
         assertThrows(NullPointerException.class, () -> workspace.isTrackVisible(null));
         assertThrows(NullPointerException.class, () -> workspace.setTrackVisible(null, true));
+        assertThrows(NullPointerException.class, () -> workspace.renameTrack(null, "Name"));
+        assertThrows(NullPointerException.class, () -> workspace.renameTrack(trackA, null));
+        assertThrows(NullPointerException.class, () -> workspace.moveTrack(null, 0));
+    }
+
+    // --- rename track tests ---
+    @Test
+    public void renamingTrackUpdatesItsName() {
+        workspace.addTrack(trackA);
+        Result<Unit> renameResult = workspace.renameTrack(trackA, "NewName");
+        assertInstanceOf(Success.class, renameResult);
+        assertEquals("NewName", trackA.getName());
+    }
+
+    @Test
+    public void renamingNonexistentTrackReturnsFailure() {
+        workspace.addTrack(trackB);
+        workspace.removeTrack(trackB);
+        Result<Unit> renameResult = workspace.renameTrack(trackB, "NewName");
+        assertInstanceOf(Failure.class, renameResult);
+        assertFailure(renameResult, WorkspaceErrors.TRACK_NOT_FOUND);
+    }
+
+    // --- move track tests ---
+    @Test
+    public void movingTrackUpdatesItsPosition() {
+        workspace.addTrack(trackA);
+        workspace.addTrack(trackB);
+        workspace.addTrack(trackC);
+
+        Result<Unit> moveResult = workspace.moveTrack(trackC, 0);
+        assertInstanceOf(Success.class, moveResult);
+        assertEquals(List.of(trackC, trackA, trackB), workspace.getTracks());
+    }
+
+    @Test
+    public void movingNonexistentTrackReturnsFailure() {
+        Result<Unit> moveResult = workspace.moveTrack(trackC, 0);
+        assertInstanceOf(Failure.class, moveResult);
+        assertFailure(moveResult, WorkspaceErrors.TRACK_NOT_FOUND);
+    }
+
+    @Test
+    public void movingTrackToInvalidIndexReturnsFailure() {
+        workspace.addTrack(trackA);
+        Result<Unit> moveResult = workspace.moveTrack(trackA, -1);
+        assertInstanceOf(Failure.class, moveResult);
+        assertFailure(moveResult, WorkspaceErrors.INVALID_TRACK_INDEX);
+
+        moveResult = workspace.moveTrack(trackA, 10);
+        assertInstanceOf(Failure.class, moveResult);
+        assertFailure(moveResult, WorkspaceErrors.INVALID_TRACK_INDEX);
+    }
+
+    @Test
+    public void movingTrackRetainsContext() {
+        workspace.addTrack(trackA);
+        workspace.addTrack(trackB);
+        workspace.addTrack(trackC);
+
+        workspace.setActiveTrack(trackA);
+
+        TrackEditorModel editorA = workspace.getActiveTrackEditor().orElseThrow();
+
+        editorA.createNote(60, 0.0, 1.0);
+
+        workspace.moveTrack(trackA, 2);
+
+        assertEquals(List.of(trackB, trackC, trackA), workspace.getTracks());
+        assertSame(trackA, workspace.getActiveTrack().orElseThrow());
+        assertSame(editorA, workspace.getActiveTrackEditor().orElseThrow());
+        assertTrue(editorA.canUndo());
+    }
+
+    // --- listener notification tests ---
+    @Test
+    public void successfulWorkspaceMutationNotifiesListeners() {
+        AtomicInteger notificationCount = new AtomicInteger();
+
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.addTrack(trackA);
+
+        assertEquals(1, notificationCount.get());
+    }
+
+    @Test
+    public void failedWorkspaceMutationDoesNotNotifyListeners() {
+        workspace.addTrack(trackA);
+
+        AtomicInteger notificationCount = new AtomicInteger();
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.addTrack(trackA);
+
+        assertEquals(0, notificationCount.get());
+    }
+
+    @Test
+    public void settingAlreadyActiveTrackDoesNotNotifyListeners() {
+        workspace.addTrack(trackA);
+        workspace.setActiveTrack(trackA);
+
+        AtomicInteger notificationCount = new AtomicInteger();
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.setActiveTrack(trackA);
+
+        assertEquals(0, notificationCount.get());
+    }
+
+    @Test
+    public void removedListenerIsNotNotified() {
+        AtomicInteger notificationCount = new AtomicInteger();
+
+        EditorWorkspaceListener listener = notificationCount::incrementAndGet;
+
+        workspace.addListener(listener);
+        workspace.removeListener(listener);
+
+        workspace.addTrack(trackA);
+
+        assertEquals(0, notificationCount.get());
+    }
+
+    @Test
+    public void changingActiveTrackNotifiesListenerOnce() {
+        workspace.addTrack(trackA);
+        workspace.addTrack(trackB);
+        workspace.setActiveTrack(trackA);
+
+        AtomicInteger notificationCount = new AtomicInteger();
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.setActiveTrack(trackB);
+
+        assertEquals(1, notificationCount.get());
+        assertSame(trackB, workspace.getActiveTrack().orElseThrow());
+    }
+
+    @Test
+    public void clearingAlreadyEmptyActiveTrackDoesNotNotifyListeners() {
+        AtomicInteger notificationCount = new AtomicInteger();
+        workspace.addListener(notificationCount::incrementAndGet);
+
+        workspace.clearActiveTrack();
+
+        assertEquals(0, notificationCount.get());
     }
 }

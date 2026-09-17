@@ -35,7 +35,7 @@ public final class DemoTrackGenerator {
      * @param noteCount the number of notes to generate
      * @return an EditorTrack containing the generated notes
      */
-    public static EditorTrack create(long seed, int noteCount) {
+    public static EditorTrack create(String name, long seed, int noteCount) {
         if (noteCount < 0) {
             throw new IllegalArgumentException("noteCount cannot be negative");
         }
@@ -65,7 +65,7 @@ public final class DemoTrackGenerator {
             currentBeat += pick(random, ADVANCES);
         }
 
-        return new EditorTrack("Demo Track", notes);
+        return new EditorTrack(name, notes);
     }
 
     /**
