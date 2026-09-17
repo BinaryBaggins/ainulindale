@@ -90,4 +90,49 @@ public class CompositionExplorerTest {
             assertSame(trackB, workspace.getActiveTrack().orElseThrow());
         });
     }
+
+    @Test
+    public void activatingSelectedVisibleTrackChangesActiveTrack() throws Exception {
+        EditorWorkspace workspace = new EditorWorkspace();
+
+        EditorTrack trackA = new EditorTrack("Track A");
+        EditorTrack trackB = new EditorTrack("Track B");
+
+        workspace.addTrack(trackA);
+        workspace.addTrack(trackB);
+        workspace.setActiveTrack(trackA);
+
+        SwingUtilities.invokeAndWait(() -> {
+            CompositionExplorer explorer = new CompositionExplorer(workspace);
+
+            explorer.getTrackTable().setRowSelectionInterval(1, 1);
+            explorer.activateSelectedTrack();
+
+            assertSame(trackB, workspace.getActiveTrack().orElseThrow());
+            assertEquals(1, explorer.getTrackTable().getSelectedRow());
+        });
+    }
+
+    @Test
+    public void activatingSelectedHiddenTrackKeepsCurrentActiveTrack() throws Exception {
+        EditorWorkspace workspace = new EditorWorkspace();
+
+        EditorTrack trackA = new EditorTrack("Track A");
+        EditorTrack trackB = new EditorTrack("Track B");
+
+        workspace.addTrack(trackA);
+        workspace.addTrack(trackB);
+        workspace.setActiveTrack(trackA);
+        workspace.setTrackVisible(trackB, false);
+
+        SwingUtilities.invokeAndWait(() -> {
+            CompositionExplorer explorer = new CompositionExplorer(workspace);
+
+            explorer.getTrackTable().setRowSelectionInterval(1, 1);
+            explorer.activateSelectedTrack();
+
+            assertSame(trackA, workspace.getActiveTrack().orElseThrow());
+            assertEquals(1, explorer.getTrackTable().getSelectedRow());
+        });
+    }
 }

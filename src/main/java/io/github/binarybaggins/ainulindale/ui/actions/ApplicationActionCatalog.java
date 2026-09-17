@@ -55,6 +55,13 @@ public final class ApplicationActionCatalog {
                     Shortcut.of(Key.F2)
                 ),
                 new ActionDefinition(
+                    ActionId.TRACK_ACTIVATE,
+                    ActionScope.COMPOSITION_EXPLORER,
+                    "action.track.activate.name",
+                    "action.track.activate.description",
+                    Shortcut.of(Key.ENTER)
+                ),
+                new ActionDefinition(
                     ActionId.TRACK_MOVE_UP,
                     ActionScope.COMPOSITION_EXPLORER,
                     "action.track.move-up.name",

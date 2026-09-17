@@ -40,6 +40,8 @@ public class ApplicationActionCatalogTest {
 
         assertEquals(Shortcut.of(Key.F2), catalog.get(ActionId.TRACK_RENAME).defaultShortcut().orElseThrow());
 
+        assertEquals(Shortcut.of(Key.ENTER), catalog.get(ActionId.TRACK_ACTIVATE).defaultShortcut().orElseThrow());
+
         assertEquals(
             Shortcut.of(Key.UP, Modifier.ALT),
             catalog.get(ActionId.TRACK_MOVE_UP).defaultShortcut().orElseThrow()

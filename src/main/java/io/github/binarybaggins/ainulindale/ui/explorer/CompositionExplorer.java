@@ -38,6 +38,10 @@ public class CompositionExplorer extends JPanel {
         this.workspace = Objects.requireNonNull(workspace);
         tableModel = new CompositionTableModel(this.workspace);
         trackTable = new JTable(tableModel);
+        trackTable
+            .getColumnModel()
+            .getColumn(CompositionTableModel.NAME_COLUMN)
+            .setCellRenderer(new TrackNameCellRenderer(this.workspace));
 
         TableColumn visibilityColumn = trackTable.getColumnModel().getColumn(0);
         visibilityColumn.setMinWidth(40);
@@ -129,6 +133,13 @@ public class CompositionExplorer extends JPanel {
      */
     private Optional<EditorTrack> getSelectedTrack() {
         return Optional.ofNullable(selectedTrack);
+    }
+
+    /**
+     * Activates the currently selected track.
+     */
+    public void activateSelectedTrack() {
+        getSelectedTrack().ifPresent(workspace::setActiveTrack);
     }
 
     /**
