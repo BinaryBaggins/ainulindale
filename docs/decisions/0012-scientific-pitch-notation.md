@@ -10,6 +10,6 @@ Octaves follow scientific pitch notation.
 C4 = Middle C
 ```
 
-Under the standard MIDI mapping, this corresponds to MIDI note number 60.
+When SPN is mapped to MIDI note numbers, C4 maps to MIDI note number 60. The MIDI note number remains a derived technical representation.
 
 The MIDI number remains a derived technical representation.

@@ -16,7 +16,7 @@ ainulindale-midi
 ainulindale-desktop
 ```
 
-Additional modules require a concrete domain requirement.
+Additional modules require a concrete architectural responsibility and a justified module boundary.
 
 The new domain and editing system must not depend on legacy models.
 See [ADR-0001](../decisions/0001-greenfield-domain-rebuild.md).
