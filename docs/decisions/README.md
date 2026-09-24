@@ -29,6 +29,8 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0021 – Composition as the Aggregate Mutation Boundary](0021-composition-aggregate-mutation-boundary.md)
 - [ADR-0022 – Scoped Musical State Uses Hierarchical Inheritance](0022-scoped-musical-state-inheritance.md)
 - [ADR-0023 – Canonical Scopes for Tempo, Meter, KeySignature, and InstrumentAssignment](0023-musical-state-scopes.md)
+- [ADR-0024 – Meter Preserves Structural Metric Grouping](0024-structural-meter-model.md)
+- [ADR-0025 – Meter Does Not Define Measure Structure by Itself](0025-meter-and-measure-structure.md)
 
 ## Open Decisions
 
@@ -44,7 +46,11 @@ In particular, the following have not yet been finalized:
 - Instrument transposition and target-specific instrument mapping
 - Tuning and SoundingPitch
 - Tempo value representation
-- Meter representation
+- Concrete Java implementation of the accepted Meter value model
+- Measure and barline model, including MeasureStructure
+- MeasurePosition model and derivation
+- Interchangeable or alternate meter relationships
+- Conventional meter-grouping interpretation rules
 - KeySignature representation
 - Concrete state timeline implementation and APIs
 - Representation and API for explicitly ending local overrides

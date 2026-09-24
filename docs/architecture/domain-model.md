@@ -420,7 +420,7 @@ Playback time
 
 Score time describes a position within the canonical, unexpanded musical structure.
 
-Meter provides a metrical interpretation of that position.
+Meter provides metric structure for interpreting that position. Actual measure and barline structure is a separate concern; meter alone does not fully determine measure positions.
 
 Tempo and form will later be used to derive playback time and playback order.
 
@@ -609,13 +609,17 @@ PlaybackTime
 
 Meter does not change `ScorePosition` either.
 
-Conceptually:
+Meter describes metric structure, but does not by itself determine actual measure boundaries. A future derivation may conceptually require:
 
 ```text
 ScorePosition
-    ↓ meter map
++ effective Meter
++ MeasureStructure
+    ↓
 MeasurePosition
 ```
+
+`MeasureStructure`, barlines, and `MeasurePosition` remain future domain concerns, not finalized types or APIs. See section 40.
 
 Tempo and meter interpret the timeline without moving existing events.
 
@@ -1225,6 +1229,155 @@ See [ADR-0022](../decisions/0022-scoped-musical-state-inheritance.md) and [ADR-0
 
 ---
 
+## 39. Structural Meter Model
+
+### Value Object and Semantic Variants
+
+`Meter` is a canonical value object used as musical state. Its accepted semantic variants are:
+
+```text
+Meter
+├── StructuredMeter
+└── FreeMeter
+```
+
+The exact Java inheritance mechanism, collection types, and APIs remain implementation details. Meter retains the Composition, Part, and Voice scopes and inheritance rules defined in section 38.
+
+### StructuredMeter and MeterComponent
+
+A `StructuredMeter` contains a non-empty ordered sequence of `MeterComponent`s. Each component represents a positive number of equal musical-duration units forming one explicit component of the meter structure.
+
+Conceptually:
+
+```text
+StructuredMeter:
+    ordered components
+
+MeterComponent:
+    count
+    unit: MusicalDuration
+```
+
+The invariants are:
+
+```text
+components is non-empty
+component.count > 0
+component.unit > 0
+```
+
+The count is a positive whole number. The unit has positive `MusicalDuration` semantics rather than being a format-specific denominator integer. Although the general duration value permits zero, a meter component's unit must be strictly positive.
+
+Examples:
+
+```text
+4/4 → [(4, 1/4)]
+3/4 → [(3, 1/4)]
+6/8 → [(6, 1/8)]
+```
+
+Canonical units are not constrained to powers of two or interchange-format denominator rules. Such restrictions belong to parsers, exporters, validation, or `TargetRuleset`s.
+
+### Explicit Grouping and Mixed Units
+
+The explicit component sequence carries metric grouping and accent semantics. Its order participates in structural identity.
+
+```text
+7/8     → [(7, 1/8)]
+2+3+2/8 → [(2, 1/8), (3, 1/8), (2, 1/8)]
+3+2+2/8 → [(3, 1/8), (2, 1/8), (2, 1/8)]
+```
+
+These three meters are structurally distinct.
+
+Grouping must not be inferred and stored as if explicitly specified. In particular, `6/8` does not automatically become `3+3/8`. A future interpretation layer may derive conventional grouping when explicit grouping is absent; its rules remain open, and derived grouping is not canonical explicit state.
+
+Components need not share the same unit. Mixed-unit meters are representable:
+
+```text
+2/4 + 3/8 → [(2, 1/4), (3, 1/8)]
+```
+
+### Derived Nominal Duration and Structural Equality
+
+The nominal duration of a `StructuredMeter` is derived:
+
+```text
+nominalDuration = sum(component.count × component.unit)
+
+2+3+2/8 → 2/8 + 3/8 + 2/8 → 7/8
+```
+
+Nominal duration must not be stored redundantly as an independent source of truth. Equal nominal durations do not imply equal meters:
+
+```text
+6/8 != 3/4
+7/8 != 2+3+2/8
+7/8 != 3+2+2/8
+2+3+2/8 != 3+2+2/8
+```
+
+`Meter.equals` conceptually expresses structural metric equality. It preserves the ordered components, their counts, and their musical-duration units. Structurally distinct meters must not be normalized merely because their nominal durations are equal.
+
+### FreeMeter and Absent State
+
+`FreeMeter` is an explicit meterless or free-rhythm state. It is not `null`, missing state, or absence from a timeline.
+
+```text
+Composition Meter: 4/4
+
+Part A: no local Meter state
+    → inherits 4/4
+
+Part B: FreeMeter
+    → explicitly no regular meter
+```
+
+Absent local meter means unspecified state or inheritance from the parent. `FreeMeter` is an explicit local value and therefore participates in the persistent override rules; it does not fall back to the parent's structured meter while active.
+
+### Notation and Source Representation
+
+Canonical `Meter` describes musical metric structure. Common-time and cut-time symbols, graphical time-signature choices, and source spelling belong to notation or source representation.
+
+For example, a common-time symbol and numeric `4/4` may map to the same canonical structured meter. ABC syntax preservation belongs in the separate ABC representation. Any future notation-specific metadata must be modeled separately from `Meter`.
+
+### Interchangeable Meter
+
+Relationships such as `3/4 (6/8)` are not introduced into the basic `Meter` value object. Interchangeable or alternate meter may need a separate semantic or notation model; this remains open.
+
+See [ADR-0024](../decisions/0024-structural-meter-model.md).
+
+---
+
+## 40. Meter and Measure Structure
+
+Meter describes metric structure. Actual measure and barline structure is a separate future domain concern.
+
+Meter alone does not fully determine measure boundaries. Additional information is needed for:
+
+- Pickup or anacrusis measures
+- Incomplete measures
+- Irregular measures
+- Explicit barline deviations
+- Meter changes that do not align trivially with nominal measure length
+- Later form and barline semantics
+
+A future derivation may conceptually depend on:
+
+```text
+ScorePosition
++ effective Meter
++ MeasureStructure
+    ↓
+MeasurePosition
+```
+
+This names the conceptual inputs only. The exact `MeasureStructure`, `Measure`, `Barline`, and `MeasurePosition` models remain open. The derived nominal duration of a structured meter does not by itself establish actual measure boundaries.
+
+See [ADR-0025](../decisions/0025-meter-and-measure-structure.md).
+
+---
+
 ## Open Design Questions
 
 The following points remain unresolved:
@@ -1232,7 +1385,7 @@ The following points remain unresolved:
 ### State Representations and Implementation
 
 - Tempo value representation
-- Meter representation
+- Concrete Java implementation of the accepted Meter value model
 - KeySignature representation
 - Concrete state timeline storage and APIs
 - Representation and API for explicitly ending a local override
@@ -1240,6 +1393,15 @@ The following points remain unresolved:
 - Instrument transposition and target-specific instrument mapping
 
 The accepted state scopes and inheritance semantics do not decide these details.
+
+### Meter Interpretation and Measure Structure
+
+- Measure and barline model, including `MeasureStructure`
+- `MeasurePosition` model and its derivation
+- Interchangeable or alternate meter relationships
+- Conventional grouping interpretation when explicit grouping is absent
+
+The structural Meter model is accepted; these related models and interpretation rules are not.
 
 ### Dynamics
 
