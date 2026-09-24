@@ -25,14 +25,17 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0017 – NoteEvent as an Entity](0017-note-event-entity.md)
 - [ADR-0018 – The Domain Allows Overlapping and Duplicate Notes](0018-overlapping-and-duplicate-notes.md)
 - [ADR-0019 – Maven Multi-Module as the Target Architecture](0019-maven-multi-module-architecture.md)
+- [ADR-0020 – VoiceEvent as the Voice-Level Event Abstraction](0020-voice-event-abstraction.md)
+- [ADR-0021 – Composition as the Aggregate Mutation Boundary](0021-composition-aggregate-mutation-boundary.md)
 
 ## Open Decisions
 
 In particular, the following have not yet been finalized:
 
-- `VoiceEvent` abstraction
-- Storage and indexing of events within a voice
-- General event hierarchy
+- Concrete event storage and derived index implementations
+- Technical ordering policies for simultaneous events
+- Exact aggregate mutation API and internal delegation mechanisms
+- Additional event types and any further event hierarchy
 - Musical relations such as ties, slurs, and tuplets
 - Global musical state versus state local to a part or voice
 - InstrumentAssignment and transposition

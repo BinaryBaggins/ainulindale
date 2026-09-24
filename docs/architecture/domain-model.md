@@ -43,6 +43,7 @@ The fundamental musical ownership structure is:
 Composition
 └── Part*
     └── Voice+
+        └── VoiceEvent*
 ```
 
 The following rules apply:
@@ -52,6 +53,8 @@ The following rules apply:
 - A `Voice` belongs to exactly one `Part`.
 - A `Part` has at least one `Voice`.
 - A `Composition` may contain no parts.
+- A `VoiceEvent` belongs to exactly one `Voice`.
+- A `Voice` may contain no events.
 
 ---
 
@@ -203,6 +206,9 @@ Part
    owns
      ↓
 Voice
+   owns
+     ↓
+VoiceEvent
 ```
 
 An object must not belong to multiple parents at the same time.
@@ -215,7 +221,9 @@ In particular, the following is not required:
 voice.getPart().getComposition();
 ```
 
-Operations that need the context of the entire composition can start at the aggregate root.
+An event must never be owned by multiple voices. Other structures reference events through `EventId`, not shared object ownership.
+
+External domain mutations enter through the aggregate root, as described in section 12.
 
 ---
 
@@ -233,6 +241,8 @@ record EventId(UUID value) {}
 ```
 
 The specific ID technology remains an implementation detail.
+
+`EventId` is unique within the entire `Composition`, not merely within a voice. Identity and ownership are distinct: event identity is composition-wide, while each event is owned by exactly one voice.
 
 The semantic requirements are:
 
@@ -273,6 +283,8 @@ The same principle applies to voices.
 ## 9. Ordering
 
 Part and voice order are canonical domain state.
+
+This does not imply a musical list order for events within a voice; event collection semantics are defined in section 36.
 
 Example:
 
@@ -316,6 +328,7 @@ The musical structure is:
 Composition
 └── Part
     └── Voice
+        └── VoiceEvent
 ```
 
 The term `Track` may still be used at technical or visual boundaries, for example:
@@ -351,7 +364,7 @@ will only be introduced when Ainulindalë has a concrete domain requirement for 
 
 ---
 
-## 12. Mutability
+## 12. Mutability and the Aggregate Mutation Boundary
 
 The canonical aggregate allows controlled mutation.
 
@@ -364,21 +377,32 @@ composition.parts().add(part);
 part.voices().clear();
 ```
 
-Instead, structural changes use defined domain operations:
+`Composition` is the public mutation boundary of the aggregate. External structural and domain mutations enter through it, including changes to nested entities.
+
+Conceptually:
 
 ```java
 composition.addPart(...);
 composition.removePart(...);
 composition.movePart(...);
 
-part.addVoice(...);
-part.removeVoice(...);
-part.moveVoice(...);
+composition.addVoice(partId, ...);
+composition.addNote(voiceId, range, pitch);
+composition.removeEvent(eventId);
+composition.changeNotePitch(eventId, pitch);
 ```
 
-This keeps domain invariants centrally protected.
+These examples illustrate the mutation boundary, not a finalized API.
+
+Internally, `Composition` may delegate to `Part` or `Voice`. Nested entities may have internal or package-private mutation operations, but callers must not bypass the aggregate root through unrestricted public mutation of `Part`, `Voice`, or `VoiceEvent`.
+
+This protects composition-wide invariants, including `EventId` uniqueness and valid ownership, and provides the boundary for future relation integrity and cross-entity invariants. The details of those future invariants remain undecided.
+
+The domain provides primitive, invariant-safe mutations. Higher-level user operations such as transpose, quantize, move selection, and duplicate section, together with editing transactions and undo/redo, belong to the future editing layer. Their design remains open.
 
 Value objects remain immutable.
+
+See [ADR-0021](../decisions/0021-composition-aggregate-mutation-boundary.md).
 
 ---
 
@@ -882,7 +906,7 @@ The specific acoustic interpretation remains the responsibility of the tuning sy
 
 ## 32. NoteEvent
 
-A `NoteEvent` is an entity within exactly one voice.
+A `NoteEvent` is the first concrete `VoiceEvent` and is an entity within exactly one voice.
 
 It has at least:
 
@@ -892,7 +916,9 @@ ScoreRange
 Pitch
 ```
 
-Conceptually:
+Its event position corresponds to `ScoreRange.start()`; it is not a separate source of temporal truth.
+
+Conceptually, without prescribing the final Java class or interface shape:
 
 ```java
 final class NoteEvent {
@@ -973,34 +999,86 @@ However, fundamental domain representability does not prohibit them.
 
 ---
 
-## Open Design Questions
+## 35. VoiceEvent
 
-The following points have not yet been settled for the canonical model:
+`VoiceEvent` is the common abstraction for musical events owned by exactly one `Voice`.
 
-### VoiceEvent Abstraction
+Every `VoiceEvent` has a stable `EventId` and is anchored at a `ScorePosition`. Conceptually:
 
-It remains to be decided whether a voice generally contains:
+```java
+public interface VoiceEvent {
 
-```text
-VoiceEvent
+    EventId id();
+
+    ScorePosition position();
+}
 ```
 
-with `NoteEvent` as merely the first concrete event type.
+This example describes the semantic contract; the exact Java interface or class shape remains an implementation choice.
 
-In particular, the following need clarification:
+A `VoiceEvent` does not necessarily have a duration or `ScoreRange`. `NoteEvent` is the first concrete event type and retains its positive-duration range and pitch. Its position is the start of that range.
 
-- Which event types actually have voice-level semantics
-- Whether all VoiceEvents have a time position
-- Whether a further abstraction such as `RangedVoiceEvent` is useful
+`RangedVoiceEvent` is deliberately deferred: only `NoteEvent` currently justifies a range. A shared ranged abstraction may be introduced later if multiple concrete event types need it.
+
+Relations, tempo, meter, key signatures, and instrument assignments do not automatically become `VoiceEvent`s. Their ownership and semantics require separate decisions; a shared musical context alone does not establish voice-level event semantics.
+
+See [ADR-0020](../decisions/0020-voice-event-abstraction.md).
+
+---
+
+## 36. Event Collection and Simultaneous Events
+
+A voice owns a collection of uniquely identified, temporally anchored events. It has no intrinsic musical list order. Insertion order and collection index do not define musical ordering.
+
+Musical temporal ordering is derived from `VoiceEvent.position()`.
+
+Events with the same `ScorePosition` are simultaneous and have no intrinsic ordering unless future domain semantics explicitly introduce one.
+
+Serialization, testing, export, or other technical processing may require deterministic ordering. Such an order is not automatically domain semantics; no particular technical comparator is mandated here.
+
+---
+
+## 37. Event Storage and Derived Indexes
+
+The canonical contract is independent of the concrete storage strategy and must not be defined as `List<VoiceEvent>`.
+
+An implementation may initially use an ID-based store:
+
+```text
+EventId → VoiceEvent
+```
+
+This is an option, not a canonical requirement.
+
+Temporal indexes or composition-wide event lookup indexes may be introduced later for performance. Such indexes must remain derived and must not become a second source of truth.
+
+Canonical ownership remains:
+
+```text
+Composition
+└── Part
+    └── Voice
+        └── VoiceEvent
+```
+
+---
+
+## Open Design Questions
+
+The following points remain unresolved:
+
+### Additional Event Types
+
+Further event types require concrete voice-level musical semantics. No additional event type or ranged abstraction is accepted by this decision.
 
 ### Event Storage
 
 The following remain open:
 
-- Collection semantics within a voice
-- ID lookup
-- Temporal indexing
-- Deterministic ordering of simultaneous events
+- Concrete event storage implementation
+- ID lookup and temporal indexing strategies, including whether and when indexes are needed
+- Technical ordering policies for serialization, testing, export, and other processing
+- Exact public mutation API and internal delegation mechanisms
 
 ### Relations
 
