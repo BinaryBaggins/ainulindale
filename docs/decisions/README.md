@@ -27,6 +27,8 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0019 – Maven Multi-Module as the Target Architecture](0019-maven-multi-module-architecture.md)
 - [ADR-0020 – VoiceEvent as the Voice-Level Event Abstraction](0020-voice-event-abstraction.md)
 - [ADR-0021 – Composition as the Aggregate Mutation Boundary](0021-composition-aggregate-mutation-boundary.md)
+- [ADR-0022 – Scoped Musical State Uses Hierarchical Inheritance](0022-scoped-musical-state-inheritance.md)
+- [ADR-0023 – Canonical Scopes for Tempo, Meter, KeySignature, and InstrumentAssignment](0023-musical-state-scopes.md)
 
 ## Open Decisions
 
@@ -37,10 +39,15 @@ In particular, the following have not yet been finalized:
 - Exact aggregate mutation API and internal delegation mechanisms
 - Additional event types and any further event hierarchy
 - Musical relations such as ties, slurs, and tuplets
-- Global musical state versus state local to a part or voice
-- InstrumentAssignment and transposition
+- Dynamics scope and temporal model
+- Instrument and InstrumentAssignment model details
+- Instrument transposition and target-specific instrument mapping
 - Tuning and SoundingPitch
-- Tempo and meter models
+- Tempo value representation
+- Meter representation
+- KeySignature representation
+- Concrete state timeline implementation and APIs
+- Representation and API for explicitly ending local overrides
 - MusicalForm
 - PlaybackPlan
 - Editing transactions and undo/redo

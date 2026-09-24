@@ -68,7 +68,7 @@ Conceptually:
 Composition
 ├── metadata
 ├── ordered Parts
-├── global musical state        [later]
+├── composition-level musical state
 ├── musical form                [later]
 └── cross-entity relations      [later]
 ```
@@ -127,7 +127,7 @@ Such concepts may be mapped to one or more parts at system boundaries.
 
 A `Part` is not inherently limited to exactly one instrument.
 
-Instrument assignments and instrument changes will be modeled separately later.
+`InstrumentAssignment` is Part-scoped state and may change over score time. Its scope is defined in section 38; the detailed instrument and assignment models remain open.
 
 A specific `TargetRuleset` may impose stricter rules.
 
@@ -619,6 +619,8 @@ MeasurePosition
 
 Tempo and meter interpret the timeline without moving existing events.
 
+Tempo is Composition-level state. Meter may be overridden at Part or Voice scope without creating a separate score timeline. The state and inheritance semantics are defined in section 38.
+
 ---
 
 ## 21. ScoreRange
@@ -1020,7 +1022,7 @@ A `VoiceEvent` does not necessarily have a duration or `ScoreRange`. `NoteEvent`
 
 `RangedVoiceEvent` is deliberately deferred: only `NoteEvent` currently justifies a range. A shared ranged abstraction may be introduced later if multiple concrete event types need it.
 
-Relations, tempo, meter, key signatures, and instrument assignments do not automatically become `VoiceEvent`s. Their ownership and semantics require separate decisions; a shared musical context alone does not establish voice-level event semantics.
+Relations, tempo, meter, key signatures, and instrument assignments do not automatically become `VoiceEvent`s. A shared musical context alone does not establish voice-level event semantics. Section 38 defines the accepted state scopes; detailed relation models remain open.
 
 See [ADR-0020](../decisions/0020-voice-event-abstraction.md).
 
@@ -1063,9 +1065,187 @@ Composition
 
 ---
 
+## 38. Musical State Scope and Temporal Semantics
+
+### Semantic Scope and Temporal Shape
+
+Musical information is described by two independent questions:
+
+1. What is its semantic scope?
+2. What is its temporal shape?
+
+Temporal shapes include `State`, `Point`, `Span`, and `Relation`. These are semantic distinctions, not a universal event hierarchy. Domain-specific types remain explicit; no generic `MusicalContextEvent`, universal `ScopedEvent`, or similar untyped abstraction is introduced.
+
+`Tempo`, `Meter`, `KeySignature`, and `InstrumentAssignment` are stateful. A state value becomes effective at a `ScorePosition` and remains effective until changed or until its local override explicitly ends.
+
+### State Timelines
+
+State changes conceptually have the form:
+
+```text
+ScorePosition → value
+```
+
+Within the same state timeline, scope, and state type, at most one value may be established at a given `ScorePosition`.
+
+The effective local state at a position is the latest local state change at or before that position, unless that local override has explicitly ended.
+
+For example, an illustrative tempo timeline is:
+
+```text
+0   → 120 BPM
+1   → 90 BPM
+3/2 → 110 BPM
+```
+
+This example does not decide the tempo value representation.
+
+A value at `ScorePosition.ZERO` is not required. An absent initial value is valid: state may be unspecified or inherited from an allowed parent scope. No canonical default value is introduced.
+
+Concrete data structures and APIs remain implementation details. A helper such as `StateTimeline<T>` may be considered internally later, but it is not part of the canonical musical vocabulary.
+
+### Hierarchical Inheritance and Persistent Overrides
+
+For state types allowed at multiple hierarchical scopes, fallback follows:
+
+```text
+Composition
+    ↓ fallback
+Part
+    ↓ fallback
+Voice
+```
+
+At a given position, a scope uses its active local state if one exists. Otherwise, it inherits the effective parent state. If no value is available through the allowed scope hierarchy, the state remains unspecified.
+
+A local value is a persistent override. Later parent changes do not replace an active child override.
+
+For example:
+
+```text
+Composition KeySignature:
+0  → C major
+20 → D major
+
+Part A:
+(no override)
+
+Part B:
+10 → G major
+```
+
+The effective values are:
+
+| Score interval | Part A | Part B |
+| --- | --- | --- |
+| [0, 10) | C major | C major |
+| [10, 20) | C major | G major |
+| [20, onward) | D major | G major |
+
+The Composition change at position 20 is stored only once.
+
+> Inherited state is derived, not persisted as duplicated child state.
+
+Child timelines contain local state, not materialized copies of inherited values. This avoids maintaining synchronized duplicate state across scopes.
+
+### Explicit Return to Inheritance
+
+A persistent local override must be explicitly removable. Once it ends, the child inherits the effective parent value at that position and follows subsequent parent changes, unless another local override becomes active.
+
+Conceptually:
+
+```text
+No local state        → inherit parent
+Active local state    → override parent
+Local override ended → inherit parent again
+```
+
+The representation of an override ending and the API used to express it remain open. No concrete method or storage mechanism is prescribed.
+
+### Tempo
+
+Tempo is canonical Composition-level state. Part- and Voice-local tempo are not currently allowed.
+
+All parts and voices share one absolute score timeline. The canonical mapping must remain composition-wide and unambiguous:
+
+```text
+ScorePosition
+    ↓ tempo state
+PlaybackTime
+```
+
+Genuine polytempo would require a deliberate future revision of the shared-time model. It is not introduced by the scope model. Playback implementation remains open.
+
+### Meter
+
+Meter is stateful at Composition, Part, or Voice scope and uses hierarchical inheritance with persistent local overrides.
+
+This permits polymetric structures while preserving the shared absolute `ScorePosition` timeline. Different metrical interpretations do not imply different score timelines.
+
+### KeySignature
+
+`KeySignature` is stateful at Composition, Part, or Voice scope and uses the same hierarchical inheritance model as meter.
+
+It provides musical and notational context, but does not determine the canonical pitch of an already-resolved `NoteEvent`.
+
+```text
+KeySignature: G major
+
+NoteEvent:
+Pitch(F, +1, 4)
+```
+
+The stored pitch explicitly represents F♯4. A key signature is not hidden input needed to interpret that value. Format-specific importers, such as ABC importers, must resolve context-dependent source notation into explicit canonical `Pitch` values.
+
+### InstrumentAssignment
+
+`InstrumentAssignment` is currently Part-scoped state. A part may change instruments over score time; the generic domain does not require one fixed instrument per part.
+
+A concrete target such as LOTRO may impose stricter constraints through a `TargetRuleset`.
+
+Voice-local instrument assignment is deliberately deferred. Independently assigned instruments in different voices may indicate separate parts unless a concrete future domain requirement justifies voice-local assignment.
+
+The detailed models for `Instrument`, `InstrumentAssignment`, `InstrumentTransposition`, and target-specific instrument mapping remain open.
+
+### Accepted Scope Matrix
+
+| Information | Temporal form | Allowed scope / ownership | Inheritance or status |
+| --- | --- | --- | --- |
+| Tempo | State | Composition | Composition-wide only |
+| Meter | State | Composition, Part, Voice | Hierarchical |
+| KeySignature | State | Composition, Part, Voice | Hierarchical |
+| InstrumentAssignment | State | Part | Part-local state |
+| NoteEvent | Ranged VoiceEvent | Voice | Owned by exactly one voice |
+| Tie / Slur / TupletGroup | Relation | Detailed model open | Detailed model open |
+| Dynamics | Open | Open | Scope and temporal model open |
+
+“Ranged VoiceEvent” describes the temporal form of `NoteEvent`; it does not introduce `RangedVoiceEvent` as a type.
+
+See [ADR-0022](../decisions/0022-scoped-musical-state-inheritance.md) and [ADR-0023](../decisions/0023-musical-state-scopes.md).
+
+---
+
 ## Open Design Questions
 
 The following points remain unresolved:
+
+### State Representations and Implementation
+
+- Tempo value representation
+- Meter representation
+- KeySignature representation
+- Concrete state timeline storage and APIs
+- Representation and API for explicitly ending a local override
+- Detailed Instrument and InstrumentAssignment models
+- Instrument transposition and target-specific instrument mapping
+
+The accepted state scopes and inheritance semantics do not decide these details.
+
+### Dynamics
+
+Dynamics remain open in both scope and temporal model. They may involve different temporal forms: `mf` may be state-like, a crescendo span-like, and an accent note- or event-local. These examples do not establish accepted types or scopes.
+
+MIDI velocity is not automatically equivalent to canonical musical dynamics.
 
 ### Additional Event Types
 
