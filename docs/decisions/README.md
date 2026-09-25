@@ -32,6 +32,8 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0024 – Meter Preserves Structural Metric Grouping](0024-structural-meter-model.md)
 - [ADR-0025 – Meter Does Not Define Measure Structure by Itself](0025-meter-and-measure-structure.md)
 - [ADR-0026 – Tempo Uses a Canonical Rational Score-to-Time Rate](0026-canonical-tempo-rate.md)
+- [ADR-0027 – KeySignature Represents Diatonic-Step Alteration Defaults](0027-canonical-key-signature.md)
+- [ADR-0028 – External Formats Are Expressiveness References, Not Domain Templates](0028-external-formats-as-expressiveness-references.md)
 
 ## Open Decisions
 
@@ -58,7 +60,12 @@ In particular, the following have not yet been finalized:
 - MeasurePosition model and derivation
 - Interchangeable or alternate meter relationships
 - Conventional meter-grouping interpretation rules
-- KeySignature representation
+- Concrete Java implementation of the accepted KeySignature value model
+- Tonal center semantics
+- Mode semantics
+- Scale semantics
+- Relationships between tonal center, mode, scale, and key-signature context
+- Concrete format mappings and adapters
 - Concrete state timeline implementation and APIs
 - Representation and API for explicitly ending local overrides
 - MusicalForm

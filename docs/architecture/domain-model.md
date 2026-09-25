@@ -27,6 +27,14 @@ It is independent of:
 
 External formats and targets are mapped to the domain model or generated from it.
 
+Canonical design starts from musical semantics and Ainulindalë's own domain requirements. ABC, MIDI, MusicXML, LOTRO, and other external systems help discover relevant concepts, test expressiveness, validate interoperability requirements, and guide future adapter design. They do not define canonical ownership, type hierarchies, or internal representation.
+
+> External formats are test cases for expressiveness, not templates for the domain model.
+
+An external construct such as ABC `K:` must not dictate an equivalent canonical field structure. A future adapter may map one external construct into multiple canonical concepts or combine multiple external constructs into one canonical concept. Format-specific syntax and preservation belong in dedicated adapter/source representations. Concrete mappings and adapters remain open.
+
+See [ADR-0028](../decisions/0028-external-formats-as-expressiveness-references.md).
+
 Core principle:
 
 > Domain representability is not the same as target validity.
@@ -1128,23 +1136,23 @@ For example:
 
 ```text
 Composition KeySignature:
-0  → C major
-20 → D major
+0  → all steps 0
+20 → F: +1, C: +1; all other steps 0
 
 Part A:
 (no override)
 
 Part B:
-10 → G major
+10 → F: +1; all other steps 0
 ```
 
 The effective values are:
 
 | Score interval | Part A | Part B |
 | --- | --- | --- |
-| [0, 10) | C major | C major |
-| [10, 20) | C major | G major |
-| [20, onward) | D major | G major |
+| [0, 10) | All steps 0 | All steps 0 |
+| [10, 20) | All steps 0 | F: +1; others 0 |
+| [20, onward) | F: +1, C: +1; others 0 | F: +1; others 0 |
 
 The Composition change at position 20 is stored only once.
 
@@ -1193,7 +1201,7 @@ This permits polymetric structures while preserving the shared absolute `ScorePo
 It provides musical and notational context, but does not determine the canonical pitch of an already-resolved `NoteEvent`.
 
 ```text
-KeySignature: G major
+KeySignature: F → +1; all other steps → 0
 
 NoteEvent:
 Pitch(F, +1, 4)
@@ -1484,6 +1492,87 @@ See [ADR-0026](../decisions/0026-canonical-tempo-rate.md).
 
 ---
 
+## 42. Canonical KeySignature
+
+### Immutable Value Object and Total Mapping
+
+`KeySignature` is an immutable value object used as canonical musical state. It represents default chromatic alterations by diatonic step:
+
+```text
+DiatonicStep → PitchAlteration
+```
+
+This mapping is semantically total: each of `C`, `D`, `E`, `F`, `G`, `A`, and `B` has exactly one effective alteration. The alteration uses the already accepted rational `PitchAlteration` value model.
+
+Steps omitted during construction or parsing have effective value `PitchAlteration.ZERO`. For example:
+
+| Step | No alterations | F-sharp-style signature |
+| --- | --- | --- |
+| C | 0 | 0 |
+| D | 0 | 0 |
+| E | 0 | 0 |
+| F | 0 | +1 |
+| G | 0 | 0 |
+| A | 0 | 0 |
+| B | 0 | 0 |
+
+The exact Java representation, constructors, and storage remain implementation details. Sparse input may be supported, but sparse storage is not part of the canonical contract.
+
+The zero default applies to unspecified steps within a KeySignature value. It does not create a KeySignature state when none was specified. An absent local state still follows the existing inheritance rules; an explicit all-zero signature is a value.
+
+### Rational Alterations
+
+Rational and microtonal defaults are representable:
+
+```text
+F → +1/2
+B → -1
+all other steps → 0
+```
+
+The generic domain does not restrict signatures to traditional sharps and flats, integer alterations, seven sharps or flats, major/minor conventions, or a particular notation system. Format- and target-specific limitations belong to adapters, exporters, validation, or `TargetRuleset`s.
+
+### Equality
+
+Two KeySignature values are equal when all seven effective step alterations are equal.
+
+Sparse input specifying only `F → +1` and total input explicitly assigning zero to the other six steps represent the same value. Equality does not depend on construction syntax, source format, display glyphs, entry order, or sparse versus total storage.
+
+Distinct alterations must not be normalized merely because an external notation might render them similarly.
+
+### Separation from Tonal Interpretation
+
+`KeySignature` describes chromatic defaults, not tonal center, tonic, mode, scale, major/minor identity, or harmonic function. Different tonal interpretations may share one signature.
+
+No tonic, mode, major/minor, or scale fields are introduced. Tonal center, mode, scale, and their relationships remain separate open questions; no finalized types for them are defined here.
+
+### Explicit Pitch and Notation Boundaries
+
+An already-resolved `NoteEvent` retains a fully explicit `Pitch`, independent of signature context:
+
+```text
+KeySignature: F → +1; all other steps → 0
+
+F-sharp note → Pitch(F, +1, 4)
+F-natural note → Pitch(F, 0, 4)
+```
+
+The sharp note must not be stored as `Pitch(F, 0, 4)` with an implicit dependency on the signature. Context-dependent source notation must be resolved at the format boundary into explicit canonical pitches.
+
+The existing distinction between semantic `PitchAlteration` and displayed `Accidental` remains unchanged. Likewise, KeySignature state is separate from displayed key-signature glyphs and accidental ordering.
+
+Glyph order, layout, source spelling, and format-specific tokens are not stored in canonical KeySignature or included in its identity. They belong in notation/source representations when needed.
+
+The domain question is: what `PitchAlteration` applies by default to a given `DiatonicStep`? An operation such as `alterationFor(step)` would illustrate that question only; no public API is finalized.
+
+### Scope and Inheritance
+
+KeySignature remains state at Composition, Part, or Voice scope, with hierarchical inheritance, persistent local overrides, and explicit return to inheritance. This decision defines the value, not timeline storage or override APIs.
+
+See [ADR-0027](../decisions/0027-canonical-key-signature.md).
+
+---
+
 ## Open Design Questions
 
 The following points remain unresolved:
@@ -1492,13 +1581,23 @@ The following points remain unresolved:
 
 - Concrete Java implementation of the accepted Tempo value model
 - Concrete Java implementation of the accepted Meter value model
-- KeySignature representation
+- Concrete Java implementation of the accepted KeySignature value model
 - Concrete state timeline storage and APIs
 - Representation and API for explicitly ending a local override
 - Detailed Instrument and InstrumentAssignment models
 - Instrument transposition and target-specific instrument mapping
 
 The accepted state scopes and inheritance semantics do not decide these details.
+
+### Tonal Semantics and Format Boundaries
+
+- Tonal center semantics
+- Mode semantics
+- Scale semantics
+- Relationships between tonal center, mode, scale, and key-signature context
+- Concrete format mappings and adapters, including ABC, MIDI, MusicXML, and LOTRO
+
+No tonal types or adapter designs are established by the KeySignature decision.
 
 ### Tempo Notation, Expressions, and Playback
 
