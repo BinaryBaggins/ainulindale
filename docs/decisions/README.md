@@ -31,6 +31,7 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0023 – Canonical Scopes for Tempo, Meter, KeySignature, and InstrumentAssignment](0023-musical-state-scopes.md)
 - [ADR-0024 – Meter Preserves Structural Metric Grouping](0024-structural-meter-model.md)
 - [ADR-0025 – Meter Does Not Define Measure Structure by Itself](0025-meter-and-measure-structure.md)
+- [ADR-0026 – Tempo Uses a Canonical Rational Score-to-Time Rate](0026-canonical-tempo-rate.md)
 
 ## Open Decisions
 
@@ -45,7 +46,13 @@ In particular, the following have not yet been finalized:
 - Instrument and InstrumentAssignment model details
 - Instrument transposition and target-specific instrument mapping
 - Tuning and SoundingPitch
-- Tempo value representation
+- Concrete Java implementation of the accepted Tempo value model
+- MetronomeMark and source/notation representation
+- Textual tempo indications and their relationship to quantitative Tempo
+- Gradual tempo changes, transitions, and tempo curves
+- Fallback policies for unspecified quantitative tempo
+- Playback implementation and PlaybackTime representation
+- Technical rounding, clock units, scheduling, MIDI timing, and audio timing
 - Concrete Java implementation of the accepted Meter value model
 - Measure and barline model, including MeasureStructure
 - MeasurePosition model and derivation

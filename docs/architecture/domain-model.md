@@ -1094,15 +1094,15 @@ Within the same state timeline, scope, and state type, at most one value may be 
 
 The effective local state at a position is the latest local state change at or before that position, unless that local override has explicitly ended.
 
-For example, an illustrative tempo timeline is:
+For example, a canonical quantitative tempo timeline is:
 
 ```text
-0   → 120 BPM
-1   → 90 BPM
-3/2 → 110 BPM
+0   → Tempo(30)
+1   → Tempo(45/2)
+3/2 → Tempo(55/2)
 ```
 
-This example does not decide the tempo value representation.
+These rates are in whole notes per minute, equivalent to quarter-note metronome indications of 120, 90, and 110 per minute respectively. The canonical Tempo value model is defined in section 41.
 
 A value at `ScorePosition.ZERO` is not required. An absent initial value is valid: state may be unspecified or inherited from an allowed parent scope. No canonical default value is introduced.
 
@@ -1378,13 +1378,119 @@ See [ADR-0025](../decisions/0025-meter-and-measure-structure.md).
 
 ---
 
+## 41. Canonical Quantitative Tempo
+
+### Immutable Value Object and Rate Unit
+
+`Tempo` is an immutable value object describing the quantitative rate between canonical score time and real time. Because score time uses the whole note as its base unit, tempo is normalized to whole notes per minute.
+
+Conceptually:
+
+```java
+record Tempo(Rational wholeNotesPerMinute) {}
+```
+
+This illustrates the semantic value only; the exact Java representation and API remain implementation details.
+
+The invariant is:
+
+```text
+wholeNotesPerMinute > 0
+```
+
+Zero and negative rates are invalid. The generic domain imposes no arbitrary upper rate limit.
+
+### Exact Rational Normalization
+
+Canonical tempo uses exact `Rational` values, not floating-point values. A conventional metronome indication resolves to a rate by multiplying its reference note duration by its rate per minute:
+
+```text
+quarter note = 120 per minute
+120 × 1/4 = 30 whole notes per minute
+→ Tempo(30)
+
+dotted quarter = 60 per minute
+60 × 3/8 = 180/8 = 45/2 whole notes per minute
+→ Tempo(45/2)
+```
+
+The rate remains rational for as long as possible. Rounding needed for playback timestamps, MIDI scheduling, audio clocks, nanoseconds, or other technical representations belongs at the corresponding technical boundary, not inside canonical `Tempo`.
+
+### Equality and Metronome Representation
+
+Canonical `Tempo` equality expresses equality of the normalized quantitative rate:
+
+```text
+quarter = 120 → 120 × 1/4 → 30 whole notes per minute
+half = 60     → 60 × 1/2  → 30 whole notes per minute
+```
+
+Both indications resolve to the same `Tempo(30)`. Their metronome reference durations do not participate in `Tempo.equals()` semantics. This intentionally differs from `Meter`, whose explicit structural grouping remains significant even when nominal durations are equal.
+
+The conceptual distinction is:
+
+```text
+Tempo         = canonical quantitative musical rate
+MetronomeMark = notation / presentation / source representation
+```
+
+A future metronome representation might contain a reference `MusicalDuration` and a rate per minute, but no concrete `MetronomeMark` type is accepted here. Source spelling or display choices must not be embedded in canonical `Tempo`. Preserved notation belongs in the corresponding source or notation model, such as the separate ABC representation.
+
+### Unspecified State and Scope
+
+Absent Tempo state is valid and means that no canonical quantitative tempo has been specified. It is neither `Tempo.ZERO` nor an implicit canonical default such as 120 BPM. A value at `ScorePosition.ZERO` remains optional.
+
+A player, importer, exporter, target, or UI may later apply an appropriate fallback policy without materializing that fallback as canonical Composition state unless explicitly requested. The policies themselves remain open.
+
+Tempo remains Composition-scoped state. Part- and Voice-local tempo are not introduced. The shared-time relationship remains:
+
+```text
+ScorePosition
+    ↓ effective Tempo
+PlaybackTime
+```
+
+Polytempo remains outside the current architecture and would require a deliberate revision of the shared-time model.
+
+### State Changes and Separate Tempo Expressions
+
+The accepted timeline contains state changes:
+
+```text
+position 0 → Tempo A
+position 8 → Tempo B
+```
+
+Between state changes, the specified quantitative tempo is constant. Gradual changes such as ritardando, accelerando, and tempo curves have a different temporal character and remain open. The basic `Tempo` value object has no curve, interpolation, or transition-duration fields.
+
+Textual indications such as Largo, Andante, Allegro, and Presto do not define a unique mathematical score-to-real-time rate and are not themselves quantitative `Tempo` values. Possible future `TempoIndication` or `TempoExpression` concepts, and their relationship to quantitative tempo, remain undecided. No requirement about carrying either, both, or neither is introduced here.
+
+### Derived Real-Time Duration
+
+For a score duration over which the specified tempo is constant:
+
+```text
+real duration = score duration / wholeNotesPerMinute × one minute
+
+Tempo = 30 whole notes per minute
+
+1 whole note → 1/30 minute → 2 seconds
+1/4 whole note → 1/2 second
+```
+
+This defines the semantic relationship only. Playback clock types, time units, scheduling APIs, rounding policies, MIDI timing, and audio-engine timing remain technical boundary concerns. No conversion algorithm across changing tempo states or playback implementation is designed here.
+
+See [ADR-0026](../decisions/0026-canonical-tempo-rate.md).
+
+---
+
 ## Open Design Questions
 
 The following points remain unresolved:
 
 ### State Representations and Implementation
 
-- Tempo value representation
+- Concrete Java implementation of the accepted Tempo value model
 - Concrete Java implementation of the accepted Meter value model
 - KeySignature representation
 - Concrete state timeline storage and APIs
@@ -1393,6 +1499,17 @@ The following points remain unresolved:
 - Instrument transposition and target-specific instrument mapping
 
 The accepted state scopes and inheritance semantics do not decide these details.
+
+### Tempo Notation, Expressions, and Playback
+
+- MetronomeMark and source/notation representation
+- Textual tempo indications and their relationship to quantitative Tempo
+- Gradual tempo changes, transitions, and tempo curves
+- Fallback policies when quantitative tempo is unspecified
+- Playback implementation and PlaybackTime representation
+- Technical rounding, clock units, scheduling, MIDI timing, and audio timing
+
+The canonical positive rational rate is accepted; these representations and policies remain open.
 
 ### Meter Interpretation and Measure Structure
 
