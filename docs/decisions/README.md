@@ -36,6 +36,9 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0028 – External Formats Are Expressiveness References, Not Domain Templates](0028-external-formats-as-expressiveness-references.md)
 - [ADR-0029 – ScaleStructure Preserves Diatonic and Chromatic Degree Semantics](0029-pitch-class-and-scale-structure.md)
 - [ADR-0030 – TonalContext Combines PitchClass Center and ScaleStructure](0030-tonal-context.md)
+- [ADR-0031 – Instrument Identity Is Separate from Part Assignment and Performance Setup](0031-instrument-definition-and-assignment.md)
+- [ADR-0032 – Instrument Transposition Uses Directed Diatonic and Chromatic Interval Semantics](0032-written-to-sounding-transposition.md)
+- [ADR-0033 – External Instrument Catalogs Provide Definitions Without Owning Composition Semantics](0033-instrument-catalog-boundary.md)
 
 ## Open Decisions
 
@@ -47,9 +50,14 @@ In particular, the following have not yet been finalized:
 - Additional event types and any further event hierarchy
 - Musical relations such as ties, slurs, and tuplets
 - Dynamics scope and temporal model
-- Instrument and InstrumentAssignment model details
-- Instrument transposition and target-specific instrument mapping
-- Tuning and SoundingPitch
+- Exact InstrumentDefinition metadata
+- Performance/setup models, including capo, scordatura, and alternate tuning
+- Composition-versus-Project persistence ownership of local instrument definitions
+- Catalog provenance schema and catalog implementation
+- Target-specific instrument mappings
+- Concrete instrument, assignment, and interval APIs/storage
+- InstrumentAssignment timeline storage
+- Tuning system and technical pitch mapping
 - Concrete Java implementation of the accepted Tempo value model
 - MetronomeMark and source/notation representation
 - Textual tempo indications and their relationship to quantitative Tempo

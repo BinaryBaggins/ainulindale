@@ -135,7 +135,7 @@ Such concepts may be mapped to one or more parts at system boundaries.
 
 A `Part` is not inherently limited to exactly one instrument.
 
-`InstrumentAssignment` is Part-scoped state and may change over score time. Its scope is defined in section 38; the detailed instrument and assignment models remain open.
+`InstrumentAssignment` is Part-scoped state and may change over score time. Its scope is defined in section 38; sections 45–47 define instrument identity, assignment, transposition, and the catalog boundary.
 
 A specific `TargetRuleset` may impose stricter rules.
 
@@ -870,14 +870,12 @@ The following are not part of `Pitch`:
 - MIDI range
 - Specific tuning
 
-Future processing may, for example, take this form:
+`NoteEvent.pitch` is canonical sounding/concert musical pitch. Instrument-specific written pitch is derived using the inverse of the instrument's intrinsic written-to-sounding transposition. Canonical sounding pitch does not require an additional instrument-transposition step before acoustic interpretation.
+
+Future acoustic processing may, for example, take this form:
 
 ```text
-Pitch
-+
-InstrumentTransposition
-    ↓
-SoundingPitch
+Canonical sounding Pitch
 +
 TuningSystem
     ↓
@@ -887,7 +885,7 @@ Frequency
 or:
 
 ```text
-SoundingPitch
+Canonical sounding Pitch
 +
 MidiMappingPolicy
     ↓
@@ -921,6 +919,8 @@ The specific acoustic interpretation remains the responsibility of the tuning sy
 ## 32. NoteEvent
 
 A `NoteEvent` is the first concrete `VoiceEvent` and is an entity within exactly one voice.
+
+Its `Pitch` is the fully resolved canonical sounding/concert musical pitch. Instrument-specific written pitch is derived separately; see section 46.
 
 It has at least:
 
@@ -1217,7 +1217,7 @@ A concrete target such as LOTRO may impose stricter constraints through a `Targe
 
 Voice-local instrument assignment is deliberately deferred. Independently assigned instruments in different voices may indicate separate parts unless a concrete future domain requirement justifies voice-local assignment.
 
-The detailed models for `Instrument`, `InstrumentAssignment`, `InstrumentTransposition`, and target-specific instrument mapping remain open.
+Sections 45 and 46 define InstrumentDefinition, InstrumentAssignment, and intrinsic directed transposition. Exact metadata, temporary setup models, and target-specific instrument mappings remain open.
 
 ### Accepted Scope Matrix
 
@@ -1707,6 +1707,116 @@ See [ADR-0030](../decisions/0030-tonal-context.md).
 
 ---
 
+## 45. Instrument Identity, Assignment, and Performance Setup
+
+`InstrumentDefinition` is an entity with stable `InstrumentDefinitionId`. It describes musical identity and intrinsic properties independently of its assigned part, time of use, editor/session state, source format, or external catalog availability.
+
+Conceptually:
+
+```text
+InstrumentDefinition
+├── InstrumentDefinitionId
+├── metadata
+└── WrittenToSoundingTransposition
+```
+
+Names and descriptive metadata are not identity. Exact metadata fields and Java APIs remain open.
+
+`InstrumentAssignment` is a value object used as Part-scoped state. It answers which instrument definition is assigned to the part at a `ScorePosition`, by referencing `InstrumentDefinitionId`. It has no separate entity identity and does not redundantly embed the full definition in every assignment.
+
+Intrinsic written-to-sounding transposition belongs to InstrumentDefinition: it is part of what the instrument is, not where it is assigned. Assignments must not override that transposition. Every definition has a well-defined relation; non-transposing instruments use identity transposition rather than missing or null state.
+
+Capo, scordatura, alternate tuning, and other temporary performance configurations are separate future setup concepts. They must not mutate or override intrinsic transposition or be placed into InstrumentAssignment as transposition overrides. Their exact names, types, and behavior remain open.
+
+See [ADR-0031](../decisions/0031-instrument-definition-and-assignment.md).
+
+---
+
+## 46. Structural Intervals and Directed Instrument Transposition
+
+### PitchInterval
+
+`PitchInterval` is an immutable structural value object with:
+
+```text
+diatonicSteps: signed integer
+chromaticOffset: Rational
+```
+
+Both components may be negative, zero, or positive. Chromatic offset uses the accepted abstract semitone unit, without floating-point representation or tuning assumptions. Exact Java types and APIs remain implementation details.
+
+Equality preserves both components. An augmented unison `(0, +1)` and a minor second `(+1, +1)` are distinct even if acoustically equivalent under a particular tuning. Intervals must not be normalized solely by chromatic distance.
+
+Applying an interval uses diatonicSteps to determine the target diatonic base step, including octave movement. The chromaticOffset determines the required chromatic distance, and the resulting PitchAlteration is derived to satisfy both constraints:
+
+```text
+C4 + PitchInterval(+1, +1) → D♭4
+C4 + PitchInterval( 0, +1) → C♯4
+```
+
+Octave displacement is already represented by the interval:
+
+```text
+written C4 → sounding C5: PitchInterval(+7, +12)
+written C4 → sounding C3: PitchInterval(-7, -12)
+```
+
+No separate octave-transposition field is stored. Application and mutation APIs remain open.
+
+### WrittenToSoundingTransposition
+
+`WrittenToSoundingTransposition` gives PitchInterval a domain-significant direction:
+
+```text
+written Pitch
++ WrittenToSoundingTransposition
+    → canonical sounding Pitch
+```
+
+Direction must be encoded in a wrapper value object or another strongly typed representation, not established solely by comments around a bare interval. The exact representation remains open.
+
+Because NoteEvent.pitch is canonical sounding/concert pitch, notation derives the inverse:
+
+```text
+canonical sounding Pitch
+- WrittenToSoundingTransposition
+    → instrument-specific written Pitch
+```
+
+A separate independent SoundingToWrittenTransposition must not be stored. The inverse is derived, avoiding two potentially inconsistent sources of truth.
+
+For a non-transposing/concert instrument, WrittenToSoundingTransposition contains `PitchInterval(0, 0)`. Identity is explicit, not absent or null.
+
+See [ADR-0032](../decisions/0032-written-to-sounding-transposition.md).
+
+---
+
+## 47. External Instrument Catalog Boundary
+
+A future InstrumentCatalog may provide standard or LOTRO instrument definitions, reusable metadata, user-facing selection, and library integration. It is a provider of definitions, not the canonical owner of an already-stored composition's meaning.
+
+```text
+External Instrument Catalog
+    ↓ select/import
+Locally retained InstrumentDefinition
+    ↓ referenced by
+InstrumentAssignment
+```
+
+The Composition or Project retains a local semantic snapshot/copy of the required definition. Saved musical meaning must remain interpretable if the catalog is unavailable, an entry changes, or a newer catalog version exists. External updates must not silently change existing composition semantics.
+
+Whether definitions ultimately belong directly to Composition or to a Project layer remains open. No persistence ownership or storage mechanism is chosen here.
+
+Optional provenance may later record a source catalog identifier, entry identifier, or catalog version. These are possible metadata, not finalized fields or prerequisites for interpreting the definition.
+
+> Catalog provides definitions; the Composition/Project retains the musical meaning it actually uses.
+
+The architecture anticipates this boundary from the start, but the full catalog feature is deferred. No module, persistence, network service, synchronization, version-resolution logic, or catalog-browser UI is introduced.
+
+See [ADR-0033](../decisions/0033-instrument-catalog-boundary.md).
+
+---
+
 ## Open Design Questions
 
 The following points remain unresolved:
@@ -1718,8 +1828,13 @@ The following points remain unresolved:
 - Concrete Java implementation of the accepted KeySignature value model
 - Concrete state timeline storage and APIs
 - Representation and API for explicitly ending a local override
-- Detailed Instrument and InstrumentAssignment models
-- Instrument transposition and target-specific instrument mapping
+- Concrete instrument, assignment, and interval APIs/storage
+- InstrumentAssignment timeline storage
+- Exact InstrumentDefinition metadata
+- Performance/setup models, including capo, scordatura, and alternate tuning
+- Composition-versus-Project persistence ownership of local instrument definitions
+- Catalog provenance schema and catalog implementation
+- Target-specific instrument mappings
 
 The accepted state scopes and inheritance semantics do not decide these details.
 
@@ -1787,13 +1902,11 @@ Lyrics association
 
 The current intention is to model these structures as relations between events rather than as a deeply nested event hierarchy.
 
-### Sounding Pitch and Tuning
+### Tuning and Technical Pitch Mapping
 
 The following still need to be defined:
 
 ```text
-InstrumentTransposition
-SoundingPitch
 TuningSystem
 MidiMappingPolicy
 ```
