@@ -6,6 +6,8 @@ This document describes the currently accepted state of Ainulindalë's canonical
 
 The model is being developed as a greenfield architecture alongside the existing legacy system. Existing classes such as `EditorTrack`, `TrackEditorModel`, and `EditorWorkspace` impose no compatibility requirements on the new model.
 
+Greenfield does not require rewriting suitable domain-independent infrastructure. Existing Result, i18n, and settings infrastructure should be reused where compatible with the new dependency boundaries, without introducing legacy musical/editor dependencies. Localization and application settings remain outside the canonical musical domain. See [ADR-0038](../decisions/0038-reuse-domain-independent-infrastructure.md).
+
 Unresolved design questions are explicitly marked as open.
 
 ---
@@ -388,7 +390,7 @@ composition.parts().add(part);
 part.voices().clear();
 ```
 
-`Composition` is the public mutation boundary of the aggregate. External structural and domain mutations enter through it, including changes to nested entities.
+`Composition` is the sole public mutation boundary of the aggregate. External structural and domain mutations enter through it, including changes to nested entities.
 
 Conceptually:
 
@@ -405,15 +407,43 @@ composition.changeNotePitch(eventId, pitch);
 
 These examples illustrate the mutation boundary, not a finalized API.
 
-Internally, `Composition` may delegate to `Part` or `Voice`. Nested entities may have internal or package-private mutation operations, but callers must not bypass the aggregate root through unrestricted public mutation of `Part`, `Voice`, or `VoiceEvent`.
+Internally, `Composition` may delegate to nested entities. `Part`, `Voice`, `VoiceEvent`, `NoteEvent`, and `MusicalRelation` may be externally readable, but must not expose unrestricted public setters or mutation paths that bypass the root. For example, `note.setPitch(...)`, `note.setRange(...)`, `part.voices().add(...)`, and `voice.events().remove(...)` are not public command boundaries. Internal or package-restricted mutation may be used; the exact Java visibility strategy remains open.
 
 This protects composition-wide invariants, including `EventId` uniqueness, valid ownership, and relation referential integrity. Relation references must resolve to entities of the correct type in the same Composition, and relation-specific invariants must hold. Further cross-entity invariants and relation-specific deletion behavior remain open.
 
-The domain provides primitive, invariant-safe mutations. Higher-level user operations such as transpose, quantize, move selection, and duplicate section, together with editing transactions and undo/redo, belong to the future editing layer. Their design remains open.
+### Queries and Identity-Based Commands
+
+Reads may naturally traverse `Composition → Part → Voice → VoiceEvent`. Conceptual queries such as `composition.parts()`, `part.voices()`, `voice.events()`, `note.pitch()`, and `note.range()` do not all need flat root-level equivalents. Returned collections and entities must not permit unrestricted aggregate mutation. Concrete read-only views or snapshots remain implementation details.
+
+Commands addressing existing entities use stable typed IDs such as PartId, VoiceId, EventId, RelationId, and InstrumentDefinitionId, rather than Java object identity or mutable entity references as the primary boundary. Creation makes the new identity available to the caller; exact return/result shapes remain open.
+
+Normal domain creation creates new identities. Persistence rehydration restores existing identities through a separate reconstruction mechanism, not ordinary editing. A factory, builder, repository mapper, or dedicated path may later be suitable. Persistence-oriented operations such as `addPartWithId(...)` or `addNoteWithExistingId(...)` are not introduced into the normal editing API without implementation evidence justifying them.
+
+### Domain Operations and Editing
+
+The domain exposes primitive, invariant-safe operations expressing musical intent. Categories include Part and Voice structure, NoteEvent changes, scoped musical state, relations, and instrument definitions/assignments. These categories are not a complete method catalog or a requirement for generic collection CRUD.
+
+A single public domain operation preserves aggregate validity atomically from the caller's perspective. Its invariant-relevant effects must not expose an intermediate invalid state. A genuine operation may affect multiple entities where its semantics require it; there is no artificial one-entity-per-operation constraint.
+
+Selection-driven transpose, quantize, move, duplicate section, paste, editing transactions, and undo/redo belong to the future editing layer. Selection is not Composition state, so an API such as `composition.transposeSelectedNotes(...)` is not introduced. Editing resolves session state into entity IDs and may orchestrate multiple domain operations.
+
+Composition does not expose generic `beginTransaction()`, `commit()`, or `rollback()` APIs. Higher-level transaction grouping belongs to editing, while the domain guarantees consistency of each individual operation. Exact editing transaction and undo/redo semantics remain open.
+
+### Expected Rejection and Programming Errors
+
+Predictable domain rejection is represented explicitly as a result. Examples include an unknown entity ID, removing a part's last voice, an invalid Tie, removal blocked by referential integrity, or an invalid state transition. These examples do not choose a relation deletion policy.
+
+Programming-contract violations and broken internal invariants are a different category and may use exceptions where appropriate. Expected domain rejection is not a programming error.
+
+Reuse the existing Result abstraction where it remains domain-independent and suitable for the new boundaries; do not create a competing framework solely for the greenfield domain. No generic signature is specified here. New canonical domain errors are semantic, programmatically distinguishable values carried by that abstraction.
+
+Names such as LastVoiceRemoval, EntityNotFound, InvalidTie, and ReferencedEntity illustrate error categories, not a finalized hierarchy. Localized strings are not the primary error contract. Application/UI code maps semantic errors to messages through existing i18n infrastructure, outside the domain. The domain does not depend on ResourceBundle semantics, UI locale, or translated messages.
 
 Value objects remain immutable.
 
 See [ADR-0021](../decisions/0021-composition-aggregate-mutation-boundary.md).
+
+These public API and infrastructure principles are refined in [ADR-0037](../decisions/0037-composition-public-api-boundary.md) and [ADR-0038](../decisions/0038-reuse-domain-independent-infrastructure.md).
 
 ---
 
@@ -1914,6 +1944,11 @@ See [ADR-0036](../decisions/0036-tuplet-group-design-deferred.md).
 The following points remain unresolved:
 
 ### State Representations and Implementation
+
+- Exact Composition Java API, command result shapes, and read-view mechanism
+- Exact domain-error hierarchy
+- Persistence rehydration mechanism
+- Concrete Maven placement of Result, i18n, and settings infrastructure
 
 - Concrete Java implementation of the accepted Tempo value model
 - Concrete Java implementation of the accepted Meter value model

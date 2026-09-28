@@ -42,6 +42,8 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0034 – Musical Relations Are Composition-Owned Entities](0034-composition-owned-musical-relations.md)
 - [ADR-0035 – Tie and Slur Use Explicit NoteEvent References](0035-tie-and-slur-relations.md)
 - [ADR-0036 – TupletGroup Semantics Are Deferred Until Group Membership Requirements Are Clear](0036-tuplet-group-design-deferred.md)
+- [ADR-0037 – Composition Exposes Intent-Based Mutations Through the Aggregate Root](0037-composition-public-api-boundary.md)
+- [ADR-0038 – Reuse Suitable Domain-Independent Infrastructure Across the Greenfield Architecture](0038-reuse-domain-independent-infrastructure.md)
 
 ## Open Decisions
 
@@ -50,6 +52,10 @@ In particular, the following have not yet been finalized:
 - Concrete event storage and derived index implementations
 - Technical ordering policies for simultaneous events
 - Exact aggregate mutation API and internal delegation mechanisms
+- Query views/snapshots and command result shapes
+- Exact domain-error hierarchy
+- Persistence rehydration mechanism
+- Concrete Maven placement of Result, i18n, and settings
 - Additional event types and any further event hierarchy
 - TupletGroup concrete model, including membership, ratios, nesting, and notation relationships
 - Explicit rest representation
