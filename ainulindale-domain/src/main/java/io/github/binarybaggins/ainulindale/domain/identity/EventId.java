@@ -18,19 +18,19 @@ public record EventId(UUID value) {
     }
 
     /**
-     * Creates a new event ID with a randomly generated UUID value.
-     * @return the newly created event ID
-     */
-    public static EventId create() {
-        return new EventId(UUID.randomUUID());
-    }
-
-    /**
      * Creates a new event ID with the specified UUID value.
      * @param value the UUID value of the event ID
      * @return the newly created event ID
      */
     public static EventId of(UUID value) {
         return new EventId(value);
+    }
+
+    /**
+     * Creates a new event ID with a randomly generated UUID value.
+     * @return the newly created event ID
+     */
+    public static EventId create() {
+        return of(UUID.randomUUID());
     }
 }

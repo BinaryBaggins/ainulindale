@@ -19,19 +19,19 @@ public record CompositionId(UUID value) {
     }
 
     /**
-     * Creates a new composition ID with a randomly generated UUID value.
-     * @return the newly created composition ID
-     */
-    public static CompositionId create() {
-        return new CompositionId(UUID.randomUUID());
-    }
-
-    /**
      * Creates a new composition ID with the specified UUID value.
      * @param value the UUID value of the composition ID
      * @return the newly created composition ID
      */
     public static CompositionId of(UUID value) {
         return new CompositionId(value);
+    }
+
+    /**
+     * Creates a new composition ID with a randomly generated UUID value.
+     * @return the newly created composition ID
+     */
+    public static CompositionId create() {
+        return of(UUID.randomUUID());
     }
 }

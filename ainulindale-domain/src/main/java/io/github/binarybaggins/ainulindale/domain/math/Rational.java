@@ -88,7 +88,7 @@ public record Rational(BigInteger numerator, BigInteger denominator) implements 
      */
     public Rational plus(Rational other) {
         Objects.requireNonNull(other, "Other rational cannot be null");
-        return new Rational(
+        return of(
             numerator.multiply(other.denominator).add(other.numerator.multiply(denominator)),
             denominator.multiply(other.denominator)
         );
@@ -101,7 +101,7 @@ public record Rational(BigInteger numerator, BigInteger denominator) implements 
      */
     public Rational minus(Rational other) {
         Objects.requireNonNull(other, "Other rational cannot be null");
-        return new Rational(
+        return of(
             numerator.multiply(other.denominator).subtract(other.numerator.multiply(denominator)),
             denominator.multiply(other.denominator)
         );
@@ -114,7 +114,7 @@ public record Rational(BigInteger numerator, BigInteger denominator) implements 
      */
     public Rational times(Rational other) {
         Objects.requireNonNull(other, "Other rational cannot be null");
-        return new Rational(numerator.multiply(other.numerator), denominator.multiply(other.denominator));
+        return of(numerator.multiply(other.numerator), denominator.multiply(other.denominator));
     }
 
     /**
@@ -129,7 +129,7 @@ public record Rational(BigInteger numerator, BigInteger denominator) implements 
         if (other.isZero()) {
             throw new ArithmeticException("Division by zero");
         }
-        return new Rational(numerator.multiply(other.denominator), denominator.multiply(other.numerator));
+        return of(numerator.multiply(other.denominator), denominator.multiply(other.numerator));
     }
 
     /**
@@ -137,7 +137,7 @@ public record Rational(BigInteger numerator, BigInteger denominator) implements 
      * @return the negated rational number
      */
     public Rational negated() {
-        return new Rational(numerator.negate(), denominator);
+        return of(numerator.negate(), denominator);
     }
 
     /**

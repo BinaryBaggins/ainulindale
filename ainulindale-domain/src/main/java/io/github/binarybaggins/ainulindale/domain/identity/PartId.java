@@ -19,19 +19,19 @@ public record PartId(UUID value) {
     }
 
     /**
-     * Creates a new part ID with a randomly generated UUID value.
-     * @return the newly created part ID
-     */
-    public static PartId create() {
-        return new PartId(UUID.randomUUID());
-    }
-
-    /**
      * Creates a new part ID with the specified UUID value.
      * @param value the UUID value of the part ID
      * @return the newly created part ID
      */
     public static PartId of(UUID value) {
         return new PartId(value);
+    }
+
+    /**
+     * Creates a new part ID with a randomly generated UUID value.
+     * @return the newly created part ID
+     */
+    public static PartId create() {
+        return of(UUID.randomUUID());
     }
 }

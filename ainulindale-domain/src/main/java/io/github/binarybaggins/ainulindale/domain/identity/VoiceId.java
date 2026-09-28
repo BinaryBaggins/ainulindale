@@ -19,19 +19,19 @@ public record VoiceId(UUID value) {
     }
 
     /**
-     * Creates a new voice ID with a randomly generated UUID value.
-     * @return the newly created voice ID
-     */
-    public static VoiceId create() {
-        return new VoiceId(UUID.randomUUID());
-    }
-
-    /**
      * Creates a new voice ID with the specified UUID value.
      * @param value the UUID value of the voice ID
      * @return the newly created voice ID
      */
     public static VoiceId of(UUID value) {
         return new VoiceId(value);
+    }
+
+    /**
+     * Creates a new voice ID with a randomly generated UUID value.
+     * @return the newly created voice ID
+     */
+    public static VoiceId create() {
+        return of(UUID.randomUUID());
     }
 }

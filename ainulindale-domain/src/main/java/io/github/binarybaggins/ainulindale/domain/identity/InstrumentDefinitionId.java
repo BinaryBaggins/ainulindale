@@ -19,19 +19,19 @@ public record InstrumentDefinitionId(UUID value) {
     }
 
     /**
-     * Creates a new instrument definition ID with a randomly generated UUID value.
-     * @return the newly created instrument definition ID
-     */
-    public static InstrumentDefinitionId create() {
-        return new InstrumentDefinitionId(UUID.randomUUID());
-    }
-
-    /**
      * Creates a new instrument definition ID with the specified UUID value.
      * @param value the UUID value of the instrument definition ID
      * @return the newly created instrument definition ID
      */
     public static InstrumentDefinitionId of(UUID value) {
         return new InstrumentDefinitionId(value);
+    }
+
+    /**
+     * Creates a new instrument definition ID with a randomly generated UUID value.
+     * @return the newly created instrument definition ID
+     */
+    public static InstrumentDefinitionId create() {
+        return of(UUID.randomUUID());
     }
 }

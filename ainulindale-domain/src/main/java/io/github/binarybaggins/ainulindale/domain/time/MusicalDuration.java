@@ -55,7 +55,7 @@ public record MusicalDuration(Rational value) implements Comparable<MusicalDurat
     public MusicalDuration plus(MusicalDuration other) {
         Objects.requireNonNull(other, "other");
 
-        return new MusicalDuration(value.plus(other.value));
+        return of(value.plus(other.value));
     }
 
     /**

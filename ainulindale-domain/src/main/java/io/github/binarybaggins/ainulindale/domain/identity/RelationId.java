@@ -19,19 +19,19 @@ public record RelationId(UUID value) {
     }
 
     /**
-     * Creates a new relation ID with a randomly generated UUID value.
-     * @return the newly created relation ID
-     */
-    public static RelationId create() {
-        return new RelationId(UUID.randomUUID());
-    }
-
-    /**
      * Creates a new relation ID with the specified UUID value.
      * @param value the UUID value of the relation ID
      * @return the newly created relation ID
      */
     public static RelationId of(UUID value) {
         return new RelationId(value);
+    }
+
+    /**
+     * Creates a new relation ID with a randomly generated UUID value.
+     * @return the newly created relation ID
+     */
+    public static RelationId create() {
+        return of(UUID.randomUUID());
     }
 }

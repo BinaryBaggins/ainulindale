@@ -49,7 +49,7 @@ public record MusicalOffset(Rational value) implements Comparable<MusicalOffset>
      */
     public MusicalOffset plus(MusicalOffset other) {
         Objects.requireNonNull(other, "other must not be null");
-        return new MusicalOffset(value.plus(other.value));
+        return of(value.plus(other.value));
     }
 
     /**
@@ -60,7 +60,7 @@ public record MusicalOffset(Rational value) implements Comparable<MusicalOffset>
      */
     public MusicalOffset minus(MusicalOffset other) {
         Objects.requireNonNull(other, "other must not be null");
-        return new MusicalOffset(value.minus(other.value));
+        return of(value.minus(other.value));
     }
 
     /**
@@ -68,7 +68,7 @@ public record MusicalOffset(Rational value) implements Comparable<MusicalOffset>
      * @return a new musical offset representing the negation
      */
     public MusicalOffset negated() {
-        return new MusicalOffset(value.negated());
+        return of(value.negated());
     }
 
     @Override
