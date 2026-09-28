@@ -2,9 +2,9 @@
     "name": "ainulindale",
     "private": true,
     "scripts": {
-    "format": "prettier --write \"ainulindale-*/src/**/*.java\"",
-    "format:check": "prettier --check \"ainulindale-*/src/**/*.java\""
-},
+        "format": "prettier --write \"ainulindale-*/src/**/*.java\"",
+        "format:check": "prettier --check \"ainulindale-*/src/**/*.java\""
+    },
     "devDependencies": {
         "prettier": "^3.9.6",
         "prettier-plugin-java": "^2.10.3"
