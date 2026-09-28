@@ -34,6 +34,8 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0026 – Tempo Uses a Canonical Rational Score-to-Time Rate](0026-canonical-tempo-rate.md)
 - [ADR-0027 – KeySignature Represents Diatonic-Step Alteration Defaults](0027-canonical-key-signature.md)
 - [ADR-0028 – External Formats Are Expressiveness References, Not Domain Templates](0028-external-formats-as-expressiveness-references.md)
+- [ADR-0029 – ScaleStructure Preserves Diatonic and Chromatic Degree Semantics](0029-pitch-class-and-scale-structure.md)
+- [ADR-0030 – TonalContext Combines PitchClass Center and ScaleStructure](0030-tonal-context.md)
 
 ## Open Decisions
 
@@ -61,10 +63,13 @@ In particular, the following have not yet been finalized:
 - Interchangeable or alternate meter relationships
 - Conventional meter-grouping interpretation rules
 - Concrete Java implementation of the accepted KeySignature value model
-- Tonal center semantics
-- Mode semantics
-- Scale semantics
-- Relationships between tonal center, mode, scale, and key-signature context
+- Named mode classification and its relationship to ScaleStructure
+- Whether additional tonal or harmonic concepts are needed
+- TonalContext scope and timeline semantics
+- Explicit relationships between TonalContext and KeySignature beyond their independence
+- Numeric within-octave bounds and treatment of a repeated terminal octave degree
+- Non-octave-periodic systems
+- Concrete Java APIs and storage for the accepted tonal and scale concepts
 - Concrete format mappings and adapters
 - Concrete state timeline implementation and APIs
 - Representation and API for explicitly ending local overrides

@@ -1544,7 +1544,7 @@ Distinct alterations must not be normalized merely because an external notation 
 
 `KeySignature` describes chromatic defaults, not tonal center, tonic, mode, scale, major/minor identity, or harmonic function. Different tonal interpretations may share one signature.
 
-No tonic, mode, major/minor, or scale fields are introduced. Tonal center, mode, scale, and their relationships remain separate open questions; no finalized types for them are defined here.
+No tonic, mode, major/minor, or scale fields are introduced into `KeySignature`. Sections 43 and 44 define tonal center and scale structure separately. Named mode classification remains open.
 
 ### Explicit Pitch and Notation Boundaries
 
@@ -1573,6 +1573,129 @@ See [ADR-0027](../decisions/0027-canonical-key-signature.md).
 
 ---
 
+## 43. PitchClass and ScaleStructure
+
+### Octave-Independent Structural Pitch
+
+`PitchClass` consists of `DiatonicStep` and `PitchAlteration`, with no octave. Examples include C, F♯, E♭, and C with a +1/2-semitone alteration.
+
+Conceptually:
+
+```text
+PitchClass
+├── DiatonicStep
+└── PitchAlteration
+```
+
+Equality preserves structural spelling, following canonical `Pitch`: `C♯ != D♭`, even if a particular tuning makes them acoustically equivalent. A PitchClass contains no octave, MIDI note number, frequency, or tuning information. Its exact Java representation remains open.
+
+A tonal center is represented by `PitchClass`, not a full `Pitch`. A separate `TonalCenter` wrapper is not introduced solely to wrap that value; a future concrete requirement could justify reconsidering it.
+
+### ScaleDegree
+
+A `ScaleDegree` preserves both diatonic and chromatic structure:
+
+```text
+diatonicOffset ∈ nonnegative integers
+chromaticOffset ∈ Rational
+```
+
+The chromatic offset uses the same abstract semitone unit as `PitchAlteration`. It is not a frequency ratio or a commitment to 12-tone equal temperament.
+
+Both offsets are needed. A major-scale structure is:
+
+```text
+Degree 1 → (0,  0)
+Degree 2 → (1,  2)
+Degree 3 → (2,  4)
+Degree 4 → (3,  5)
+Degree 5 → (4,  7)
+Degree 6 → (5,  9)
+Degree 7 → (6, 11)
+```
+
+Relative to center D, degree 3's diatonic offset of 2 identifies F, and its chromatic offset of 4 requires F♯. Chromatic distance alone would lose this spelling information.
+
+Rational offsets preserve microtonal structures, for example `(1, 3/2)`. Floating-point and integer-only chromatic representations are not canonical. Tuning and acoustic interpretation remain separate.
+
+### Ordered ScaleStructure
+
+`ScaleStructure` is an immutable value object containing an ordered sequence of scale degrees relative to a tonal center. The sequence represents first degree, second degree, and so on; ordering is canonical musical semantics, not incidental insertion order.
+
+Accepted invariants:
+
+- At least one degree
+- First degree is `(0, 0)`
+- Diatonic offsets strictly increase
+- Chromatic offsets strictly increase
+- Duplicate degrees are not allowed
+
+Degrees must not be silently inferred, reordered, sorted, normalized, or merged. Invalid input must not be transformed into a different valid structure through automatic normalization. Concrete Java types, collection storage, and APIs remain open.
+
+### Current Octave-Periodic Scope
+
+The current model describes one ordered ascending scale structure within an octave, repeating at the octave. Rational chromatic offsets permit microtonality; octave periodicity does not imply 12-TET.
+
+Arbitrary non-octave-periodic systems are deliberately deferred. No equave or arbitrary-period abstraction is introduced. Such support would require a concrete future requirement and deliberate extension.
+
+The accepted invariants do not yet spell out numeric upper bounds for the offsets or treatment of a repeated terminal octave degree. Those boundary details remain explicitly open rather than being inferred here.
+
+See [ADR-0029](../decisions/0029-pitch-class-and-scale-structure.md).
+
+---
+
+## 44. TonalContext
+
+`TonalContext` is an immutable canonical value object combining:
+
+```text
+TonalContext
+├── center: PitchClass
+└── scaleStructure: ScaleStructure
+```
+
+The exact Java API remains an implementation detail. For example:
+
+```text
+center = PitchClass(D, 0)
+
+scale structure:
+(0, 0)
+(1, 2)
+(2, 3)
+(3, 5)
+(4, 7)
+(5, 9)
+(6, 10)
+```
+
+This describes the structure commonly classified as D Dorian. Its canonical meaning does not depend on the string "Dorian".
+
+### Mode Names and Classification
+
+No required `Mode` enum or mode-name field defines the canonical structure. Traditional modes, custom scales, and microtonal structures are represented through their degrees.
+
+A conventional name may later be derived from a known structure, associated as metadata, or represented through a separate classification concept. Named classification and its relationship to ScaleStructure remain open.
+
+### Independence from KeySignature and Stored Pitch
+
+The concepts answer different questions:
+
+```text
+KeySignature = default PitchAlteration for each DiatonicStep
+TonalContext = tonal center + ordered scale structure
+```
+
+The same KeySignature may be compatible with several TonalContexts. Neither TonalContext nor ScaleStructure requires KeySignature as hidden input to determine its meaning. Future relationships between these concepts must be explicit.
+
+An already-resolved `NoteEvent` retains its fully explicit canonical `Pitch`. Neither TonalContext nor KeySignature is required to interpret it. Tonal context supplies additional information without making pitch storage relative.
+
+TonalContext scope and timeline semantics are not decided here. These concepts follow musical semantics, independently of external formats, as required by [ADR-0028](../decisions/0028-external-formats-as-expressiveness-references.md). Adapter mappings remain open.
+
+See [ADR-0030](../decisions/0030-tonal-context.md).
+
+---
+
 ## Open Design Questions
 
 The following points remain unresolved:
@@ -1591,13 +1714,16 @@ The accepted state scopes and inheritance semantics do not decide these details.
 
 ### Tonal Semantics and Format Boundaries
 
-- Tonal center semantics
-- Mode semantics
-- Scale semantics
-- Relationships between tonal center, mode, scale, and key-signature context
+- Named mode classification and its relationship to ScaleStructure
+- Whether additional tonal or harmonic concepts are needed
+- TonalContext scope and timeline semantics
+- Explicit relationships between TonalContext and KeySignature beyond their independence
+- Numeric within-octave bounds and treatment of a repeated terminal octave degree
+- Non-octave-periodic systems
+- Concrete Java APIs and storage for the accepted tonal and scale concepts
 - Concrete format mappings and adapters, including ABC, MIDI, MusicXML, and LOTRO
 
-No tonal types or adapter designs are established by the KeySignature decision.
+PitchClass, ScaleDegree, ScaleStructure, and TonalContext semantics are accepted. The additional concepts, boundary details, and adapter designs above remain open; tuning remains separate.
 
 ### Tempo Notation, Expressions, and Playback
 
