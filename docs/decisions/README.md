@@ -39,6 +39,9 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0031 – Instrument Identity Is Separate from Part Assignment and Performance Setup](0031-instrument-definition-and-assignment.md)
 - [ADR-0032 – Instrument Transposition Uses Directed Diatonic and Chromatic Interval Semantics](0032-written-to-sounding-transposition.md)
 - [ADR-0033 – External Instrument Catalogs Provide Definitions Without Owning Composition Semantics](0033-instrument-catalog-boundary.md)
+- [ADR-0034 – Musical Relations Are Composition-Owned Entities](0034-composition-owned-musical-relations.md)
+- [ADR-0035 – Tie and Slur Use Explicit NoteEvent References](0035-tie-and-slur-relations.md)
+- [ADR-0036 – TupletGroup Semantics Are Deferred Until Group Membership Requirements Are Clear](0036-tuplet-group-design-deferred.md)
 
 ## Open Decisions
 
@@ -48,7 +51,13 @@ In particular, the following have not yet been finalized:
 - Technical ordering policies for simultaneous events
 - Exact aggregate mutation API and internal delegation mechanisms
 - Additional event types and any further event hierarchy
-- Musical relations such as ties, slurs, and tuplets
+- TupletGroup concrete model, including membership, ratios, nesting, and notation relationships
+- Explicit rest representation
+- Detailed Slur restrictions and any future justified same-Voice Tie restriction
+- Relation-specific deletion, cascade, or transformation policies
+- Relation storage, indexing, and technical ordering
+- Playback and notation interpretation of relations
+- Lyrics association
 - Dynamics scope and temporal model
 - Exact InstrumentDefinition metadata
 - Performance/setup models, including capo, scordatura, and alternate tuning

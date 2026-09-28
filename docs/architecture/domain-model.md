@@ -49,9 +49,10 @@ The fundamental musical ownership structure is:
 
 ```text
 Composition
-└── Part*
-    └── Voice+
-        └── VoiceEvent*
+├── Part*
+│   └── Voice+
+│       └── VoiceEvent*
+└── MusicalRelation*
 ```
 
 The following rules apply:
@@ -63,6 +64,7 @@ The following rules apply:
 - A `Composition` may contain no parts.
 - A `VoiceEvent` belongs to exactly one `Voice`.
 - A `Voice` may contain no events.
+- Musical relations are owned directly by `Composition` and reference entities without owning them.
 
 ---
 
@@ -78,7 +80,7 @@ Composition
 ├── ordered Parts
 ├── composition-level musical state
 ├── musical form                [later]
-└── cross-entity relations      [later]
+└── composition-owned musical relations
 ```
 
 `Composition` answers the domain question:
@@ -246,6 +248,7 @@ record CompositionId(UUID value) {}
 record PartId(UUID value) {}
 record VoiceId(UUID value) {}
 record EventId(UUID value) {}
+record RelationId(UUID value) {}
 ```
 
 The specific ID technology remains an implementation detail.
@@ -404,7 +407,7 @@ These examples illustrate the mutation boundary, not a finalized API.
 
 Internally, `Composition` may delegate to `Part` or `Voice`. Nested entities may have internal or package-private mutation operations, but callers must not bypass the aggregate root through unrestricted public mutation of `Part`, `Voice`, or `VoiceEvent`.
 
-This protects composition-wide invariants, including `EventId` uniqueness and valid ownership, and provides the boundary for future relation integrity and cross-entity invariants. The details of those future invariants remain undecided.
+This protects composition-wide invariants, including `EventId` uniqueness, valid ownership, and relation referential integrity. Relation references must resolve to entities of the correct type in the same Composition, and relation-specific invariants must hold. Further cross-entity invariants and relation-specific deletion behavior remain open.
 
 The domain provides primitive, invariant-safe mutations. Higher-level user operations such as transpose, quantize, move selection, and duplicate section, together with editing transactions and undo/redo, belong to the future editing layer. Their design remains open.
 
@@ -1034,7 +1037,7 @@ A `VoiceEvent` does not necessarily have a duration or `ScoreRange`. `NoteEvent`
 
 `RangedVoiceEvent` is deliberately deferred: only `NoteEvent` currently justifies a range. A shared ranged abstraction may be introduced later if multiple concrete event types need it.
 
-Relations, tempo, meter, key signatures, and instrument assignments do not automatically become `VoiceEvent`s. A shared musical context alone does not establish voice-level event semantics. Section 38 defines the accepted state scopes; detailed relation models remain open.
+Relations, tempo, meter, key signatures, and instrument assignments do not automatically become `VoiceEvent`s. A shared musical context alone does not establish voice-level event semantics. Section 38 defines the accepted state scopes; sections 48–50 define Composition-owned relations, Tie, Slur, and the deliberate TupletGroup deferral.
 
 See [ADR-0020](../decisions/0020-voice-event-abstraction.md).
 
@@ -1228,7 +1231,8 @@ Sections 45 and 46 define InstrumentDefinition, InstrumentAssignment, and intrin
 | KeySignature | State | Composition, Part, Voice | Hierarchical |
 | InstrumentAssignment | State | Part | Part-local state |
 | NoteEvent | Ranged VoiceEvent | Voice | Owned by exactly one voice |
-| Tie / Slur / TupletGroup | Relation | Detailed model open | Detailed model open |
+| Tie / Slur | Relation | Composition | Explicit NoteEvent references |
+| TupletGroup | Relation / grouping | Composition-owned relation framework | Detailed model deferred |
 | Dynamics | Open | Open | Scope and temporal model open |
 
 “Ranged VoiceEvent” describes the temporal form of `NoteEvent`; it does not introduce `RangedVoiceEvent` as a type.
@@ -1817,6 +1821,94 @@ See [ADR-0033](../decisions/0033-instrument-catalog-boundary.md).
 
 ---
 
+## 48. Composition-Owned Musical Relations
+
+Canonical musical relations are entities owned directly by `Composition`. They do not belong to a voice merely because their references point to voice-owned events. This allows references to cross lower-level ownership boundaries.
+
+Each relation has a stable typed `RelationId` within its Composition, independently of the identities it references. The exact ID implementation remains open, as with other typed entity IDs.
+
+Relations reference existing canonical entities through stable typed IDs; they do not acquire or share ownership. A Voice continues to own its NoteEvents when a Tie or Slur references their EventIds.
+
+### Explicit Structure and Integrity
+
+Different relation types have different structures and invariants. A minimal common `MusicalRelation` abstraction may expose identity only; its exact Java shape remains open. No universal `RelationType + List<EventId> members` structure is introduced.
+
+> Every entity referenced by a relation must exist within the same Composition.
+
+Dangling references are invalid canonical state. Composition, as aggregate root and mutation boundary, validates existence, referenced entity types, and relation-specific invariants. External callers must not bypass it through mutable relation collections. Illustrative operations such as `composition.addTie(...)` or `composition.removeRelation(...)` do not finalize an API.
+
+Deleting a referenced entity must not leave invalid references. Whether a mutation is rejected, a relation is deleted, or a relation is transformed remains a relation-specific future decision; no universal deletion or cascade policy is chosen.
+
+### Collection Semantics
+
+Relation collection/index order does not define musical ordering. Relations carry identity and type-specific references. Deterministic ordering for serialization, tests, export, or persistence is technical processing, not automatically musical semantics. Concrete storage and indexing remain open.
+
+See [ADR-0034](../decisions/0034-composition-owned-musical-relations.md).
+
+---
+
+## 49. Tie and Slur
+
+### Tie
+
+A Tie is a directed relation between exactly two distinct NoteEvents:
+
+```text
+Tie
+├── RelationId
+├── sourceNoteId: EventId
+└── targetNoteId: EventId
+```
+
+Both references must resolve to NoteEvents in the same Composition. Direction is semantic, from source to target. Its invariants are:
+
+```text
+source.id != target.id
+source.pitch == target.pitch
+source.range.end() == target.range.start()
+```
+
+Pitch comparison uses canonical structural Pitch equality, not MIDI note numbers or acoustic equivalence. Enharmonically distinct pitches do not qualify merely because a tuning makes them sound alike.
+
+Temporal adjacency is exact: neither gaps nor overlaps form a canonical Tie. The notes remain independently identified entities; the relation does not merge them.
+
+No same-Voice restriction is imposed. A future concrete requirement may justify constraints in notation rules, editing policy, target validation, or a refined relation decision.
+
+### Slur
+
+A Slur has two distinct NoteEvent anchors:
+
+```text
+Slur
+├── RelationId
+├── startNoteId: EventId
+└── endNoteId: EventId
+```
+
+Both anchors must exist within the Composition, and the start note must occur before the end note in canonical score time. This anchor ordering does not impose Tie-like temporal adjacency.
+
+Intermediate events are not redundantly stored as a mandatory membership list. They can be determined from canonical score structure where needed; detailed selection rules are not defined here. Slur does not contain visual curve data, notation placement, or engraving geometry.
+
+Same-Voice requirements, cross-Voice restrictions, nesting, overlapping Slur restrictions, notation placement, engraving direction, and playback articulation remain open. No such restrictions or interpretations are introduced here.
+
+See [ADR-0035](../decisions/0035-tie-and-slur-relations.md).
+
+---
+
+## 50. TupletGroup Deferral
+
+TupletGroup is recognized as relational/grouping semantics beyond already-resolved rational note durations. Canonical time can represent a duration such as `1/12` exactly without a tuplet object.
+
+A future TupletGroup would preserve additional musical structure, not provide basic rational-time representability. Its detailed model remains open.
+
+`TupletGroup = List<NoteEventId>` would be too narrow: tuplets may involve rests and other structures not modeled as NoteEvents. No explicit RestEvent is currently accepted or introduced by this decision.
+
+Membership, ratio representation, nesting, rests within tuplets, notation relationships, and whether references identify events, ranges, or other future structures remain undecided. Detailed TupletGroup design is not required before the first implementation phase.
+
+See [ADR-0036](../decisions/0036-tuplet-group-design-deferred.md).
+
+---
+
 ## Open Design Questions
 
 The following points remain unresolved:
@@ -1891,16 +1983,17 @@ The following remain open:
 
 ### Relations
 
-The following, among others, still need to be modeled separately:
+- TupletGroup membership, ratio representation, nesting, and notation relationships
+- Explicit rest representation, including rests within tuplets
+- Detailed Slur restrictions, including Voice boundaries, nesting, and overlap
+- Any future same-Voice Tie restriction justified by concrete requirements
+- Relation-specific deletion, cascade, or transformation policies
+- Relation storage, indexing, and technical ordering
+- Exact aggregate relation mutation APIs
+- Playback and notation interpretation of relations
+- Lyrics association
 
-```text
-Tie
-Slur
-TupletGroup
-Lyrics association
-```
-
-The current intention is to model these structures as relations between events rather than as a deeply nested event hierarchy.
+Composition ownership, relation identity, ID references, referential integrity, and the basic Tie and Slur structures are accepted. The details above remain open.
 
 ### Tuning and Technical Pitch Mapping
 
