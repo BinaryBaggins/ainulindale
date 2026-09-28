@@ -1948,7 +1948,7 @@ The following points remain unresolved:
 - Exact Composition Java API, command result shapes, and read-view mechanism
 - Exact domain-error hierarchy
 - Persistence rehydration mechanism
-- Concrete Maven placement of Result, i18n, and settings infrastructure
+- Concrete extraction/adaptation details for Result in foundation and settings/i18n in desktop; initial placement is defined in [module-architecture.md](module-architecture.md)
 
 - Concrete Java implementation of the accepted Tempo value model
 - Concrete Java implementation of the accepted Meter value model

@@ -44,6 +44,8 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0036 – TupletGroup Semantics Are Deferred Until Group Membership Requirements Are Clear](0036-tuplet-group-design-deferred.md)
 - [ADR-0037 – Composition Exposes Intent-Based Mutations Through the Aggregate Root](0037-composition-public-api-boundary.md)
 - [ADR-0038 – Reuse Suitable Domain-Independent Infrastructure Across the Greenfield Architecture](0038-reuse-domain-independent-infrastructure.md)
+- [ADR-0039 – Greenfield Architecture Uses Focused Maven Modules Alongside Temporary Legacy](0039-maven-multi-module-architecture.md)
+- [ADR-0040 – Foundation Contains Only Minimal Domain-Independent Shared Primitives](0040-foundation-module-boundary.md)
 
 ## Open Decisions
 
@@ -55,7 +57,10 @@ In particular, the following have not yet been finalized:
 - Query views/snapshots and command result shapes
 - Exact domain-error hierarchy
 - Persistence rehydration mechanism
-- Concrete Maven placement of Result, i18n, and settings
+- Exact package layout and child-POM implementation
+- Concrete Result extraction and settings/i18n reuse details
+- Future persistence and LOTRO/TargetRuleset module boundaries
+- Possible future settings/i18n extraction for genuine cross-application use
 - Additional event types and any further event hierarchy
 - TupletGroup concrete model, including membership, ratios, nesting, and notation relationships
 - Explicit rest representation

@@ -5,6 +5,7 @@
 This document collects the accepted editing constraints. The editing model is still
 being designed; transactions and undo/redo remain open decisions.
 Their placement in editing is accepted; their exact semantics and implementation remain open.
+These concerns belong in `ainulindale-editing`, which depends on domain without a reverse dependency. See [module-architecture.md](module-architecture.md).
 
 ## Accepted Constraints
 
