@@ -5,9 +5,8 @@ import java.util.Objects;
 
 /**
  * Represents a pitch alteration in music, such as a sharp, flat, or natural.
- * The alteration is expressed as a rational number, where
- * positive values indicate upward alterations (sharps) and
- * negative values indicate downward alterations (flats).
+ * The alteration is expressed as a rational number, where values indicate
+ * upward or downward chromatic alteration in abstract semitone units.
  */
 public record PitchAlteration(Rational value) {
     /**
