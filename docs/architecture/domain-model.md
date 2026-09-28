@@ -253,9 +253,13 @@ record EventId(UUID value) {}
 record RelationId(UUID value) {}
 ```
 
-The specific ID technology remains an implementation detail.
+For the first implementation, each ID is a distinct type backed by a non-null `UUID`. UUID is a technical representation without musical meaning. New identities use UUIDv4 via `UUID.randomUUID()`, not a central numeric sequence. Public domain identities are typed values, not untyped strings or raw UUIDs. No common `DomainId` base class is introduced solely for technical uniformity.
+
+Normal domain creation generates new identities; rehydration restores existing ones. Exact factory/method names and reconstruction mechanisms are not prescribed here.
 
 `EventId` is unique within the entire `Composition`, not merely within a voice. Identity and ownership are distinct: event identity is composition-wide, while each event is owned by exactly one voice.
+
+Using UUIDs does not expand any accepted validity or uniqueness scope into a new global domain invariant. See [ADR-0005](../decisions/0005-stable-typed-domain-identities.md).
 
 The semantic requirements are:
 
@@ -512,9 +516,9 @@ Meter interprets the timeline but does not define it.
 
 Canonical musical time uses only exact, normalized rational values.
 
-Floating-point numbers are excluded as a canonical time representation.
+`Rational` represents all of ℚ, including negative values; it is not restricted to nonnegative musical time. Floating-point numbers are excluded as a canonical value representation.
 
-Conceptually:
+The accepted canonical representation uses `BigInteger numerator` and `BigInteger denominator`. Illustratively:
 
 ```java
 record Rational(
@@ -523,7 +527,7 @@ record Rational(
 ) {}
 ```
 
-The specific implementation may be optimized later.
+The denominator must never be zero. Normalization makes it positive, keeps the sign in the numerator, and fully reduces numerator and denominator by their greatest common divisor. Zero has exactly the canonical representation `0/1`. Exact Java method names are not prescribed.
 
 A `Rational` is normalized:
 
@@ -531,9 +535,11 @@ A `Rational` is normalized:
 2/4    → 1/2
 3/9    → 1/3
 -2/-4  → 1/2
+2/-4   → -1/2
+0/7    → 0/1
 ```
 
-The denominator is positive.
+A zero denominator or division by zero violates the programming contract; it is not an expected domain rejection represented by a domain error. No concrete exception type is selected here.
 
 ---
 
@@ -591,7 +597,7 @@ move(note, MusicalOffset.of(-1, 8));
 
 ## 18. Typed Time Operations
 
-Examples of meaningful operations:
+The accepted semantic algebra for this foundation slice is:
 
 ```text
 ScorePosition + MusicalOffset
@@ -602,9 +608,26 @@ ScorePosition + MusicalDuration
 
 ScorePosition - ScorePosition
     → MusicalOffset
+
+MusicalDuration + MusicalDuration
+    → MusicalDuration
+
+MusicalDuration - MusicalDuration
+    → MusicalOffset
+
+MusicalOffset + MusicalOffset
+    → MusicalOffset
+
+MusicalOffset - MusicalOffset
+    → MusicalOffset
+
+-MusicalOffset
+    → MusicalOffset
 ```
 
-A result must still satisfy the invariants of its target type.
+A result must still satisfy its target type's invariants. Positions and durations remain nonnegative, while offsets may be negative, zero, or positive. Invalid negative results must not be silently saturated or clamped to zero.
+
+Adding two ScorePositions and general multiplication of ScorePosition are not part of this algebra. General MusicalDuration scaling is neither specified nor included for implementation in this slice without a concrete need. These are semantic operations, not prescribed Java method names. See [ADR-0007](../decisions/0007-exact-rational-score-time.md).
 
 ---
 
@@ -1855,7 +1878,7 @@ See [ADR-0033](../decisions/0033-instrument-catalog-boundary.md).
 
 Canonical musical relations are entities owned directly by `Composition`. They do not belong to a voice merely because their references point to voice-owned events. This allows references to cross lower-level ownership boundaries.
 
-Each relation has a stable typed `RelationId` within its Composition, independently of the identities it references. The exact ID implementation remains open, as with other typed entity IDs.
+Each relation has a stable typed `RelationId` within its Composition, independently of the identities it references. Its initial UUID-backed representation follows section 7 without changing the composition-local identity scope.
 
 Relations reference existing canonical entities through stable typed IDs; they do not acquire or share ownership. A Voice continues to own its NoteEvents when a Tie or Slur references their EventIds.
 
