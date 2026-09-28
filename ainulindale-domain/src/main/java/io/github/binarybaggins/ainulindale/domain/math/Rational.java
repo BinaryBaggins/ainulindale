@@ -16,6 +16,13 @@ public record Rational(BigInteger numerator, BigInteger denominator) implements 
 
     public static final Rational MINUS_ONE = new Rational(BigInteger.ONE.negate(), BigInteger.ONE);
 
+    /**
+     * Constructs a new rational number with the specified numerator and denominator.
+     * @param numerator the numerator of the rational number
+     * @param denominator the denominator of the rational number
+     * @throws NullPointerException if the numerator or denominator is null
+     * @throws ArithmeticException if the denominator is zero
+     */
     public Rational {
         Objects.requireNonNull(numerator, "Numerator cannot be null");
         Objects.requireNonNull(denominator, "Denominator cannot be null");

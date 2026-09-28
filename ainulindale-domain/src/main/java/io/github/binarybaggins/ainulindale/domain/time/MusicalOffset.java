@@ -10,6 +10,12 @@ import java.util.Objects;
 public record MusicalOffset(Rational value) implements Comparable<MusicalOffset> {
     public static final MusicalOffset ZERO = new MusicalOffset(Rational.ZERO);
 
+    /**
+     * Constructs a new musical offset with the specified rational value.
+     *
+     * @param value the rational value of the musical offset
+     * @throws NullPointerException if the value is null
+     */
     public MusicalOffset {
         Objects.requireNonNull(value, "value must not be null");
     }
