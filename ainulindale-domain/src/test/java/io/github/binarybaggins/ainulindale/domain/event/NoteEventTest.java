@@ -14,7 +14,7 @@ import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
 import io.github.binarybaggins.ainulindale.domain.time.ScoreRange;
 import org.junit.jupiter.api.Test;
 
-public class NoteEventTest {
+class NoteEventTest {
 
     @Test
     void createGeneratesEventId() {
