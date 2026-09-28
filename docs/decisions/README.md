@@ -67,7 +67,6 @@ In particular, the following have not yet been finalized:
 - Whether additional tonal or harmonic concepts are needed
 - TonalContext scope and timeline semantics
 - Explicit relationships between TonalContext and KeySignature beyond their independence
-- Numeric within-octave bounds and treatment of a repeated terminal octave degree
 - Non-octave-periodic systems
 - Concrete Java APIs and storage for the accepted tonal and scale concepts
 - Concrete format mappings and adapters

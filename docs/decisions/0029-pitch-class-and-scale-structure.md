@@ -38,17 +38,28 @@ Rational values allow microtonal degrees such as `(1, 3/2)`. Neither floating-po
 
 Degrees must not be silently inferred, reordered, sorted, normalized, or merged. Invalid input must not become a different valid scale through automatic normalization.
 
-The current structure is ascending within one octave and repeats at the octave. This permits rational microtonal offsets without restricting tuning to 12-TET.
+The current structure is ascending and repeats at the octave.
+
+> ScaleStructure describes exactly one octave period, including the root and excluding its octave repetition.
+
+Every stored ScaleDegree also satisfies:
+
+```text
+0 <= diatonicOffset < 7
+0 <= chromaticOffset < 12
+```
+
+These bounds complement the existing invariants. The major-scale example ends at `(6, 11)`; `(7, 12)` must not be stored because it repeats the root in the next octave period.
+
+The value 12 defines the octave span in canonical abstract semitone units, not 12-TET or a particular tuning. Chromatic offsets remain rational: values such as `7/2` and `11/3` are valid in principle if they satisfy the ordering and within-octave constraints. Acoustic interpretation remains a future tuning concern.
 
 Arbitrary non-octave-periodic systems are deferred until a concrete requirement justifies an extension. No general equave or arbitrary-period model is introduced.
-
-The accepted invariant list does not specify numeric upper bounds or whether a repeated terminal octave degree is included. These boundary details remain explicitly open; this decision does not silently select either convention.
 
 ## Consequences
 
 - Tonal centers can preserve spelling independently of octave.
 - Scale degrees preserve both diatonic and chromatic meaning.
 - Ordered custom and microtonal structures remain representable without a fixed mode enumeration.
-- Concrete implementations, within-octave boundary details, tuning, generalized periodicity, and format mappings remain open.
+- Concrete implementations, tuning, generalized periodicity, and format mappings remain open.
 
 The use of PitchClass and ScaleStructure in tonal context is defined in [ADR-0030](0030-tonal-context.md).

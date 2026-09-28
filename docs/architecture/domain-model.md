@@ -1634,11 +1634,22 @@ Degrees must not be silently inferred, reordered, sorted, normalized, or merged.
 
 ### Current Octave-Periodic Scope
 
-The current model describes one ordered ascending scale structure within an octave, repeating at the octave. Rational chromatic offsets permit microtonality; octave periodicity does not imply 12-TET.
+The current model describes one ordered ascending scale structure that repeats at the octave.
+
+> ScaleStructure describes exactly one octave period, including the root and excluding its octave repetition.
+
+Every stored ScaleDegree must satisfy these additional bounds:
+
+```text
+0 <= diatonicOffset < 7
+0 <= chromaticOffset < 12
+```
+
+The value 12 defines the octave span in canonical abstract semitone units. It does not imply 12-TET or any specific tuning. Chromatic offsets remain rational; values such as `7/2` and `11/3` are valid in principle when the ordering and within-octave constraints are satisfied. Acoustic interpretation remains the responsibility of a future tuning model.
+
+The major-scale example above ends at `(6, 11)` and must not additionally store `(7, 12)`. That degree is the next-period repetition of the root, not another degree within the stored octave period. These bounds complement the existing root, ordering, and uniqueness invariants.
 
 Arbitrary non-octave-periodic systems are deliberately deferred. No equave or arbitrary-period abstraction is introduced. Such support would require a concrete future requirement and deliberate extension.
-
-The accepted invariants do not yet spell out numeric upper bounds for the offsets or treatment of a repeated terminal octave degree. Those boundary details remain explicitly open rather than being inferred here.
 
 See [ADR-0029](../decisions/0029-pitch-class-and-scale-structure.md).
 
@@ -1718,12 +1729,11 @@ The accepted state scopes and inheritance semantics do not decide these details.
 - Whether additional tonal or harmonic concepts are needed
 - TonalContext scope and timeline semantics
 - Explicit relationships between TonalContext and KeySignature beyond their independence
-- Numeric within-octave bounds and treatment of a repeated terminal octave degree
 - Non-octave-periodic systems
 - Concrete Java APIs and storage for the accepted tonal and scale concepts
 - Concrete format mappings and adapters, including ABC, MIDI, MusicXML, and LOTRO
 
-PitchClass, ScaleDegree, ScaleStructure, and TonalContext semantics are accepted. The additional concepts, boundary details, and adapter designs above remain open; tuning remains separate.
+PitchClass, ScaleDegree, ScaleStructure, and TonalContext semantics are accepted. The additional concepts, implementation details, and adapter designs above remain open; tuning remains separate.
 
 ### Tempo Notation, Expressions, and Playback
 
