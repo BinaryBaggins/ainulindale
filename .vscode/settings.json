@@ -7,5 +7,12 @@
 
     "[java]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }
+    },
+    "[xml]": {
+        "editor.defaultFormatter": "DotJoshJohnson.xml"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "java.configuration.updateBuildConfiguration": "automatic"
 }
