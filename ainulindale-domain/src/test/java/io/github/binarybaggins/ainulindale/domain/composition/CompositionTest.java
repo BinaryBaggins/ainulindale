@@ -57,9 +57,10 @@ class CompositionTest {
         PartId partId = composition.addPart();
         Result<VoiceId> result = composition.addVoice(partId);
         Success<?> success = assertInstanceOf(Success.class, result);
+        VoiceId voiceId = assertInstanceOf(VoiceId.class, success.value());
         Part part = composition.parts().getFirst();
         assertEquals(2, part.voices().size());
-        assertEquals(success.value(), part.voices().get(1).id());
+        assertEquals(voiceId, part.voices().get(1).id());
     }
 
     @Test
@@ -68,9 +69,11 @@ class CompositionTest {
         PartId partId = composition.addPart();
         VoiceId firstVoiceId = composition.parts().getFirst().voices().getFirst().id();
         Success<?> second = assertInstanceOf(Success.class, composition.addVoice(partId));
+        VoiceId secondVoiceId = assertInstanceOf(VoiceId.class, second.value());
         Success<?> third = assertInstanceOf(Success.class, composition.addVoice(partId));
+        VoiceId thirdVoiceId = assertInstanceOf(VoiceId.class, third.value());
         assertEquals(
-            List.of(firstVoiceId, second.value(), third.value()),
+            List.of(firstVoiceId, secondVoiceId, thirdVoiceId),
             composition.parts().getFirst().voices().stream().map(Voice::id).toList()
         );
     }

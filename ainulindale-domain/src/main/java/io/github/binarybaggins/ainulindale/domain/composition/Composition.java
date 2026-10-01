@@ -1,7 +1,6 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
 import io.github.binarybaggins.ainulindale.core.result.Result;
-import io.github.binarybaggins.ainulindale.core.result.ResultError;
 import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
@@ -77,17 +76,4 @@ public final class Composition {
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
-}
-
-/**
- * Contains error definitions related to the Composition class.
- */
-final class CompositionErrors {
-
-    private CompositionErrors() {}
-
-    /**
-     * Error indicating that the specified part was not found within the composition.
-     */
-    static final ResultError PART_NOT_FOUND = new ResultError("Composition.PartNotFound");
 }
