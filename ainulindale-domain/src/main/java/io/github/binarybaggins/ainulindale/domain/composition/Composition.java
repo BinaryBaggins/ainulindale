@@ -84,9 +84,7 @@ public final class Composition {
  */
 final class CompositionErrors {
 
-    private CompositionErrors() {
-        // Private constructor to prevent instantiation
-    }
+    private CompositionErrors() {}
 
     /**
      * Error indicating that the specified part was not found within the composition.
