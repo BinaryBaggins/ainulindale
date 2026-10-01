@@ -17,7 +17,6 @@ class PartTest {
     @Test
     void newPartHasExactlyOneVoice() {
         Part part = Part.create();
-        assertNotNull(part.voices());
         assertEquals(1, part.voices().size());
     }
 

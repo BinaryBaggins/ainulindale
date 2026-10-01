@@ -24,7 +24,6 @@ public final class Part {
      * Creates a new part with a unique identifier and an initial voice.
      *
      * @return a new part instance
-     * @throws NullPointerException if the generated PartId or initial Voice is null
      */
     public static Part create() {
         return new Part(PartId.create(), Voice.create());

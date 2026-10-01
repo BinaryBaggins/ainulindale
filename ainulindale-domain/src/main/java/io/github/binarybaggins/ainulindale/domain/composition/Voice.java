@@ -27,7 +27,6 @@ public final class Voice {
      * Creates a new voice with a unique identifier.
      *
      * @return a new voice instance
-     * @throws NullPointerException if the generated VoiceId is null
      */
     public static Voice create() {
         return new Voice(VoiceId.create());
