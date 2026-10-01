@@ -15,7 +15,7 @@ public final class Composition {
     private final List<Part> parts;
 
     private Composition(CompositionId id) {
-        this.id = Objects.requireNonNull(id);
+        this.id = Objects.requireNonNull(id, "id must not be null");
         this.parts = new ArrayList<>();
     }
 
