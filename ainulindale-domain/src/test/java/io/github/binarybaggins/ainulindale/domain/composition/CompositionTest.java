@@ -38,7 +38,7 @@ class CompositionTest {
     }
 
     @Test
-    void addedPartsPreservesPartOrder() {
+    void addPartPreservesPartOrder() {
         Composition composition = Composition.create();
         PartId firstPartId = composition.addPart();
         PartId secondPartId = composition.addPart();
