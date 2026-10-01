@@ -19,7 +19,7 @@ public final class Voice {
     private final Map<EventId, VoiceEvent> events;
 
     private Voice(VoiceId id) {
-        this.id = Objects.requireNonNull(id);
+        this.id = Objects.requireNonNull(id, "id must not be null");
         this.events = new HashMap<>();
     }
 
@@ -27,6 +27,7 @@ public final class Voice {
      * Creates a new voice with a unique identifier.
      *
      * @return a new voice instance
+     * @throws NullPointerException if the generated VoiceId is null
      */
     public static Voice create() {
         return new Voice(VoiceId.create());
