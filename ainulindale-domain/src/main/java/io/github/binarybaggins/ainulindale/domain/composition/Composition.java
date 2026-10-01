@@ -1,6 +1,7 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
 import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
+import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,5 +45,16 @@ public final class Composition {
      */
     public List<Part> parts() {
         return Collections.unmodifiableList(parts);
+    }
+
+    /**
+     * Adds a new part to this composition and returns its unique identifier.
+     *
+     * @return the unique identifier of the newly added part
+     */
+    public PartId addPart() {
+        Part part = Part.create();
+        parts.add(part);
+        return part.id();
     }
 }

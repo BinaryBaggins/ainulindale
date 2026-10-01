@@ -28,7 +28,7 @@ public final class Voice {
      *
      * @return a new voice instance
      */
-    public static Voice create() {
+    static Voice create() {
         return new Voice(VoiceId.create());
     }
 

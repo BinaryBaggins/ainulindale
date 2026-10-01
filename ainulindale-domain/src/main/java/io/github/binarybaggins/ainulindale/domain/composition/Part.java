@@ -25,7 +25,7 @@ public final class Part {
      *
      * @return a new part instance
      */
-    public static Part create() {
+    static Part create() {
         return new Part(PartId.create(), Voice.create());
     }
 
