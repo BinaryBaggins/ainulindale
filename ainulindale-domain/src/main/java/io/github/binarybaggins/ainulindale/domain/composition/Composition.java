@@ -1,7 +1,9 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
+import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
+import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,5 +58,22 @@ public final class Composition {
         Part part = Part.create();
         parts.add(part);
         return part.id();
+    }
+
+    /**
+     * Adds a new voice to the specified part within this composition.
+     *
+     * @param partId the unique identifier of the part to which the voice will be added
+     * @return a result containing the unique identifier of the newly added voice if successful,
+     *         or an error if the part was not found
+     */
+    public Result<VoiceId> addVoice(PartId partId) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                return Result.success(part.addVoice());
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
 }

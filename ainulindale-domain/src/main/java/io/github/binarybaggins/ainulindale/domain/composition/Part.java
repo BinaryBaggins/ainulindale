@@ -1,6 +1,7 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
+import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,5 +46,16 @@ public final class Part {
      */
     public List<Voice> voices() {
         return Collections.unmodifiableList(voices);
+    }
+
+    /**
+     * Adds a new voice to this part and returns its unique identifier.
+     *
+     * @return the unique identifier of the newly added voice
+     */
+    VoiceId addVoice() {
+        Voice voice = Voice.create();
+        voices.add(voice);
+        return voice.id();
     }
 }

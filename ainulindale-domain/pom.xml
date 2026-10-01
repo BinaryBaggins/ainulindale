@@ -16,6 +16,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.github.binarybaggins</groupId>
+            <artifactId>ainulindale-foundation</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
