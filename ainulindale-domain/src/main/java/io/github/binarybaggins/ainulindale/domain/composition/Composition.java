@@ -1,6 +1,7 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
 import io.github.binarybaggins.ainulindale.core.result.Result;
+import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
@@ -101,5 +102,23 @@ public final class Composition {
             }
         }
         return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Removes the specified event from this composition.
+     *
+     * @param eventId the unique identifier of the event to be removed
+     * @return a result indicating success if the event was removed, or an error if the event was not found
+     */
+    public Result<Unit> removeEvent(EventId eventId) {
+        Objects.requireNonNull(eventId, "eventId must not be null");
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.removeEvent(eventId)) {
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
     }
 }

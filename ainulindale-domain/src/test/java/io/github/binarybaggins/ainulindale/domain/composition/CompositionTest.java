@@ -1,6 +1,7 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -166,5 +167,61 @@ class CompositionTest {
         VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
         ScoreRange range = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 8));
         assertThrows(NullPointerException.class, () -> composition.addNote(voiceId, range, null));
+    }
+
+    @Test
+    void removeEventRemovesEventFromOwningVoice() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        ScoreRange range = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 8));
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.of(1), 4);
+        Success<?> success = assertInstanceOf(Success.class, composition.addNote(voiceId, range, pitch));
+        EventId eventId = assertInstanceOf(EventId.class, success.value());
+        assertInstanceOf(Success.class, composition.removeEvent(eventId));
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        assertTrue(voice.events().isEmpty());
+    }
+
+    @Test
+    void removeEventRemovesOnlySpecifiedEvent() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        ScoreRange range = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 8));
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.of(1), 4);
+        Success<?> success1 = assertInstanceOf(Success.class, composition.addNote(voiceId, range, pitch));
+        EventId eventId1 = assertInstanceOf(EventId.class, success1.value());
+        Success<?> success2 = assertInstanceOf(Success.class, composition.addNote(voiceId, range, pitch));
+        EventId eventId2 = assertInstanceOf(EventId.class, success2.value());
+        assertInstanceOf(Success.class, composition.removeEvent(eventId1));
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        assertEquals(1, voice.events().size());
+        assertTrue(
+            voice
+                .events()
+                .stream()
+                .anyMatch(event -> event.id().equals(eventId2))
+        );
+        assertFalse(
+            voice
+                .events()
+                .stream()
+                .anyMatch(event -> event.id().equals(eventId1))
+        );
+    }
+
+    @Test
+    void removeEventReturnsFailureForUnknownEvent() {
+        Composition composition = Composition.create();
+        EventId unknownEventId = EventId.create();
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.removeEvent(unknownEventId));
+        assertEquals(CompositionErrors.EVENT_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void removeEventRejectsNullEventId() {
+        Composition composition = Composition.create();
+        assertThrows(NullPointerException.class, () -> composition.removeEvent(null));
     }
 }
