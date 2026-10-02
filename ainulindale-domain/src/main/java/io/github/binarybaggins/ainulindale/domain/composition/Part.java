@@ -72,9 +72,9 @@ public final class Part {
     }
 
     /**
-     * Checks if a voice can be removed from this part.
+     * Checks if this part has only a single voice.
      *
-     * @return true if there is more than one voice in this part, false otherwise
+     * @return true if this part has exactly one voice, false otherwise
      */
     boolean hasSingleVoice() {
         return voices.size() == 1;
@@ -84,7 +84,6 @@ public final class Part {
      * Removes the specified voice from this part.
      *
      * @param voiceId the unique identifier of the voice to be removed
-     * @return true if the voice was removed, false otherwise
      * @throws NullPointerException if the voiceId is null
      */
     void removeVoice(VoiceId voiceId) {
