@@ -23,4 +23,9 @@ final class CompositionErrors {
      * Error indicating that the specified event was not found within the composition.
      */
     static final ResultError EVENT_NOT_FOUND = new ResultError("Composition.EventNotFound");
+
+    /**
+     * Error indicating that an attempt was made to remove the last remaining voice in a part.
+     */
+    static final ResultError CANNOT_REMOVE_LAST_VOICE = new ResultError("Composition.CannotRemoveLastVoice");
 }

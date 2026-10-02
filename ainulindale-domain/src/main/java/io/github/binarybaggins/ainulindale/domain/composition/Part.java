@@ -58,4 +58,36 @@ public final class Part {
         voices.add(voice);
         return voice.id();
     }
+
+    /**
+     * Checks if this part contains a voice with the specified unique identifier.
+     *
+     * @param voiceId the unique identifier of the voice to check
+     * @return true if the voice exists in this part, false otherwise
+     * @throws NullPointerException if the voiceId is null
+     */
+    boolean containsVoice(VoiceId voiceId) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        return voices.stream().anyMatch(voice -> voice.id().equals(voiceId));
+    }
+
+    /**
+     * Checks if this part has only a single voice.
+     *
+     * @return true if this part has exactly one voice, false otherwise
+     */
+    boolean hasSingleVoice() {
+        return voices.size() == 1;
+    }
+
+    /**
+     * Removes the specified voice from this part.
+     *
+     * @param voiceId the unique identifier of the voice to be removed
+     * @throws NullPointerException if the voiceId is null
+     */
+    void removeVoice(VoiceId voiceId) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        voices.removeIf(voice -> voice.id().equals(voiceId));
+    }
 }

@@ -59,8 +59,11 @@ public final class Voice {
      * @param range the score range of the note
      * @param pitch the pitch of the note
      * @return the unique identifier of the newly added note
+     * @throws NullPointerException if the range or pitch is null
      */
     EventId addNote(ScoreRange range, Pitch pitch) {
+        Objects.requireNonNull(range, "range must not be null");
+        Objects.requireNonNull(pitch, "pitch must not be null");
         NoteEvent noteEvent = NoteEvent.create(range, pitch);
         events.put(noteEvent.id(), noteEvent);
         return noteEvent.id();
@@ -73,6 +76,7 @@ public final class Voice {
      * @return true if the event was successfully removed, false otherwise
      */
     boolean removeEvent(EventId eventId) {
+        Objects.requireNonNull(eventId, "eventId must not be null");
         return events.remove(eventId) != null;
     }
 }

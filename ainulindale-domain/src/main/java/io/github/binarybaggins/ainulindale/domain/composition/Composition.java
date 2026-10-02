@@ -70,6 +70,7 @@ public final class Composition {
      * @param partId the unique identifier of the part to which the voice will be added
      * @return a result containing the unique identifier of the newly added voice if successful,
      *         or an error if the part was not found
+     * @throws NullPointerException if the partId is null
      */
     public Result<VoiceId> addVoice(PartId partId) {
         Objects.requireNonNull(partId, "partId must not be null");
@@ -89,6 +90,7 @@ public final class Composition {
      * @param pitch the pitch of the note
      * @return a result containing the unique identifier of the newly added note if successful,
      *         or an error if the voice was not found
+     * @throws NullPointerException if the voiceId, scoreRange, or pitch is null
      */
     public Result<EventId> addNote(VoiceId voiceId, ScoreRange scoreRange, Pitch pitch) {
         Objects.requireNonNull(voiceId, "voiceId must not be null");
@@ -109,6 +111,7 @@ public final class Composition {
      *
      * @param eventId the unique identifier of the event to be removed
      * @return a result indicating success if the event was removed, or an error if the event was not found
+     * @throws NullPointerException if the eventId is null
      */
     public Result<Unit> removeEvent(EventId eventId) {
         Objects.requireNonNull(eventId, "eventId must not be null");
@@ -120,5 +123,28 @@ public final class Composition {
             }
         }
         return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+    }
+
+    /**
+     * Removes the specified voice from this composition.
+     *
+     * @param voiceId the unique identifier of the voice to be removed
+     * @return a result indicating success if the voice was removed, or an error if the voice was not found
+     *         or if attempting to remove the last remaining voice in a part
+     * @throws NullPointerException if the voiceId is null
+     */
+    public Result<Unit> removeVoice(VoiceId voiceId) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        for (Part part : parts) {
+            if (part.containsVoice(voiceId)) {
+                if (part.hasSingleVoice()) {
+                    return Result.failure(CompositionErrors.CANNOT_REMOVE_LAST_VOICE);
+                }
+
+                part.removeVoice(voiceId);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
 }
