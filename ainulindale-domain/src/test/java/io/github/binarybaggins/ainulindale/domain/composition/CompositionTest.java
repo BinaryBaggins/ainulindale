@@ -125,10 +125,11 @@ class CompositionTest {
         ScoreRange range = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 8));
         Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
         Success<?> success = assertInstanceOf(Success.class, composition.addNote(secondVoiceId, range, pitch));
-
-        assertInstanceOf(EventId.class, success.value());
+        EventId eventId = assertInstanceOf(EventId.class, success.value());
         assertTrue(firstVoice.events().isEmpty());
         assertEquals(1, secondVoice.events().size());
+        assertEquals(eventId, secondVoice.events().iterator().next().id());
+        
     }
 
     @Test
