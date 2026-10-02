@@ -76,7 +76,7 @@ public final class Part {
      *
      * @return true if there is more than one voice in this part, false otherwise
      */
-    boolean isLastVoice() {
+    boolean hasSingleVoice() {
         return voices.size() == 1;
     }
 
@@ -87,8 +87,8 @@ public final class Part {
      * @return true if the voice was removed, false otherwise
      * @throws NullPointerException if the voiceId is null
      */
-    boolean removeVoice(VoiceId voiceId) {
+    void removeVoice(VoiceId voiceId) {
         Objects.requireNonNull(voiceId, "voiceId must not be null");
-        return voices.removeIf(voice -> voice.id().equals(voiceId));
+        voices.removeIf(voice -> voice.id().equals(voiceId));
     }
 }

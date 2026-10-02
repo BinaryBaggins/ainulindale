@@ -137,7 +137,7 @@ public final class Composition {
         Objects.requireNonNull(voiceId, "voiceId must not be null");
         for (Part part : parts) {
             if (part.containsVoice(voiceId)) {
-                if (part.isLastVoice()) {
+                if (part.hasSingleVoice()) {
                     return Result.failure(CompositionErrors.CANNOT_REMOVE_LAST_VOICE);
                 }
 
