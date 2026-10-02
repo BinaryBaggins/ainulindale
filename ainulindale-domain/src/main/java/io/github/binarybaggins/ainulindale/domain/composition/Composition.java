@@ -147,4 +147,19 @@ public final class Composition {
         }
         return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
+
+    /**
+     * Removes the specified part from this composition.
+     *
+     * @param partId the unique identifier of the part to be removed
+     * @return a result indicating success if the part was removed, or an error if the part was not found
+     * @throws NullPointerException if the partId is null
+     */
+    public Result<Unit> removePart(PartId partId) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        if (parts.removeIf(part -> part.id().equals(partId))) {
+            return Result.success(Unit.INSTANCE);
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
 }
