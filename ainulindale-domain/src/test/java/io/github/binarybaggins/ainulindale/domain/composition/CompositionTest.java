@@ -224,4 +224,60 @@ class CompositionTest {
         Composition composition = Composition.create();
         assertThrows(NullPointerException.class, () -> composition.removeEvent(null));
     }
+
+    @Test
+    void removeVoiceRemovesSpecifiedVoice() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId initialVoiceId = composition.parts().getFirst().voices().getFirst().id();
+        Success<?> addedVoice = assertInstanceOf(Success.class, composition.addVoice(partId));
+        VoiceId addedVoiceId = assertInstanceOf(VoiceId.class, addedVoice.value());
+        assertInstanceOf(Success.class, composition.removeVoice(addedVoiceId));
+        List<Voice> voices = composition.parts().getFirst().voices();
+        assertEquals(1, voices.size());
+        assertEquals(initialVoiceId, voices.getFirst().id());
+        assertFalse(voices.stream().anyMatch(voice -> voice.id().equals(addedVoiceId)));
+    }
+
+    @Test
+    void removeVoicePreservesRemainingVoiceOrder() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId firstVoiceId = composition.parts().getFirst().voices().getFirst().id();
+        Success<?> second = assertInstanceOf(Success.class, composition.addVoice(partId));
+        VoiceId secondVoiceId = assertInstanceOf(VoiceId.class, second.value());
+        Success<?> third = assertInstanceOf(Success.class, composition.addVoice(partId));
+        VoiceId thirdVoiceId = assertInstanceOf(VoiceId.class, third.value());
+        assertInstanceOf(Success.class, composition.removeVoice(secondVoiceId));
+        assertEquals(
+            List.of(firstVoiceId, thirdVoiceId),
+            composition.parts().getFirst().voices().stream().map(Voice::id).toList()
+        );
+    }
+
+    @Test
+    void removeVoiceReturnsFailureWhenRemovingLastVoice() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.removeVoice(voiceId));
+        assertEquals(CompositionErrors.CANNOT_REMOVE_LAST_VOICE, failure.error());
+        assertEquals(1, composition.parts().getFirst().voices().size());
+        assertEquals(voiceId, composition.parts().getFirst().voices().getFirst().id());
+    }
+
+    @Test
+    void removeVoiceReturnsFailureForUnknownVoice() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId unknownVoiceId = VoiceId.create();
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.removeVoice(unknownVoiceId));
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void removeVoiceRejectsNullVoiceId() {
+        Composition composition = Composition.create();
+        assertThrows(NullPointerException.class, () -> composition.removeVoice(null));
+    }
 }
