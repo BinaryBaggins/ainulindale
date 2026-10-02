@@ -2,8 +2,11 @@ package io.github.binarybaggins.ainulindale.domain.composition;
 
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
+import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
+import io.github.binarybaggins.ainulindale.domain.time.ScoreRange;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -75,5 +78,28 @@ public final class Composition {
             }
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Adds a new note to the specified voice within this composition.
+     *
+     * @param voiceId the unique identifier of the voice to which the note will be added
+     * @param scoreRange the score range of the note
+     * @param pitch the pitch of the note
+     * @return a result containing the unique identifier of the newly added note if successful,
+     *         or an error if the voice was not found
+     */
+    public Result<EventId> addNote(VoiceId voiceId, ScoreRange scoreRange, Pitch pitch) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(scoreRange, "scoreRange must not be null");
+        Objects.requireNonNull(pitch, "pitch must not be null");
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    return Result.success(voice.addNote(scoreRange, pitch));
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
 }

@@ -1,8 +1,12 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
+import io.github.binarybaggins.ainulindale.domain.event.NoteEvent;
 import io.github.binarybaggins.ainulindale.domain.event.VoiceEvent;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
+import io.github.binarybaggins.ainulindale.domain.time.ScoreRange;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,5 +52,18 @@ public final class Voice {
      */
     public Collection<VoiceEvent> events() {
         return Collections.unmodifiableCollection(events.values());
+    }
+
+    /**
+     * Adds a new note to this voice.
+     *
+     * @param range the score range of the note
+     * @param pitch the pitch of the note
+     * @return the unique identifier of the newly added note
+     */
+    EventId addNote(ScoreRange range, Pitch pitch) {
+        NoteEvent noteEvent = NoteEvent.create(range, pitch);
+        events.put(noteEvent.id(), noteEvent);
+        return noteEvent.id();
     }
 }
