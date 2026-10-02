@@ -280,4 +280,49 @@ class CompositionTest {
         Composition composition = Composition.create();
         assertThrows(NullPointerException.class, () -> composition.removeVoice(null));
     }
+
+    @Test
+    void removePartRemovesSpecifiedPart() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        assertInstanceOf(Success.class, composition.removePart(partId));
+        assertFalse(
+            composition
+                .parts()
+                .stream()
+                .anyMatch(part -> part.id().equals(partId))
+        );
+    }
+
+    @Test
+    void removePartPreservesRemainingPartOrder() {
+        Composition composition = Composition.create();
+        PartId firstPartId = composition.addPart();
+        PartId secondPartId = composition.addPart();
+        PartId thirdPartId = composition.addPart();
+        assertInstanceOf(Success.class, composition.removePart(secondPartId));
+        assertEquals(List.of(firstPartId, thirdPartId), composition.parts().stream().map(Part::id).toList());
+    }
+
+    @Test
+    void removePartAllowsRemovingLastPart() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        assertInstanceOf(Success.class, composition.removePart(partId));
+        assertTrue(composition.parts().isEmpty());
+    }
+
+    @Test
+    void removePartReturnsFailureForUnknownPart() {
+        Composition composition = Composition.create();
+        PartId unknownPartId = PartId.create();
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.removePart(unknownPartId));
+        assertEquals(CompositionErrors.PART_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void removePartRejectsNullPartId() {
+        Composition composition = Composition.create();
+        assertThrows(NullPointerException.class, () -> composition.removePart(null));
+    }
 }
