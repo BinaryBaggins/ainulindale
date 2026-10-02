@@ -6,7 +6,6 @@ import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
 import io.github.binarybaggins.ainulindale.domain.time.ScoreRange;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,5 +64,15 @@ public final class Voice {
         NoteEvent noteEvent = NoteEvent.create(range, pitch);
         events.put(noteEvent.id(), noteEvent);
         return noteEvent.id();
+    }
+
+    /**
+     * Removes an event from this voice.
+     *
+     * @param eventId the unique identifier of the event to be removed
+     * @return true if the event was successfully removed, false otherwise
+     */
+    boolean removeEvent(EventId eventId) {
+        return events.remove(eventId) != null;
     }
 }
