@@ -129,7 +129,6 @@ class CompositionTest {
         assertTrue(firstVoice.events().isEmpty());
         assertEquals(1, secondVoice.events().size());
         assertEquals(eventId, secondVoice.events().iterator().next().id());
-        
     }
 
     @Test
