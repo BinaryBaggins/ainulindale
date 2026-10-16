@@ -329,7 +329,7 @@ class CompositionTest {
     @Test
     void movePartReturnsFailureForUnknownPart() {
         Composition composition = Composition.create();
-        PartId _ = composition.addPart();
+        composition.addPart();
         PartId unknownPartId = PartId.create();
         Failure<?> failure = assertInstanceOf(Failure.class, composition.movePart(unknownPartId, 0));
         assertEquals(CompositionErrors.PART_NOT_FOUND, failure.error());
