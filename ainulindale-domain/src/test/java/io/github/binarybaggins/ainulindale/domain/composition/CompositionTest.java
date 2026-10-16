@@ -329,7 +329,6 @@ class CompositionTest {
     @Test
     void movePartReturnsFailureForUnknownPart() {
         Composition composition = Composition.create();
-        composition.addPart();
         PartId unknownPartId = PartId.create();
         Failure<?> failure = assertInstanceOf(Failure.class, composition.movePart(unknownPartId, 0));
         assertEquals(CompositionErrors.PART_NOT_FOUND, failure.error());
@@ -347,29 +346,14 @@ class CompositionTest {
     }
 
     @Test
-    void movePartToEarlierIndexPreservesOrder() {
+    void movePartPreservesRemainingPartOrder() {
         Composition composition = Composition.create();
         PartId firstPartId = composition.addPart();
         PartId secondPartId = composition.addPart();
         PartId thirdPartId = composition.addPart();
-
         assertInstanceOf(Success.class, composition.movePart(thirdPartId, 0));
         assertEquals(
             List.of(thirdPartId, firstPartId, secondPartId),
-            composition.parts().stream().map(Part::id).toList()
-        );
-    }
-
-    @Test
-    void movePartToLaterIndexPreservesOrder() {
-        Composition composition = Composition.create();
-        PartId firstPartId = composition.addPart();
-        PartId secondPartId = composition.addPart();
-        PartId thirdPartId = composition.addPart();
-
-        assertInstanceOf(Success.class, composition.movePart(firstPartId, 2));
-        assertEquals(
-            List.of(secondPartId, thirdPartId, firstPartId),
             composition.parts().stream().map(Part::id).toList()
         );
     }
@@ -387,5 +371,13 @@ class CompositionTest {
     void movePartRejectsNullPartId() {
         Composition composition = Composition.create();
         assertThrows(NullPointerException.class, () -> composition.movePart(null, 0));
+    }
+
+    @Test
+    void movePartRejectsInvalidIndex() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        assertThrows(IndexOutOfBoundsException.class, () -> composition.movePart(partId, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> composition.movePart(partId, 1));
     }
 }

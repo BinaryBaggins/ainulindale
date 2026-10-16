@@ -167,10 +167,9 @@ public final class Composition {
      * Moves the specified part to a new index within this composition.
      *
      * @param partId the unique identifier of the part to be moved
-     * @param newIndex the final zero-based index of the part after moving it
-     * (must be between 0 and the number of parts minus one)
-     * @return a result indicating success if the part was moved, or an error
-     * if the part was not found or if the new index is invalid
+     * @param newIndex the new index to which the part should be moved
+     * @return a result indicating success if the part was moved, or an error if the part was not found
+     *         or if the new index is invalid
      * @throws NullPointerException if the partId is null
      */
     public Result<Unit> movePart(PartId partId, int newIndex) {
