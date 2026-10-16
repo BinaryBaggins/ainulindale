@@ -162,4 +162,28 @@ public final class Composition {
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
+
+    /**
+     * Moves the specified part to a new index within this composition.
+     *
+     * @param partId the unique identifier of the part to be moved
+     * @param newIndex the new index to which the part should be moved
+     * @return a result indicating success if the part was moved, or an error if the part was not found
+     *         or if the new index is invalid
+     * @throws NullPointerException if the partId is null
+     */
+    public Result<Unit> movePart(PartId partId, int newIndex) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        if (newIndex < 0 || newIndex >= parts.size()) {
+            return Result.failure(CompositionErrors.INVALID_PART_INDEX);
+        }
+        for (int i = 0; i < parts.size(); i++) {
+            if (parts.get(i).id().equals(partId)) {
+                Part part = parts.remove(i);
+                parts.add(newIndex, part);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
 }

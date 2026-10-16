@@ -325,4 +325,59 @@ class CompositionTest {
         Composition composition = Composition.create();
         assertThrows(NullPointerException.class, () -> composition.removePart(null));
     }
+
+    @Test
+    void movePartReturnsFailureForUnknownPart() {
+        Composition composition = Composition.create();
+        PartId unknownPartId = PartId.create();
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.movePart(unknownPartId, 0));
+        assertEquals(CompositionErrors.PART_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void movePartReturnsFailureForInvalidIndex() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.movePart(partId, -1));
+        assertEquals(CompositionErrors.INVALID_PART_INDEX, failure.error());
+
+        failure = assertInstanceOf(Failure.class, composition.movePart(partId, 1));
+        assertEquals(CompositionErrors.INVALID_PART_INDEX, failure.error());
+    }
+
+    @Test
+    void movePartPreservesRemainingPartOrder() {
+        Composition composition = Composition.create();
+        PartId firstPartId = composition.addPart();
+        PartId secondPartId = composition.addPart();
+        PartId thirdPartId = composition.addPart();
+        assertInstanceOf(Success.class, composition.movePart(thirdPartId, 0));
+        assertEquals(
+            List.of(thirdPartId, firstPartId, secondPartId),
+            composition.parts().stream().map(Part::id).toList()
+        );
+    }
+
+    @Test
+    void movePartAllowsMovingPartToSameIndex() {
+        Composition composition = Composition.create();
+        PartId firstPartId = composition.addPart();
+        PartId secondPartId = composition.addPart();
+        assertInstanceOf(Success.class, composition.movePart(firstPartId, 0));
+        assertEquals(List.of(firstPartId, secondPartId), composition.parts().stream().map(Part::id).toList());
+    }
+
+    @Test
+    void movePartRejectsNullPartId() {
+        Composition composition = Composition.create();
+        assertThrows(NullPointerException.class, () -> composition.movePart(null, 0));
+    }
+
+    @Test
+    void movePartRejectsInvalidIndex() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        assertThrows(IndexOutOfBoundsException.class, () -> composition.movePart(partId, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> composition.movePart(partId, 1));
+    }
 }
