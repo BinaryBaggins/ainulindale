@@ -28,4 +28,9 @@ final class CompositionErrors {
      * Error indicating that an attempt was made to remove the last remaining voice in a part.
      */
     static final ResultError CANNOT_REMOVE_LAST_VOICE = new ResultError("Composition.CannotRemoveLastVoice");
+
+    /**
+     * Error indicating that the specified part index is invalid within the composition.
+     */
+    static final ResultError INVALID_PART_INDEX = new ResultError("Composition.InvalidPartIndex");
 }
