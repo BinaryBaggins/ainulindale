@@ -33,4 +33,9 @@ final class CompositionErrors {
      * Error indicating that the specified part index is invalid within the composition.
      */
     static final ResultError INVALID_PART_INDEX = new ResultError("Composition.InvalidPartIndex");
+
+    /**
+     * Error indicating that the specified voice index is invalid within the composition.
+     */
+    static final ResultError INVALID_VOICE_INDEX = new ResultError("Composition.InvalidVoiceIndex");
 }

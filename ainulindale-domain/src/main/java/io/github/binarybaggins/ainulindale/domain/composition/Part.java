@@ -90,4 +90,29 @@ public final class Part {
         Objects.requireNonNull(voiceId, "voiceId must not be null");
         voices.removeIf(voice -> voice.id().equals(voiceId));
     }
+
+    /**
+     * Moves the specified voice to a new index within this part.
+     *
+     * @param voiceId the unique identifier of the voice to be moved
+     * @param newIndex the final zero-based index of the voice after moving it
+     * @throws NullPointerException if the voiceId is null
+     * @throws IllegalArgumentException if the voice with the specified ID is not found
+     * @throws IndexOutOfBoundsException if the new index is out of range (less than 0 or greater than the number of voices minus one)
+     */
+    void moveVoice(VoiceId voiceId, int newIndex) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.checkIndex(newIndex, voices.size());
+        for (int i = 0; i < voices.size(); i++) {
+            if (voices.get(i).id().equals(voiceId)) {
+                if (i != newIndex) {
+                    Voice voice = voices.remove(i);
+                    voices.add(newIndex, voice);
+                }
+                return;
+            }
+        }
+
+        throw new IllegalArgumentException("Voice not found: " + voiceId);
+    }
 }

@@ -187,4 +187,30 @@ public final class Composition {
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
+
+    /**
+     * Moves the specified voice to a new index within its part in this composition.
+     *
+     * @param voiceId the unique identifier of the voice to be moved
+     * @param newIndex the final zero-based index of the voice after moving it
+     * @return a result indicating success if the voice was moved, or an error
+     * if the voice was not found or if the new index is invalid
+     * @throws NullPointerException if the voiceId is null
+     */
+    public Result<Unit> moveVoice(VoiceId voiceId, int newIndex) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        if (newIndex < 0) {
+            return Result.failure(CompositionErrors.INVALID_VOICE_INDEX);
+        }
+        for (Part part : parts) {
+            if (part.containsVoice(voiceId)) {
+                if (newIndex >= part.voices().size()) {
+                    return Result.failure(CompositionErrors.INVALID_VOICE_INDEX);
+                }
+                part.moveVoice(voiceId, newIndex);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
 }
