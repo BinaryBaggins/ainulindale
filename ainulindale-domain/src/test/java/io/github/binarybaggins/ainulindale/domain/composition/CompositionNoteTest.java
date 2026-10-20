@@ -24,6 +24,7 @@ import io.github.binarybaggins.ainulindale.domain.pitch.PitchAlteration;
 import io.github.binarybaggins.ainulindale.domain.time.MusicalDuration;
 import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
 import io.github.binarybaggins.ainulindale.domain.time.ScoreRange;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class CompositionNoteTest {
@@ -39,7 +40,10 @@ class CompositionNoteTest {
         Success<?> success = assertInstanceOf(Success.class, composition.addNote(voiceId, range, pitch));
         EventId eventId = assertInstanceOf(EventId.class, success.value());
         assertEquals(1, voice.events().size());
-        assertEquals(eventId, voice.events().iterator().next().id());
+        NoteEvent note = assertInstanceOf(NoteEvent.class, voice.events().iterator().next());
+        assertEquals(eventId, note.id());
+        assertEquals(range, note.range());
+        assertEquals(pitch, note.pitch());
     }
 
     @Test
@@ -97,17 +101,26 @@ class CompositionNoteTest {
     }
 
     @Test
-    void removeEventRemovesEventFromOwningVoice() {
+    void removeEventOnlyRemovesEventFromOwningVoice() {
         Composition composition = Composition.create();
         composition.addPart();
-        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        PartId secondPartId = composition.addPart();
+        assertInstanceOf(Success.class, composition.addVoice(secondPartId));
+        Voice firstPartVoice = composition.parts().getFirst().voices().getFirst();
+        Voice siblingVoice = composition.parts().get(1).voices().getFirst();
+        Voice owningVoice = composition.parts().get(1).voices().get(1);
         ScoreRange range = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 8));
         Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.of(1), 4);
-        Success<?> success = assertInstanceOf(Success.class, composition.addNote(voiceId, range, pitch));
-        EventId eventId = assertInstanceOf(EventId.class, success.value());
+        assertInstanceOf(Success.class, composition.addNote(firstPartVoice.id(), range, pitch));
+        assertInstanceOf(Success.class, composition.addNote(siblingVoice.id(), range, pitch));
+        NoteEvent firstPartNote = assertInstanceOf(NoteEvent.class, firstPartVoice.events().iterator().next());
+        NoteEvent siblingNote = assertInstanceOf(NoteEvent.class, siblingVoice.events().iterator().next());
+        Success<?> added = assertInstanceOf(Success.class, composition.addNote(owningVoice.id(), range, pitch));
+        EventId eventId = assertInstanceOf(EventId.class, added.value());
         assertInstanceOf(Success.class, composition.removeEvent(eventId));
-        Voice voice = composition.parts().getFirst().voices().getFirst();
-        assertTrue(voice.events().isEmpty());
+        assertTrue(owningVoice.events().isEmpty());
+        assertEquals(List.of(firstPartNote), List.copyOf(firstPartVoice.events()));
+        assertEquals(List.of(siblingNote), List.copyOf(siblingVoice.events()));
     }
 
     @Test

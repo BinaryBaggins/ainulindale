@@ -1,7 +1,6 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -12,6 +11,9 @@ import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class CompositionVoiceTest {
 
@@ -58,21 +60,25 @@ class CompositionVoiceTest {
     }
 
     @Test
-    void removeVoiceRemovesSpecifiedVoice() {
+    void removeVoiceOnlyRemovesVoiceFromOwningPart() {
         Composition composition = Composition.create();
+        composition.addPart();
+        Part firstPart = composition.parts().getFirst();
+        List<Voice> firstPartVoices = List.copyOf(firstPart.voices());
         PartId partId = composition.addPart();
-        VoiceId initialVoiceId = composition.parts().getFirst().voices().getFirst().id();
+        Part owningPart = composition.parts().get(1);
+        VoiceId initialVoiceId = owningPart.voices().getFirst().id();
         Success<?> addedVoice = assertInstanceOf(Success.class, composition.addVoice(partId));
         VoiceId addedVoiceId = assertInstanceOf(VoiceId.class, addedVoice.value());
         assertInstanceOf(Success.class, composition.removeVoice(addedVoiceId));
-        List<Voice> voices = composition.parts().getFirst().voices();
-        assertEquals(1, voices.size());
-        assertEquals(initialVoiceId, voices.getFirst().id());
-        assertFalse(voices.stream().anyMatch(voice -> voice.id().equals(addedVoiceId)));
+        assertEquals(List.of(initialVoiceId), owningPart.voices().stream().map(Voice::id).toList());
+        assertEquals(firstPartVoices, firstPart.voices());
+        assertEquals(List.of(firstPart, owningPart), composition.parts());
     }
 
-    @Test
-    void removeVoicePreservesRemainingVoiceOrder() {
+    @ParameterizedTest(name = "remove voice at index {0}")
+    @CsvSource({ "0, 1, 2", "1, 0, 2", "2, 0, 1" })
+    void removeVoicePreservesRemainingVoiceOrder(int removed, int expectedFirst, int expectedSecond) {
         Composition composition = Composition.create();
         PartId partId = composition.addPart();
         VoiceId firstVoiceId = composition.parts().getFirst().voices().getFirst().id();
@@ -80,9 +86,10 @@ class CompositionVoiceTest {
         VoiceId secondVoiceId = assertInstanceOf(VoiceId.class, second.value());
         Success<?> third = assertInstanceOf(Success.class, composition.addVoice(partId));
         VoiceId thirdVoiceId = assertInstanceOf(VoiceId.class, third.value());
-        assertInstanceOf(Success.class, composition.removeVoice(secondVoiceId));
+        List<VoiceId> ids = List.of(firstVoiceId, secondVoiceId, thirdVoiceId);
+        assertInstanceOf(Success.class, composition.removeVoice(ids.get(removed)));
         assertEquals(
-            List.of(firstVoiceId, thirdVoiceId),
+            List.of(ids.get(expectedFirst), ids.get(expectedSecond)),
             composition.parts().getFirst().voices().stream().map(Voice::id).toList()
         );
     }
@@ -113,8 +120,9 @@ class CompositionVoiceTest {
         assertThrows(NullPointerException.class, () -> composition.removeVoice(null));
     }
 
-    @Test
-    void moveVoiceToEarlierIndexPreservesOrder() {
+    @ParameterizedTest(name = "move from {0} to {1}")
+    @CsvSource({ "2, 0, 2, 0, 1", "0, 2, 1, 2, 0", "1, 1, 0, 1, 2" })
+    void moveVoicePreservesOrder(int fromIndex, int toIndex, int expectedFirst, int expectedSecond, int expectedThird) {
         Composition composition = Composition.create();
         PartId partId = composition.addPart();
         VoiceId firstVoiceId = composition.parts().getFirst().voices().getFirst().id();
@@ -122,25 +130,10 @@ class CompositionVoiceTest {
         VoiceId secondVoiceId = assertInstanceOf(VoiceId.class, second.value());
         Success<?> third = assertInstanceOf(Success.class, composition.addVoice(partId));
         VoiceId thirdVoiceId = assertInstanceOf(VoiceId.class, third.value());
-        assertInstanceOf(Success.class, composition.moveVoice(thirdVoiceId, 0));
+        List<VoiceId> ids = List.of(firstVoiceId, secondVoiceId, thirdVoiceId);
+        assertInstanceOf(Success.class, composition.moveVoice(ids.get(fromIndex), toIndex));
         assertEquals(
-            List.of(thirdVoiceId, firstVoiceId, secondVoiceId),
-            composition.parts().getFirst().voices().stream().map(Voice::id).toList()
-        );
-    }
-
-    @Test
-    void moveVoiceToLaterIndexPreservesOrder() {
-        Composition composition = Composition.create();
-        PartId partId = composition.addPart();
-        VoiceId firstVoiceId = composition.parts().getFirst().voices().getFirst().id();
-        Success<?> second = assertInstanceOf(Success.class, composition.addVoice(partId));
-        VoiceId secondVoiceId = assertInstanceOf(VoiceId.class, second.value());
-        Success<?> third = assertInstanceOf(Success.class, composition.addVoice(partId));
-        VoiceId thirdVoiceId = assertInstanceOf(VoiceId.class, third.value());
-        assertInstanceOf(Success.class, composition.moveVoice(firstVoiceId, 2));
-        assertEquals(
-            List.of(secondVoiceId, thirdVoiceId, firstVoiceId),
+            List.of(ids.get(expectedFirst), ids.get(expectedSecond), ids.get(expectedThird)),
             composition.parts().getFirst().voices().stream().map(Voice::id).toList()
         );
     }
@@ -163,16 +156,19 @@ class CompositionVoiceTest {
         assertEquals(CompositionErrors.VOICE_NOT_FOUND, failure.error());
     }
 
-    @Test
-    void moveVoiceReturnsFailureForInvalidIndex() {
+    @ParameterizedTest
+    @ValueSource(ints = { -1, 3 })
+    void moveVoiceReturnsFailureForInvalidIndex(int index) {
         Composition composition = Composition.create();
-        composition.addPart();
-        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
-        Failure<?> failure = assertInstanceOf(Failure.class, composition.moveVoice(voiceId, -1));
+        PartId partId = composition.addPart();
+        assertInstanceOf(Success.class, composition.addVoice(partId));
+        assertInstanceOf(Success.class, composition.addVoice(partId));
+        Part part = composition.parts().getFirst();
+        List<Voice> originalOrder = List.copyOf(part.voices());
+        VoiceId voiceId = originalOrder.get(1).id();
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.moveVoice(voiceId, index));
         assertEquals(CompositionErrors.INVALID_VOICE_INDEX, failure.error());
-        failure = assertInstanceOf(Failure.class, composition.moveVoice(voiceId, 1));
-        assertEquals(CompositionErrors.INVALID_VOICE_INDEX, failure.error());
-        assertEquals(voiceId, composition.parts().getFirst().voices().getFirst().id());
+        assertEquals(originalOrder, part.voices());
     }
 
     @Test

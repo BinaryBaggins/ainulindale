@@ -1,7 +1,6 @@
 package io.github.binarybaggins.ainulindale.domain.composition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +10,9 @@ import io.github.binarybaggins.ainulindale.core.result.Success;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class CompositionPartTest {
 
@@ -31,27 +33,19 @@ class CompositionPartTest {
         assertEquals(secondPartId, composition.parts().get(1).id());
     }
 
-    @Test
-    void removePartRemovesSpecifiedPart() {
-        Composition composition = Composition.create();
-        PartId partId = composition.addPart();
-        assertInstanceOf(Success.class, composition.removePart(partId));
-        assertFalse(
-            composition
-                .parts()
-                .stream()
-                .anyMatch(part -> part.id().equals(partId))
-        );
-    }
-
-    @Test
-    void removePartPreservesRemainingPartOrder() {
+    @ParameterizedTest(name = "remove part at index {0}")
+    @CsvSource({ "0, 1, 2", "1, 0, 2", "2, 0, 1" })
+    void removePartPreservesRemainingPartOrder(int removed, int expectedFirst, int expectedSecond) {
         Composition composition = Composition.create();
         PartId firstPartId = composition.addPart();
         PartId secondPartId = composition.addPart();
         PartId thirdPartId = composition.addPart();
-        assertInstanceOf(Success.class, composition.removePart(secondPartId));
-        assertEquals(List.of(firstPartId, thirdPartId), composition.parts().stream().map(Part::id).toList());
+        List<PartId> ids = List.of(firstPartId, secondPartId, thirdPartId);
+        assertInstanceOf(Success.class, composition.removePart(ids.get(removed)));
+        assertEquals(
+            List.of(ids.get(expectedFirst), ids.get(expectedSecond)),
+            composition.parts().stream().map(Part::id).toList()
+        );
     }
 
     @Test
@@ -85,49 +79,32 @@ class CompositionPartTest {
         assertEquals(CompositionErrors.PART_NOT_FOUND, failure.error());
     }
 
-    @Test
-    void movePartReturnsFailureForInvalidIndex() {
+    @ParameterizedTest
+    @ValueSource(ints = { -1, 3 })
+    void movePartReturnsFailureForInvalidIndex(int index) {
         Composition composition = Composition.create();
         PartId partId = composition.addPart();
-        Failure<?> failure = assertInstanceOf(Failure.class, composition.movePart(partId, -1));
+        composition.addPart();
+        composition.addPart();
+        List<Part> originalOrder = List.copyOf(composition.parts());
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.movePart(partId, index));
         assertEquals(CompositionErrors.INVALID_PART_INDEX, failure.error());
-        failure = assertInstanceOf(Failure.class, composition.movePart(partId, 1));
-        assertEquals(CompositionErrors.INVALID_PART_INDEX, failure.error());
+        assertEquals(originalOrder, composition.parts());
     }
 
-    @Test
-    void movePartToEarlierIndexPreservesOrder() {
+    @ParameterizedTest(name = "move from {0} to {1}")
+    @CsvSource({ "2, 0, 2, 0, 1", "0, 2, 1, 2, 0", "1, 1, 0, 1, 2" })
+    void movePartPreservesOrder(int fromIndex, int toIndex, int expectedFirst, int expectedSecond, int expectedThird) {
         Composition composition = Composition.create();
         PartId firstPartId = composition.addPart();
         PartId secondPartId = composition.addPart();
         PartId thirdPartId = composition.addPart();
-        assertInstanceOf(Success.class, composition.movePart(thirdPartId, 0));
+        List<PartId> ids = List.of(firstPartId, secondPartId, thirdPartId);
+        assertInstanceOf(Success.class, composition.movePart(ids.get(fromIndex), toIndex));
         assertEquals(
-            List.of(thirdPartId, firstPartId, secondPartId),
+            List.of(ids.get(expectedFirst), ids.get(expectedSecond), ids.get(expectedThird)),
             composition.parts().stream().map(Part::id).toList()
         );
-    }
-
-    @Test
-    void movePartToLaterIndexPreservesOrder() {
-        Composition composition = Composition.create();
-        PartId firstPartId = composition.addPart();
-        PartId secondPartId = composition.addPart();
-        PartId thirdPartId = composition.addPart();
-        assertInstanceOf(Success.class, composition.movePart(firstPartId, 2));
-        assertEquals(
-            List.of(secondPartId, thirdPartId, firstPartId),
-            composition.parts().stream().map(Part::id).toList()
-        );
-    }
-
-    @Test
-    void movePartAllowsMovingPartToSameIndex() {
-        Composition composition = Composition.create();
-        PartId firstPartId = composition.addPart();
-        PartId secondPartId = composition.addPart();
-        assertInstanceOf(Success.class, composition.movePart(firstPartId, 0));
-        assertEquals(List.of(firstPartId, secondPartId), composition.parts().stream().map(Part::id).toList());
     }
 
     @Test
