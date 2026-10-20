@@ -20,41 +20,33 @@ class NoteEventTest {
     @Test
     void createGeneratesEventId() {
         NoteEvent note = NoteEvent.create(quarterNoteRange(), c4());
-
         assertNotNull(note.id());
     }
 
     @Test
     void rangeIsPreserved() {
         ScoreRange range = quarterNoteRange();
-
         NoteEvent note = NoteEvent.create(range, c4());
-
         assertEquals(range, note.range());
     }
 
     @Test
     void pitchIsPreserved() {
         Pitch pitch = c4();
-
         NoteEvent note = NoteEvent.create(quarterNoteRange(), pitch);
-
         assertEquals(pitch, note.pitch());
     }
 
     @Test
     void positionEqualsRangeStart() {
         ScoreRange range = quarterNoteRange();
-
         NoteEvent note = NoteEvent.create(range, c4());
-
         assertEquals(range.start(), note.position());
     }
 
     @Test
     void zeroDurationIsRejected() {
         ScoreRange range = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.ZERO);
-
         assertThrows(IllegalArgumentException.class, () -> NoteEvent.create(range, c4()));
     }
 
@@ -85,9 +77,7 @@ class NoteEventTest {
     void withPitchCreatesNewNotePreservingIdentityAndRange() {
         NoteEvent original = NoteEvent.create(quarterNoteRange(), c4());
         Pitch newPitch = new Pitch(DiatonicStep.G, PitchAlteration.NATURAL, 4);
-
         NoteEvent updated = original.withPitch(newPitch);
-
         assertNotSame(original, updated);
         assertEquals(original.id(), updated.id());
         assertEquals(original.range(), updated.range());
@@ -98,7 +88,32 @@ class NoteEventTest {
     @Test
     void withPitchRejectsNullPitch() {
         NoteEvent note = NoteEvent.create(quarterNoteRange(), c4());
-
         assertThrows(NullPointerException.class, () -> note.withPitch(null));
+    }
+
+    @Test
+    void withRangeCreatesNewNotePreservingIdentityAndPitch() {
+        NoteEvent original = NoteEvent.create(quarterNoteRange(), c4());
+        ScoreRange newRange = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 8));
+        NoteEvent updated = original.withRange(newRange);
+        assertNotSame(original, updated);
+        assertEquals(original.id(), updated.id());
+        assertEquals(original.pitch(), updated.pitch());
+        assertEquals(newRange, updated.range());
+        assertEquals(newRange.start(), updated.position());
+        assertEquals(quarterNoteRange(), original.range());
+    }
+
+    @Test
+    void withRangeRejectsNullRange() {
+        NoteEvent note = NoteEvent.create(quarterNoteRange(), c4());
+        assertThrows(NullPointerException.class, () -> note.withRange(null));
+    }
+
+    @Test
+    void withRangeRejectsZeroDuration() {
+        NoteEvent note = NoteEvent.create(quarterNoteRange(), c4());
+        ScoreRange invalidRange = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.ZERO);
+        assertThrows(IllegalArgumentException.class, () -> note.withRange(invalidRange));
     }
 }
