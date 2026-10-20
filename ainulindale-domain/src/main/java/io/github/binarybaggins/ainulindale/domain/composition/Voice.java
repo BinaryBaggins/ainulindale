@@ -99,4 +99,24 @@ public final class Voice {
         }
         return false;
     }
+
+    /**
+     * Changes the score range of an existing note in this voice.
+     *
+     * @param eventId the unique identifier of the note event to be changed
+     * @param newRange the new score range for the note
+     * @return true if the score range was successfully changed, false otherwise
+     * @throws NullPointerException if the eventId or newRange is null
+     */
+    boolean changeNoteRange(EventId eventId, ScoreRange newRange) {
+        Objects.requireNonNull(eventId, "eventId must not be null");
+        Objects.requireNonNull(newRange, "newRange must not be null");
+        VoiceEvent event = events.get(eventId);
+        if (event instanceof NoteEvent noteEvent) {
+            NoteEvent updatedNoteEvent = noteEvent.withRange(newRange);
+            events.put(eventId, updatedNoteEvent);
+            return true;
+        }
+        return false;
+    }
 }
