@@ -244,6 +244,7 @@ public final class Composition {
      * @return a result indicating success if the score range was successfully changed, or an error
      * if the note was not found
      * @throws NullPointerException if the noteId or newRange is null
+     * @throws IllegalArgumentException if the newRange has a negative duration
      */
     public Result<Unit> changeNoteRange(EventId noteId, ScoreRange newRange) {
         Objects.requireNonNull(noteId, "noteId must not be null");
