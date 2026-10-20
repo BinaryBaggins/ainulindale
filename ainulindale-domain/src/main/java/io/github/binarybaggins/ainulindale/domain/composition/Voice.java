@@ -79,4 +79,24 @@ public final class Voice {
         Objects.requireNonNull(eventId, "eventId must not be null");
         return events.remove(eventId) != null;
     }
+
+    /**
+     * Changes the pitch of an existing note in this voice.
+     *
+     * @param eventId the unique identifier of the note event to be changed
+     * @param newPitch the new pitch for the note
+     * @return true if the pitch was successfully changed, false otherwise
+     * @throws NullPointerException if the eventId or newPitch is null
+     */
+    boolean changeNotePitch(EventId eventId, Pitch newPitch) {
+        Objects.requireNonNull(eventId, "eventId must not be null");
+        Objects.requireNonNull(newPitch, "newPitch must not be null");
+        VoiceEvent event = events.get(eventId);
+        if (event instanceof NoteEvent noteEvent) {
+            NoteEvent updatedNoteEvent = noteEvent.withPitch(newPitch);
+            events.put(eventId, updatedNoteEvent);
+            return true;
+        }
+        return false;
+    }
 }

@@ -38,6 +38,17 @@ public final class NoteEvent implements VoiceEvent {
         return new NoteEvent(EventId.create(), range, pitch);
     }
 
+    /**
+     * Creates a copy of this NoteEvent with the specified pitch.
+     *
+     * @param pitch the new pitch of the note event
+     * @return a new note event with the updated pitch
+     * @throws NullPointerException if the pitch is null
+     */
+    public NoteEvent withPitch(Pitch pitch) {
+        return new NoteEvent(this.id, this.range, pitch);
+    }
+
     @Override
     public EventId id() {
         return id;

@@ -4,15 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.binarybaggins.ainulindale.core.result.Failure;
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.Success;
+import io.github.binarybaggins.ainulindale.domain.event.NoteEvent;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.math.Rational;
 import io.github.binarybaggins.ainulindale.domain.pitch.DiatonicStep;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
 import io.github.binarybaggins.ainulindale.domain.pitch.PitchAlteration;
@@ -341,7 +344,6 @@ class CompositionTest {
         PartId partId = composition.addPart();
         Failure<?> failure = assertInstanceOf(Failure.class, composition.movePart(partId, -1));
         assertEquals(CompositionErrors.INVALID_PART_INDEX, failure.error());
-
         failure = assertInstanceOf(Failure.class, composition.movePart(partId, 1));
         assertEquals(CompositionErrors.INVALID_PART_INDEX, failure.error());
     }
@@ -352,7 +354,6 @@ class CompositionTest {
         PartId firstPartId = composition.addPart();
         PartId secondPartId = composition.addPart();
         PartId thirdPartId = composition.addPart();
-
         assertInstanceOf(Success.class, composition.movePart(thirdPartId, 0));
         assertEquals(
             List.of(thirdPartId, firstPartId, secondPartId),
@@ -366,7 +367,6 @@ class CompositionTest {
         PartId firstPartId = composition.addPart();
         PartId secondPartId = composition.addPart();
         PartId thirdPartId = composition.addPart();
-
         assertInstanceOf(Success.class, composition.movePart(firstPartId, 2));
         assertEquals(
             List.of(secondPartId, thirdPartId, firstPartId),
@@ -393,15 +393,12 @@ class CompositionTest {
     void moveVoiceToEarlierIndexPreservesOrder() {
         Composition composition = Composition.create();
         PartId partId = composition.addPart();
-
         VoiceId firstVoiceId = composition.parts().getFirst().voices().getFirst().id();
         Success<?> second = assertInstanceOf(Success.class, composition.addVoice(partId));
         VoiceId secondVoiceId = assertInstanceOf(VoiceId.class, second.value());
         Success<?> third = assertInstanceOf(Success.class, composition.addVoice(partId));
         VoiceId thirdVoiceId = assertInstanceOf(VoiceId.class, third.value());
-
         assertInstanceOf(Success.class, composition.moveVoice(thirdVoiceId, 0));
-
         assertEquals(
             List.of(thirdVoiceId, firstVoiceId, secondVoiceId),
             composition.parts().getFirst().voices().stream().map(Voice::id).toList()
@@ -412,15 +409,12 @@ class CompositionTest {
     void moveVoiceToLaterIndexPreservesOrder() {
         Composition composition = Composition.create();
         PartId partId = composition.addPart();
-
         VoiceId firstVoiceId = composition.parts().getFirst().voices().getFirst().id();
         Success<?> second = assertInstanceOf(Success.class, composition.addVoice(partId));
         VoiceId secondVoiceId = assertInstanceOf(VoiceId.class, second.value());
         Success<?> third = assertInstanceOf(Success.class, composition.addVoice(partId));
         VoiceId thirdVoiceId = assertInstanceOf(VoiceId.class, third.value());
-
         assertInstanceOf(Success.class, composition.moveVoice(firstVoiceId, 2));
-
         assertEquals(
             List.of(secondVoiceId, thirdVoiceId, firstVoiceId),
             composition.parts().getFirst().voices().stream().map(Voice::id).toList()
@@ -431,11 +425,8 @@ class CompositionTest {
     void moveVoiceAllowsMovingOnlyVoiceToSameIndex() {
         Composition composition = Composition.create();
         composition.addPart();
-
         VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
-
         assertInstanceOf(Success.class, composition.moveVoice(voiceId, 0));
-
         assertEquals(List.of(voiceId), composition.parts().getFirst().voices().stream().map(Voice::id).toList());
     }
 
@@ -443,11 +434,8 @@ class CompositionTest {
     void moveVoiceReturnsFailureForUnknownVoice() {
         Composition composition = Composition.create();
         composition.addPart();
-
         VoiceId unknownVoiceId = VoiceId.create();
-
         Failure<?> failure = assertInstanceOf(Failure.class, composition.moveVoice(unknownVoiceId, 0));
-
         assertEquals(CompositionErrors.VOICE_NOT_FOUND, failure.error());
     }
 
@@ -455,47 +443,120 @@ class CompositionTest {
     void moveVoiceReturnsFailureForInvalidIndex() {
         Composition composition = Composition.create();
         composition.addPart();
-
         VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
-
         Failure<?> failure = assertInstanceOf(Failure.class, composition.moveVoice(voiceId, -1));
         assertEquals(CompositionErrors.INVALID_VOICE_INDEX, failure.error());
-
         failure = assertInstanceOf(Failure.class, composition.moveVoice(voiceId, 1));
         assertEquals(CompositionErrors.INVALID_VOICE_INDEX, failure.error());
-
         assertEquals(voiceId, composition.parts().getFirst().voices().getFirst().id());
     }
 
     @Test
     void moveVoiceRejectsNullVoiceId() {
         Composition composition = Composition.create();
-
         assertThrows(NullPointerException.class, () -> composition.moveVoice(null, 0));
     }
 
     @Test
     void moveVoiceOnlyReordersVoicesWithinOwningPart() {
         Composition composition = Composition.create();
-
         PartId firstPartId = composition.addPart();
         PartId secondPartId = composition.addPart();
-
         VoiceId firstPartVoiceId = composition.parts().get(0).voices().getFirst().id();
         VoiceId secondPartFirstVoiceId = composition.parts().get(1).voices().getFirst().id();
-
         Success<?> added = assertInstanceOf(Success.class, composition.addVoice(secondPartId));
         VoiceId secondPartSecondVoiceId = assertInstanceOf(VoiceId.class, added.value());
-
         assertInstanceOf(Success.class, composition.moveVoice(secondPartSecondVoiceId, 0));
-
         assertEquals(firstPartId, composition.parts().get(0).id());
         assertEquals(List.of(firstPartVoiceId), composition.parts().get(0).voices().stream().map(Voice::id).toList());
-
         assertEquals(secondPartId, composition.parts().get(1).id());
         assertEquals(
             List.of(secondPartSecondVoiceId, secondPartFirstVoiceId),
             composition.parts().get(1).voices().stream().map(Voice::id).toList()
         );
+    }
+
+    @Test
+    void changeNotePitchPreservesIdentityAndRange() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        ScoreRange range = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 8));
+        Pitch originalPitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        Pitch newPitch = new Pitch(DiatonicStep.G, PitchAlteration.NATURAL, 4);
+        Success<?> added = assertInstanceOf(Success.class, composition.addNote(voice.id(), range, originalPitch));
+        EventId eventId = assertInstanceOf(EventId.class, added.value());
+        NoteEvent original = assertInstanceOf(NoteEvent.class, voice.events().iterator().next());
+        assertInstanceOf(Success.class, composition.changeNotePitch(eventId, newPitch));
+        NoteEvent updated = assertInstanceOf(NoteEvent.class, voice.events().iterator().next());
+        assertNotSame(original, updated);
+        assertEquals(eventId, updated.id());
+        assertEquals(range, updated.range());
+        assertEquals(newPitch, updated.pitch());
+        assertEquals(originalPitch, original.pitch());
+        assertEquals(1, voice.events().size());
+    }
+
+    @Test
+    void changeNotePitchOnlyChangesSpecifiedNote() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        composition.addPart();
+        Voice firstVoice = composition.parts().get(0).voices().getFirst();
+        Voice secondVoice = composition.parts().get(1).voices().getFirst();
+        ScoreRange range = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.of(1, 4));
+        Pitch originalPitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        Pitch newPitch = new Pitch(DiatonicStep.G, PitchAlteration.NATURAL, 4);
+        Success<?> firstAdded = assertInstanceOf(
+            Success.class,
+            composition.addNote(firstVoice.id(), range, originalPitch)
+        );
+        EventId firstEventId = assertInstanceOf(EventId.class, firstAdded.value());
+        Success<?> secondAdded = assertInstanceOf(
+            Success.class,
+            composition.addNote(secondVoice.id(), range, originalPitch)
+        );
+        EventId secondEventId = assertInstanceOf(EventId.class, secondAdded.value());
+        assertInstanceOf(Success.class, composition.changeNotePitch(secondEventId, newPitch));
+        NoteEvent firstNote = assertInstanceOf(NoteEvent.class, firstVoice.events().iterator().next());
+        NoteEvent secondNote = assertInstanceOf(NoteEvent.class, secondVoice.events().iterator().next());
+        assertEquals(firstEventId, firstNote.id());
+        assertEquals(originalPitch, firstNote.pitch());
+        assertEquals(secondEventId, secondNote.id());
+        assertEquals(newPitch, secondNote.pitch());
+    }
+
+    @Test
+    void changeNotePitchReturnsFailureForUnknownEvent() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        EventId unknownEventId = EventId.create();
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.changeNotePitch(unknownEventId, pitch));
+        assertEquals(CompositionErrors.EVENT_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void changeNotePitchRejectsNullArguments() {
+        Composition composition = Composition.create();
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        assertThrows(NullPointerException.class, () -> composition.changeNotePitch(null, pitch));
+        assertThrows(NullPointerException.class, () -> composition.changeNotePitch(EventId.create(), null));
+    }
+
+    @Test
+    void changeNotePitchAllowsSamePitch() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        ScoreRange range = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.of(1, 4));
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        Success<?> added = assertInstanceOf(Success.class, composition.addNote(voice.id(), range, pitch));
+        EventId eventId = assertInstanceOf(EventId.class, added.value());
+        assertInstanceOf(Success.class, composition.changeNotePitch(eventId, pitch));
+        NoteEvent note = assertInstanceOf(NoteEvent.class, voice.events().iterator().next());
+        assertEquals(eventId, note.id());
+        assertEquals(range, note.range());
+        assertEquals(pitch, note.pitch());
     }
 }

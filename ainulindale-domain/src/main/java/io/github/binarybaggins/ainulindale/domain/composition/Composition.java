@@ -213,4 +213,26 @@ public final class Composition {
         }
         return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
+
+    /**
+     * Changes the pitch of an existing note in this composition.
+     *
+     * @param noteId the unique identifier of the note event to be changed
+     * @param newPitch the new pitch for the note
+     * @return a result indicating success if the pitch was successfully changed, or an error
+     * if the note was not found
+     * @throws NullPointerException if the noteId or newPitch is null
+     */
+    public Result<Unit> changeNotePitch(EventId noteId, Pitch newPitch) {
+        Objects.requireNonNull(noteId, "noteId must not be null");
+        Objects.requireNonNull(newPitch, "newPitch must not be null");
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.changeNotePitch(noteId, newPitch)) {
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+    }
 }
