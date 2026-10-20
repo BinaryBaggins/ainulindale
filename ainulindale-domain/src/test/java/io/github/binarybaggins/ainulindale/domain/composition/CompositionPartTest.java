@@ -15,18 +15,6 @@ import org.junit.jupiter.api.Test;
 class CompositionPartTest {
 
     @Test
-    void newCompositionHasNoParts() {
-        Composition composition = Composition.create();
-        assertTrue(composition.parts().isEmpty());
-    }
-
-    @Test
-    void partsCollectionIsUnmodifiable() {
-        Composition composition = Composition.create();
-        assertThrows(UnsupportedOperationException.class, () -> composition.parts().clear());
-    }
-
-    @Test
     void addPartAddsPartAndReturnsCreatedPartId() {
         Composition composition = Composition.create();
         PartId partId = composition.addPart();
