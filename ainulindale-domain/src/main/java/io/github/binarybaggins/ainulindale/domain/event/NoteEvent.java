@@ -49,6 +49,18 @@ public final class NoteEvent implements VoiceEvent {
         return new NoteEvent(this.id, this.range, pitch);
     }
 
+    /**
+     * Creates a copy of this NoteEvent with the specified score range.
+     *
+     * @param range the new score range of the note event
+     * @return a new note event with the updated score range
+     * @throws NullPointerException if the range is null
+     * @throws IllegalArgumentException if the range has a non-positive duration
+     */
+    public NoteEvent withRange(ScoreRange range) {
+        return new NoteEvent(this.id, range, this.pitch);
+    }
+
     @Override
     public EventId id() {
         return id;

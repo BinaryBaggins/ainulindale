@@ -235,4 +235,27 @@ public final class Composition {
         }
         return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
     }
+
+    /**
+     * Changes the score range of an existing note in this composition.
+     *
+     * @param noteId the unique identifier of the note event to be changed
+     * @param newRange the new score range for the note
+     * @return a result indicating success if the score range was successfully changed, or an error
+     * if the note was not found
+     * @throws NullPointerException if the noteId or newRange is null
+     * @throws IllegalArgumentException if the newRange has a negative duration
+     */
+    public Result<Unit> changeNoteRange(EventId noteId, ScoreRange newRange) {
+        Objects.requireNonNull(noteId, "noteId must not be null");
+        Objects.requireNonNull(newRange, "newRange must not be null");
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.changeNoteRange(noteId, newRange)) {
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+    }
 }

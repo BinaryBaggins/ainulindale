@@ -559,4 +559,109 @@ class CompositionTest {
         assertEquals(range, note.range());
         assertEquals(pitch, note.pitch());
     }
+
+    @Test
+    void changeNoteRangePreservesIdentityAndPitch() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        ScoreRange originalRange = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.of(1, 4));
+        ScoreRange newRange = new ScoreRange(ScorePosition.of(1, 2), MusicalDuration.of(1, 8));
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        Success<?> added = assertInstanceOf(Success.class, composition.addNote(voice.id(), originalRange, pitch));
+        EventId eventId = assertInstanceOf(EventId.class, added.value());
+        NoteEvent original = assertInstanceOf(NoteEvent.class, voice.events().iterator().next());
+        assertInstanceOf(Success.class, composition.changeNoteRange(eventId, newRange));
+        NoteEvent updated = assertInstanceOf(NoteEvent.class, voice.events().iterator().next());
+        assertNotSame(original, updated);
+        assertEquals(eventId, updated.id());
+        assertEquals(pitch, updated.pitch());
+        assertEquals(newRange, updated.range());
+        assertEquals(newRange.start(), updated.position());
+        assertEquals(originalRange, original.range());
+        assertEquals(1, voice.events().size());
+    }
+
+    @Test
+    void changeNoteRangeOnlyChangesSpecifiedNote() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        composition.addPart();
+        Voice firstVoice = composition.parts().get(0).voices().getFirst();
+        Voice secondVoice = composition.parts().get(1).voices().getFirst();
+        ScoreRange originalRange = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.of(1, 4));
+        ScoreRange newRange = new ScoreRange(ScorePosition.of(1, 2), MusicalDuration.of(1, 8));
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        Success<?> firstAdded = assertInstanceOf(
+            Success.class,
+            composition.addNote(firstVoice.id(), originalRange, pitch)
+        );
+        EventId firstEventId = assertInstanceOf(EventId.class, firstAdded.value());
+        Success<?> secondAdded = assertInstanceOf(
+            Success.class,
+            composition.addNote(secondVoice.id(), originalRange, pitch)
+        );
+        EventId secondEventId = assertInstanceOf(EventId.class, secondAdded.value());
+        assertInstanceOf(Success.class, composition.changeNoteRange(secondEventId, newRange));
+        NoteEvent firstNote = assertInstanceOf(NoteEvent.class, firstVoice.events().iterator().next());
+        NoteEvent secondNote = assertInstanceOf(NoteEvent.class, secondVoice.events().iterator().next());
+        assertEquals(firstEventId, firstNote.id());
+        assertEquals(originalRange, firstNote.range());
+        assertEquals(secondEventId, secondNote.id());
+        assertEquals(newRange, secondNote.range());
+        assertEquals(pitch, firstNote.pitch());
+        assertEquals(pitch, secondNote.pitch());
+    }
+
+    @Test
+    void changeNoteRangeReturnsFailureForUnknownEvent() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        EventId unknownEventId = EventId.create();
+        ScoreRange range = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.of(1, 4));
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.changeNoteRange(unknownEventId, range));
+        assertEquals(CompositionErrors.EVENT_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void changeNoteRangeRejectsNullArguments() {
+        Composition composition = Composition.create();
+        ScoreRange range = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.of(1, 4));
+        assertThrows(NullPointerException.class, () -> composition.changeNoteRange(null, range));
+        assertThrows(NullPointerException.class, () -> composition.changeNoteRange(EventId.create(), null));
+    }
+
+    @Test
+    void changeNoteRangeAllowsSameRange() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        ScoreRange range = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.of(1, 4));
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        Success<?> added = assertInstanceOf(Success.class, composition.addNote(voice.id(), range, pitch));
+        EventId eventId = assertInstanceOf(EventId.class, added.value());
+        assertInstanceOf(Success.class, composition.changeNoteRange(eventId, range));
+        NoteEvent updated = assertInstanceOf(NoteEvent.class, voice.events().iterator().next());
+        assertEquals(eventId, updated.id());
+        assertEquals(range, updated.range());
+        assertEquals(pitch, updated.pitch());
+    }
+
+    @Test
+    void changeNoteRangeRejectsZeroDurationWithoutMutation() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        ScoreRange originalRange = new ScoreRange(ScorePosition.of(Rational.ZERO), MusicalDuration.of(1, 4));
+        ScoreRange invalidRange = new ScoreRange(ScorePosition.of(1, 2), MusicalDuration.ZERO);
+        Pitch pitch = new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+        Success<?> added = assertInstanceOf(Success.class, composition.addNote(voice.id(), originalRange, pitch));
+        EventId eventId = assertInstanceOf(EventId.class, added.value());
+        assertThrows(IllegalArgumentException.class, () -> composition.changeNoteRange(eventId, invalidRange));
+        NoteEvent unchanged = assertInstanceOf(NoteEvent.class, voice.events().iterator().next());
+        assertEquals(eventId, unchanged.id());
+        assertEquals(originalRange, unchanged.range());
+        assertEquals(pitch, unchanged.pitch());
+        assertEquals(1, voice.events().size());
+    }
 }
