@@ -81,6 +81,18 @@ public final class Voice {
     }
 
     /**
+     * Checks if this voice contains an event with the specified event ID.
+     *
+     * @param eventId the unique identifier of the event
+     * @return true if the event exists in this voice, false otherwise
+     * @throws NullPointerException if the eventId is null
+     */
+    boolean containsEvent(EventId eventId) {
+        Objects.requireNonNull(eventId, "eventId must not be null");
+        return events.containsKey(eventId);
+    }
+
+    /**
      * Changes the pitch of an existing note in this voice.
      *
      * @param eventId the unique identifier of the note event to be changed
