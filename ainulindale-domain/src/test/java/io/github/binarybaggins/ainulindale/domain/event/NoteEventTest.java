@@ -3,6 +3,7 @@ package io.github.binarybaggins.ainulindale.domain.event;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.binarybaggins.ainulindale.domain.math.Rational;
@@ -78,5 +79,26 @@ class NoteEventTest {
 
     private static Pitch c4() {
         return new Pitch(DiatonicStep.C, PitchAlteration.NATURAL, 4);
+    }
+
+    @Test
+    void withPitchCreatesNewNotePreservingIdentityAndRange() {
+        NoteEvent original = NoteEvent.create(quarterNoteRange(), c4());
+        Pitch newPitch = new Pitch(DiatonicStep.G, PitchAlteration.NATURAL, 4);
+
+        NoteEvent updated = original.withPitch(newPitch);
+
+        assertNotSame(original, updated);
+        assertEquals(original.id(), updated.id());
+        assertEquals(original.range(), updated.range());
+        assertEquals(newPitch, updated.pitch());
+        assertEquals(c4(), original.pitch());
+    }
+
+    @Test
+    void withPitchRejectsNullPitch() {
+        NoteEvent note = NoteEvent.create(quarterNoteRange(), c4());
+
+        assertThrows(NullPointerException.class, () -> note.withPitch(null));
     }
 }
