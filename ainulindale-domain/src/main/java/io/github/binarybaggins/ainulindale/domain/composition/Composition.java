@@ -2,6 +2,7 @@ package io.github.binarybaggins.ainulindale.domain.composition;
 
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.Unit;
+import io.github.binarybaggins.ainulindale.domain.event.NoteEvent;
 import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
@@ -257,5 +258,64 @@ public final class Composition {
             }
         }
         return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+    }
+
+    /**
+     * Moves a note from its current voice to another voice within this composition.
+     *
+     * @param noteId the unique identifier of the note event to be moved
+     * @param targetVoiceId the unique identifier of the target voice
+     * @return a result indicating success if the note was successfully moved, or an error
+     * if the note or target voice was not found
+     * @throws NullPointerException if the noteId or targetVoiceId is null
+     * @throws IllegalStateException if a duplicate event ID is found in the target voice or
+     * if the source note disappears during the transfer
+     */
+    public Result<Unit> moveNoteToVoice(EventId noteId, VoiceId targetVoiceId) {
+        Objects.requireNonNull(noteId, "noteId must not be null");
+        Objects.requireNonNull(targetVoiceId, "targetVoiceId must not be null");
+
+        Voice sourceVoice = null;
+        Voice targetVoice = null;
+        NoteEvent note = null;
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(targetVoiceId)) {
+                    targetVoice = voice;
+                }
+
+                if (note == null) {
+                    NoteEvent candidate = voice.findNote(noteId);
+                    if (candidate != null) {
+                        sourceVoice = voice;
+                        note = candidate;
+                    }
+                }
+            }
+        }
+
+        if (note == null) {
+            return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+        }
+
+        if (targetVoice == null) {
+            return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+        }
+
+        if (sourceVoice == targetVoice) {
+            return Result.success(Unit.INSTANCE);
+        }
+
+        if (!targetVoice.addEvent(note)) {
+            throw new IllegalStateException("Duplicate event ID in target voice: " + noteId);
+        }
+
+        if (!sourceVoice.removeEvent(noteId)) {
+            targetVoice.removeEvent(noteId);
+            throw new IllegalStateException("Source note disappeared during transfer: " + noteId);
+        }
+
+        return Result.success(Unit.INSTANCE);
     }
 }

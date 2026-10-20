@@ -70,6 +70,18 @@ public final class Voice {
     }
 
     /**
+     * Adds a new event to this voice.
+     *
+     * @param event the voice event to be added
+     * @return true if the event was successfully added, false if an event with the same ID already exists
+     * @throws NullPointerException if the event is null
+     */
+    boolean addEvent(VoiceEvent event) {
+        Objects.requireNonNull(event, "event must not be null");
+        return events.putIfAbsent(event.id(), event) == null;
+    }
+
+    /**
      * Removes an event from this voice.
      *
      * @param eventId the unique identifier of the event to be removed
@@ -78,6 +90,18 @@ public final class Voice {
     boolean removeEvent(EventId eventId) {
         Objects.requireNonNull(eventId, "eventId must not be null");
         return events.remove(eventId) != null;
+    }
+
+    /**
+     * Finds a note event by its unique identifier in this voice.
+     *
+     * @param eventId the unique identifier of the note event
+     * @return the note event if found, or null if not found
+     * @throws NullPointerException if the eventId is null
+     */
+    NoteEvent findNote(EventId eventId) {
+        Objects.requireNonNull(eventId, "eventId must not be null");
+        return events.get(eventId) instanceof NoteEvent note ? note : null;
     }
 
     /**
