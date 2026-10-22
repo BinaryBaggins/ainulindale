@@ -441,4 +441,92 @@ public final class Composition {
             return Optional.empty();
         });
     }
+
+    /**
+     * Sets the local meter for a specific part at the specified score position.
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to set the meter
+     * @param meter the meter to establish at the specified position
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId, position, or meter is null
+     */
+    public Result<Unit> setLocalMeter(PartId partId, ScorePosition position, Meter meter) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(meter, "meter must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.setMeter(position, meter);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Ends the local meter for a specific part at the specified score position.
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to end the meter
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> endLocalMeter(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.endMeter(position);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Removes the local meter change for a specific part at the specified score position.
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to remove the meter change
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> removeLocalMeterChange(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                if (!part.removeMeterChange(position)) {
+                    return Result.failure(CompositionErrors.METER_CHANGE_NOT_FOUND);
+                }
+
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the effective meter for a specific part at the specified score position.
+     * If the part has a local meter at the position, it is returned; otherwise, the global meter is returned.
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to retrieve the effective meter
+     * @return a Result containing an Optional with the effective meter if found, or an empty Optional if not
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Optional<Meter>> meterAt(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                Optional<Meter> effectiveMeter = part.localMeterAt(position).or(() -> meterAt(position));
+
+                return Result.success(effectiveMeter);
+            }
+        }
+
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
 }
