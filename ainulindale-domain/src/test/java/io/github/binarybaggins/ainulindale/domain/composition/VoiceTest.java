@@ -254,6 +254,22 @@ class VoiceTest {
     }
 
     @Test
+    void explicitNaturalKeySignatureIsLocalStateNotUnspecified() {
+        Voice voice = Voice.create();
+        KeySignature natural = KeySignature.of(Map.of());
+
+        voice.setKeySignature(ScorePosition.ZERO, natural);
+
+        assertEquals(Optional.of(natural), voice.localKeySignatureAt(ScorePosition.of(4, 1)));
+        for (DiatonicStep step : DiatonicStep.values()) {
+            assertEquals(
+                PitchAlteration.NATURAL,
+                voice.localKeySignatureAt(ScorePosition.ZERO).orElseThrow().alterationFor(step)
+            );
+        }
+    }
+
+    @Test
     void keySignatureOperationsRejectNullArguments() {
         Voice voice = Voice.create();
 

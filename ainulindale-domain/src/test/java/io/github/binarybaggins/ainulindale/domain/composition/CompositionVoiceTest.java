@@ -473,10 +473,7 @@ class CompositionVoiceTest {
 
         composition.setKeySignature(ScorePosition.ZERO, global);
         composition.setKeySignature(partId, ScorePosition.ZERO, part);
-        assertInstanceOf(
-            Success.class,
-            composition.setKeySignature(voiceId, ScorePosition.of(2, 1), local)
-        );
+        assertInstanceOf(Success.class, composition.setKeySignature(voiceId, ScorePosition.of(2, 1), local));
 
         assertEquals(new Success<>(Optional.of(part)), composition.keySignatureAt(voiceId, ScorePosition.ZERO));
         assertEquals(new Success<>(Optional.of(local)), composition.keySignatureAt(voiceId, ScorePosition.of(2, 1)));
@@ -496,6 +493,29 @@ class CompositionVoiceTest {
 
         assertEquals(new Success<>(Optional.of(local)), composition.keySignatureAt(voiceId, ScorePosition.of(19, 1)));
         assertEquals(new Success<>(Optional.of(part)), composition.keySignatureAt(voiceId, ScorePosition.of(20, 1)));
+    }
+
+    @Test
+    void voiceFollowsLaterPartKeySignatureChangesAfterEnd() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        KeySignature firstPart = signature(DiatonicStep.B, PitchAlteration.of(-1));
+        KeySignature laterPart = signature(DiatonicStep.E, PitchAlteration.of(-1));
+
+        composition.setKeySignature(partId, ScorePosition.ZERO, firstPart);
+        composition.setKeySignature(voiceId, ScorePosition.ZERO, signature(DiatonicStep.C, PitchAlteration.of(1)));
+        composition.endKeySignature(voiceId, ScorePosition.of(10, 1));
+        composition.setKeySignature(partId, ScorePosition.of(20, 1), laterPart);
+
+        assertEquals(
+            new Success<>(Optional.of(firstPart)),
+            composition.keySignatureAt(voiceId, ScorePosition.of(15, 1))
+        );
+        assertEquals(
+            new Success<>(Optional.of(laterPart)),
+            composition.keySignatureAt(voiceId, ScorePosition.of(20, 1))
+        );
     }
 
     @Test
