@@ -9,7 +9,14 @@ import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.Success;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.meter.FreeMeter;
+import io.github.binarybaggins.ainulindale.domain.meter.Meter;
+import io.github.binarybaggins.ainulindale.domain.meter.MeterComponent;
+import io.github.binarybaggins.ainulindale.domain.meter.StructuredMeter;
+import io.github.binarybaggins.ainulindale.domain.time.MusicalDuration;
+import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -194,5 +201,221 @@ class CompositionVoiceTest {
             List.of(secondPartSecondVoiceId, secondPartFirstVoiceId),
             composition.parts().get(1).voices().stream().map(Voice::id).toList()
         );
+    }
+
+    private static Meter meter(int count, long denominator) {
+        return new StructuredMeter(List.of(new MeterComponent(count, MusicalDuration.of(1, denominator))));
+    }
+
+    @Test
+    void voiceMayHaveNoEffectiveMeter() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        assertEquals(new Success<>(Optional.empty()), composition.meterAt(voiceId, ScorePosition.ZERO));
+    }
+
+    @Test
+    void voiceInheritsCompositionMeter() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+
+        assertEquals(new Success<>(Optional.of(meter(4, 4))), composition.meterAt(voiceId, ScorePosition.ZERO));
+    }
+
+    @Test
+    void voiceInheritsPartMeterBeforeCompositionMeter() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(partId, ScorePosition.ZERO, meter(3, 4));
+
+        assertEquals(new Success<>(Optional.of(meter(3, 4))), composition.meterAt(voiceId, ScorePosition.ZERO));
+    }
+
+    @Test
+    void voiceOverrideTakesPrecedenceOverPartAndComposition() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(partId, ScorePosition.ZERO, meter(3, 4));
+
+        assertInstanceOf(Success.class, composition.setMeter(voiceId, ScorePosition.of(2, 1), meter(6, 8)));
+
+        assertEquals(new Success<>(Optional.of(meter(3, 4))), composition.meterAt(voiceId, ScorePosition.ZERO));
+        assertEquals(new Success<>(Optional.of(meter(6, 8))), composition.meterAt(voiceId, ScorePosition.of(2, 1)));
+    }
+
+    @Test
+    void voiceOverrideSurvivesParentChanges() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(partId, ScorePosition.ZERO, meter(3, 4));
+        composition.setMeter(voiceId, ScorePosition.of(10, 1), meter(6, 8));
+
+        composition.setMeter(partId, ScorePosition.of(20, 1), meter(2, 4));
+        composition.setMeter(ScorePosition.of(25, 1), meter(5, 8));
+
+        assertEquals(new Success<>(Optional.of(meter(6, 8))), composition.meterAt(voiceId, ScorePosition.of(30, 1)));
+    }
+
+    @Test
+    void endingVoiceOverrideRestoresEffectivePartMeter() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(partId, ScorePosition.ZERO, meter(3, 4));
+        composition.setMeter(voiceId, ScorePosition.of(10, 1), meter(6, 8));
+
+        composition.endMeter(voiceId, ScorePosition.of(20, 1));
+
+        assertEquals(new Success<>(Optional.of(meter(6, 8))), composition.meterAt(voiceId, ScorePosition.of(19, 1)));
+        assertEquals(new Success<>(Optional.of(meter(3, 4))), composition.meterAt(voiceId, ScorePosition.of(20, 1)));
+    }
+
+    @Test
+    void endingPartOverrideRestoresCompositionForVoice() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(partId, ScorePosition.ZERO, meter(3, 4));
+        composition.setMeter(voiceId, ScorePosition.ZERO, meter(6, 8));
+
+        composition.endMeter(voiceId, ScorePosition.of(10, 1));
+        composition.endMeter(partId, ScorePosition.of(20, 1));
+
+        assertEquals(new Success<>(Optional.of(meter(3, 4))), composition.meterAt(voiceId, ScorePosition.of(15, 1)));
+        assertEquals(new Success<>(Optional.of(meter(4, 4))), composition.meterAt(voiceId, ScorePosition.of(20, 1)));
+    }
+
+    @Test
+    void removingVoiceEndRestoresEarlierOverride() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(voiceId, ScorePosition.ZERO, meter(6, 8));
+        composition.endMeter(voiceId, ScorePosition.of(4, 1));
+
+        assertInstanceOf(Success.class, composition.removeMeterChange(voiceId, ScorePosition.of(4, 1)));
+
+        assertEquals(new Success<>(Optional.of(meter(6, 8))), composition.meterAt(voiceId, ScorePosition.of(5, 1)));
+    }
+
+    @Test
+    void removingVoiceSetRestoresInheritedMeter() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(voiceId, ScorePosition.ZERO, meter(6, 8));
+
+        assertInstanceOf(Success.class, composition.removeMeterChange(voiceId, ScorePosition.ZERO));
+
+        assertEquals(new Success<>(Optional.of(meter(4, 4))), composition.meterAt(voiceId, ScorePosition.ZERO));
+    }
+
+    @Test
+    void freeMeterOverridesInheritedMeter() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(partId, ScorePosition.ZERO, meter(3, 4));
+        composition.setMeter(voiceId, ScorePosition.ZERO, FreeMeter.INSTANCE);
+
+        assertEquals(new Success<>(Optional.of(FreeMeter.INSTANCE)), composition.meterAt(voiceId, ScorePosition.ZERO));
+
+        composition.endMeter(voiceId, ScorePosition.of(2, 1));
+
+        assertEquals(new Success<>(Optional.of(meter(3, 4))), composition.meterAt(voiceId, ScorePosition.of(2, 1)));
+    }
+
+    @Test
+    void voiceMeterChangesDoNotAffectSiblingVoices() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId first = composition.parts().getFirst().voices().getFirst().id();
+
+        Success<?> added = assertInstanceOf(Success.class, composition.addVoice(partId));
+        VoiceId second = assertInstanceOf(VoiceId.class, added.value());
+
+        composition.setMeter(ScorePosition.ZERO, meter(4, 4));
+        composition.setMeter(first, ScorePosition.ZERO, meter(6, 8));
+
+        assertEquals(new Success<>(Optional.of(meter(6, 8))), composition.meterAt(first, ScorePosition.ZERO));
+        assertEquals(new Success<>(Optional.of(meter(4, 4))), composition.meterAt(second, ScorePosition.ZERO));
+    }
+
+    @Test
+    void unknownVoiceReturnsFailureForMeterOperations() {
+        Composition composition = Composition.create();
+        VoiceId unknown = VoiceId.create();
+
+        Failure<?> set = assertInstanceOf(
+            Failure.class,
+            composition.setMeter(unknown, ScorePosition.ZERO, meter(4, 4))
+        );
+        Failure<?> end = assertInstanceOf(Failure.class, composition.endMeter(unknown, ScorePosition.ZERO));
+        Failure<?> remove = assertInstanceOf(Failure.class, composition.removeMeterChange(unknown, ScorePosition.ZERO));
+        Failure<?> query = assertInstanceOf(Failure.class, composition.meterAt(unknown, ScorePosition.ZERO));
+
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, set.error());
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, end.error());
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, remove.error());
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, query.error());
+    }
+
+    @Test
+    void removingUnknownVoiceMeterChangeReturnsFailure() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        Failure<?> failure = assertInstanceOf(
+            Failure.class,
+            composition.removeMeterChange(voiceId, ScorePosition.ZERO)
+        );
+
+        assertEquals(CompositionErrors.METER_CHANGE_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void voiceMeterOperationsRejectNullArguments() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        assertThrows(NullPointerException.class, () ->
+            composition.setMeter((VoiceId) null, ScorePosition.ZERO, meter(4, 4))
+        );
+        assertThrows(NullPointerException.class, () -> composition.setMeter(voiceId, null, meter(4, 4)));
+        assertThrows(NullPointerException.class, () -> composition.setMeter(voiceId, ScorePosition.ZERO, null));
+        assertThrows(NullPointerException.class, () -> composition.endMeter((VoiceId) null, ScorePosition.ZERO));
+        assertThrows(NullPointerException.class, () -> composition.endMeter(voiceId, null));
+        assertThrows(NullPointerException.class, () ->
+            composition.removeMeterChange((VoiceId) null, ScorePosition.ZERO)
+        );
+        assertThrows(NullPointerException.class, () -> composition.removeMeterChange(voiceId, null));
+        assertThrows(NullPointerException.class, () -> composition.meterAt((VoiceId) null, ScorePosition.ZERO));
+        assertThrows(NullPointerException.class, () -> composition.meterAt(voiceId, null));
     }
 }

@@ -4,13 +4,16 @@ import io.github.binarybaggins.ainulindale.domain.event.NoteEvent;
 import io.github.binarybaggins.ainulindale.domain.event.VoiceEvent;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
+import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
 import io.github.binarybaggins.ainulindale.domain.time.ScoreRange;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents a voice in the composition domain.
@@ -20,6 +23,7 @@ public final class Voice {
 
     private final VoiceId id;
     private final Map<EventId, VoiceEvent> events;
+    private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
 
     private Voice(VoiceId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -142,5 +146,59 @@ public final class Voice {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Sets the meter at the specified score position within this voice.
+     *
+     * @param position the score position at which to set the meter
+     * @param meter the meter to establish at the specified position
+     * @throws NullPointerException if position or meter is null
+     */
+    void setMeter(ScorePosition position, Meter meter) {
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(meter, "meter must not be null");
+
+        meterTimeline.set(position, meter);
+    }
+
+    /**
+     * Ends the meter at the specified score position within this voice.
+     *
+     * @param position the score position at which to end the meter
+     * @throws NullPointerException if position is null
+     */
+    void endMeter(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        meterTimeline.end(position);
+    }
+
+    /**
+     * Removes the meter change at the specified score position within this voice.
+     *
+     * @param position the score position at which to remove the meter change
+     * @return true if a meter change was removed, false otherwise
+     * @throws NullPointerException if position is null
+     */
+    boolean removeMeterChange(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        return meterTimeline.remove(position);
+    }
+
+    /**
+     * Retrieves the local meter at the specified score position within this voice.
+     *
+     * @param position the score position at which to retrieve the local meter
+     * @return an Optional containing the local meter if present, or an empty Optional if not
+     * @throws NullPointerException if position is null
+     */
+    Optional<Meter> localMeterAt(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        return meterTimeline.latestTransitionAt(position).flatMap(transition -> {
+            if (transition instanceof StateTransition.Set<Meter> set) {
+                return Optional.of(set.value());
+            }
+            return Optional.empty();
+        });
     }
 }

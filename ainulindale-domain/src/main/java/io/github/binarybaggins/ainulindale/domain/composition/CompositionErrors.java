@@ -43,4 +43,9 @@ final class CompositionErrors {
      * Error indicating that the specified tempo change was not found within the composition.
      */
     static final ResultError TEMPO_CHANGE_NOT_FOUND = new ResultError("Composition.TempoChangeNotFound");
+
+    /**
+     * Error indicating that the specified meter was not found within the composition.
+     */
+    static final ResultError METER_CHANGE_NOT_FOUND = new ResultError("Composition.MeterChangeNotFound");
 }

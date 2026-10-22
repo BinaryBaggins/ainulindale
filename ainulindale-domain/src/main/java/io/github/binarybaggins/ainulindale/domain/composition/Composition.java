@@ -7,6 +7,7 @@ import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
 import io.github.binarybaggins.ainulindale.domain.tempo.Tempo;
 import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
@@ -25,6 +26,7 @@ public final class Composition {
     private final CompositionId id;
     private final List<Part> parts;
     private final StateTimeline<Tempo> tempoTimeline = new StateTimeline<>();
+    private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
 
     private Composition(CompositionId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -382,5 +384,248 @@ public final class Composition {
             }
             return Optional.empty();
         });
+    }
+
+    /**
+     * Sets the meter at the specified score position.
+     * @param position the score position at which to set the meter
+     * @param meter the meter to establish at the specified position
+     * @throws NullPointerException if position or meter is null
+     */
+    public void setMeter(ScorePosition position, Meter meter) {
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(meter, "meter must not be null");
+
+        meterTimeline.set(position, meter);
+    }
+
+    /**
+     * Ends the meter at the specified score position.
+     * @param position the score position at which to end the meter
+     * @throws NullPointerException if position is null
+     */
+    public void endMeter(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        meterTimeline.end(position);
+    }
+
+    /**
+     * Removes the meter at the specified score position.
+     * @param position the score position at which to remove the meter
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if position is null
+     */
+    public Result<Unit> removeMeterChange(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        if (!meterTimeline.remove(position)) {
+            return Result.failure(CompositionErrors.METER_CHANGE_NOT_FOUND);
+        }
+
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Retrieves the meter at the specified score position.
+     * @param position the score position at which to retrieve the meter
+     * @return an Optional containing the meter if found, or empty if not found
+     * @throws NullPointerException if position is null
+     */
+    public Optional<Meter> meterAt(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        return meterTimeline.latestTransitionAt(position).flatMap(transition -> {
+            if (transition instanceof StateTransition.Set<Meter> set) {
+                return Optional.of(set.value());
+            }
+            return Optional.empty();
+        });
+    }
+
+    /**
+     * Sets the local meter at the specified score position for the given part.
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to set the meter
+     * @param meter the meter to establish at the specified position
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId, position, or meter is null
+     */
+    public Result<Unit> setMeter(PartId partId, ScorePosition position, Meter meter) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(meter, "meter must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.setMeter(position, meter);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Ends the local meter at the specified score position for the given part.
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to end the meter
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> endMeter(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.endMeter(position);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Removes the local meter change at the specified score position for the given part.
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to remove the meter change
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> removeMeterChange(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                if (!part.removeMeterChange(position)) {
+                    return Result.failure(CompositionErrors.METER_CHANGE_NOT_FOUND);
+                }
+
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the effective meter at the specified score position for the given part.
+     * If the part has a local meter at the position, it is returned; otherwise, the global meter is returned.
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to retrieve the effective meter
+     * @return a Result containing an Optional with the effective meter if found, or an empty Optional if not
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Optional<Meter>> meterAt(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                Optional<Meter> effectiveMeter = part.localMeterAt(position).or(() -> meterAt(position));
+
+                return Result.success(effectiveMeter);
+            }
+        }
+
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Sets the local meter at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to set the meter
+     * @param meter the meter to set
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId, position, or meter is null
+     */
+    public Result<Unit> setMeter(VoiceId voiceId, ScorePosition position, Meter meter) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(meter, "meter must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    voice.setMeter(position, meter);
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Ends the local meter change at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to end the meter change
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Unit> endMeter(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    voice.endMeter(position);
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Removes a local meter change at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to remove the local meter change
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Unit> removeMeterChange(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    if (!voice.removeMeterChange(position)) {
+                        return Result.failure(CompositionErrors.METER_CHANGE_NOT_FOUND);
+                    }
+
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the effective meter at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to retrieve the effective meter
+     * @return a Result containing an Optional with the effective meter if found, or an empty Optional if not
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Optional<Meter>> meterAt(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    Optional<Meter> effectiveMeter = voice
+                        .localMeterAt(position)
+                        .or(() -> part.localMeterAt(position).or(() -> meterAt(position)));
+                    return Result.success(effectiveMeter);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
 }
