@@ -1170,7 +1170,9 @@ The timeline provides exact-position queries, latest-transition queries, and imm
 
 `StateTimeline<T>` is an internal implementation detail, not canonical musical vocabulary.
 
-### Implemented Meter State Inheritance
+### Implemented Meter and KeySignature State Inheritance
+
+#### Implemented Meter State Inheritance
 
 Meter state is stored independently at three scopes:
 
@@ -1192,6 +1194,22 @@ Inherited values are resolved dynamically and never copied into child timelines.
 An `End` transition terminates the local override and restores inheritance at Part and Voice scope. At Composition scope, it leaves meter unspecified. Removing a transition deletes that transition and may reactivate an earlier local value.
 
 `FreeMeter.INSTANCE` is an explicit value and takes precedence over inherited structured meters.
+
+#### Implemented KeySignature State Inheritance
+
+KeySignature state uses the same hierarchical state mechanism as Meter.
+
+- `Composition` owns a `StateTimeline<KeySignature>`.
+- Each `Part` owns a local `StateTimeline<KeySignature>`.
+- Each `Voice` owns a local `StateTimeline<KeySignature>`.
+
+All mutations are exposed through the `Composition` aggregate. `Part` and `Voice` provide package-private operations for their local state.
+
+Effective KeySignature resolution follows Voice → Part → Composition. An active local override takes precedence over inherited state.
+
+An `End` transition restores dynamic inheritance from the effective parent state at Part and Voice scope. At Composition scope, it leaves KeySignature unspecified. Removing a transition deletes that entry and may restore an earlier local override.
+
+An explicitly natural KeySignature is a valid override and must not be confused with absent state. No implicit natural KeySignature is created when all scopes are unspecified.
 
 ### Hierarchical Inheritance and Persistent Overrides
 
@@ -1249,7 +1267,7 @@ Active local state    → override parent
 Local override ended → inherit parent again
 ```
 
-The generic timeline implements an override ending as `StateTransition.End<T>`. Tempo and Meter expose explicit end operations through `Composition`; section 39 documents the Meter API. Integration and APIs for the remaining state types are still open.
+The generic timeline implements an override ending as `StateTransition.End<T>`. Tempo, Meter, and KeySignature expose explicit end operations through `Composition`. Integration and APIs for further state types remain open.
 
 ### Tempo
 
@@ -1618,7 +1636,7 @@ DiatonicStep → PitchAlteration
 
 This mapping is semantically total: each of `C`, `D`, `E`, `F`, `G`, `A`, and `B` has exactly one effective alteration. The alteration uses the already accepted rational `PitchAlteration` value model.
 
-Steps omitted during construction or parsing have effective value `PitchAlteration.ZERO`. For example:
+Steps omitted during construction have the effective value `PitchAlteration.NATURAL`, representing zero chromatic alteration. For example:
 
 | Step | No alterations | F-sharp-style signature |
 | ---- | -------------- | ----------------------- |
@@ -1630,7 +1648,15 @@ Steps omitted during construction or parsing have effective value `PitchAlterati
 | A    | 0              | 0                       |
 | B    | 0              | 0                       |
 
-The exact Java representation, constructors, and storage remain implementation details. Sparse input may be supported, but sparse storage is not part of the canonical contract.
+The implementation is a final immutable `KeySignature` class.
+
+`KeySignature.of(Map<DiatonicStep, PitchAlteration>)` accepts a possibly sparse mapping and normalizes it to all seven diatonic steps using an `EnumMap` during construction.
+
+Missing steps are filled with `PitchAlteration.NATURAL`. The normalized mapping is stored as an immutable defensive copy.
+
+`alterationFor(DiatonicStep)` returns the effective alteration and never returns null for a valid step.
+
+Equality and hash codes are based on the complete effective mapping, independently of whether the original input was sparse or complete.
 
 The zero default applies to unspecified steps within a KeySignature value. It does not create a KeySignature state when none was specified. An absent local state still follows the existing inheritance rules; an explicit all-zero signature is a value.
 
@@ -1677,13 +1703,36 @@ The existing distinction between semantic `PitchAlteration` and displayed `Accid
 
 Glyph order, layout, source spelling, and format-specific tokens are not stored in canonical KeySignature or included in its identity. They belong in notation/source representations when needed.
 
-The domain question is: what `PitchAlteration` applies by default to a given `DiatonicStep`? An operation such as `alterationFor(step)` would illustrate that question only; no public API is finalized.
+The public `alterationFor(DiatonicStep)` operation retrieves the effective chromatic default for a specified diatonic step.
+
+This operation does not imply tonic, mode, scale, or tonal-center semantics.
 
 ### Scope and Inheritance
 
-KeySignature remains state at Composition, Part, or Voice scope, with hierarchical inheritance, persistent local overrides, and explicit return to inheritance. This decision defines the value, not timeline storage or override APIs.
+KeySignature is implemented as state at Composition, Part, and Voice scopes, with hierarchical inheritance, persistent local overrides, and explicit return to inheritance as described in section 38.
 
 See [ADR-0027](../decisions/0027-canonical-key-signature.md).
+
+### Composition KeySignature Operations
+
+`Composition` exposes overloaded operations for all three supported KeySignature scopes. The ID parameters use the distinct `PartId` and `VoiceId` types; positions use `ScorePosition`.
+
+| Operation | Composition                          | Part                                         | Voice                                         |
+| --------- | ------------------------------------ | -------------------------------------------- | --------------------------------------------- |
+| Set       | `setKeySignature(position, value)`   | `setKeySignature(partId, position, value)`   | `setKeySignature(voiceId, position, value)`   |
+| End       | `endKeySignature(position)`          | `endKeySignature(partId, position)`          | `endKeySignature(voiceId, position)`          |
+| Remove    | `removeKeySignatureChange(position)` | `removeKeySignatureChange(partId, position)` | `removeKeySignatureChange(voiceId, position)` |
+| Query     | `keySignatureAt(position)`           | `keySignatureAt(partId, position)`           | `keySignatureAt(voiceId, position)`           |
+
+Composition-level Set and End operations return `void`. Composition-level Remove returns `Result<Unit>`. Composition-level Query returns `Optional<KeySignature>`.
+
+Part- and Voice-level mutation operations return `Result<Unit>`. Their queries return `Result<Optional<KeySignature>>`.
+
+An unknown Part or Voice produces the corresponding not-found error. An existing scope without an effective KeySignature produces a successful result containing `Optional.empty()`.
+
+Local Set operations establish persistent overrides until the next local transition. Local End operations restore dynamic inheritance; Composition-level End leaves the state unspecified. Remove operations delete transitions stored at the exact position and return a failure if no transition exists there.
+
+The effective query resolves Voice-local state first, then Part-local state, and finally Composition state.
 
 ---
 
@@ -2030,8 +2079,7 @@ The following points remain unresolved:
 - Persistence rehydration mechanism
 - Concrete extraction/adaptation details for Result in foundation and settings/i18n in desktop; initial placement is defined in [module-architecture.md](module-architecture.md)
 
-- Concrete Java implementation of the accepted KeySignature value model
-- Integration of KeySignature and further state types with the generic timeline, including scope-specific APIs and explicit override-ending operations
+- Integration of further state types, particularly InstrumentAssignment, including their storage and scope-specific APIs
 - Concrete instrument, assignment, and interval APIs/storage
 - InstrumentAssignment timeline storage
 - Exact InstrumentDefinition metadata
@@ -2040,7 +2088,11 @@ The following points remain unresolved:
 - Catalog provenance schema and catalog implementation
 - Target-specific instrument mappings
 
-The Tempo and Meter value models, the generic `StateTimeline<T>` with Set and End transitions, and its use by Composition-level Tempo and hierarchical Meter are implemented. The remaining state types are not yet fully integrated. The accepted state scopes and inheritance semantics do not decide these remaining implementation details.
+The Tempo, Meter, and KeySignature value models are implemented. The generic `StateTimeline<T>` supports Set and End transitions.
+
+Tempo is integrated at Composition scope. Meter and KeySignature are integrated at Composition, Part, and Voice scopes, including persistent overrides, dynamic inheritance, and explicit ending and removal of transitions.
+
+Integration of further state types remains open.
 
 ### Tonal Semantics and Format Boundaries
 

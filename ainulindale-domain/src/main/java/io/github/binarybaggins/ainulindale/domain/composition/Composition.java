@@ -7,6 +7,7 @@ import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
 import io.github.binarybaggins.ainulindale.domain.tempo.Tempo;
@@ -27,6 +28,7 @@ public final class Composition {
     private final List<Part> parts;
     private final StateTimeline<Tempo> tempoTimeline = new StateTimeline<>();
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
+    private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
 
     private Composition(CompositionId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -623,6 +625,256 @@ public final class Composition {
                         .localMeterAt(position)
                         .or(() -> part.localMeterAt(position).or(() -> meterAt(position)));
                     return Result.success(effectiveMeter);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Sets a key signature at the specified score position.
+     *
+     * @param position the score position at which to set the key signature
+     * @param keySignature the key signature to set
+     * @throws NullPointerException if position or keySignature is null
+     */
+    public void setKeySignature(ScorePosition position, KeySignature keySignature) {
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(keySignature, "keySignature must not be null");
+
+        keySignatureTimeline.set(position, keySignature);
+    }
+
+    /**
+     * Ends the key signature at the specified score position.
+     *
+     * @param position the score position at which to end the key signature
+     * @throws NullPointerException if position is null
+     */
+    public void endKeySignature(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        keySignatureTimeline.end(position);
+    }
+
+    /**
+     * Removes the key signature at the specified score position.
+     *
+     * @param position the score position at which to remove the key signature
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if position is null
+     */
+    public Result<Unit> removeKeySignatureChange(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        if (!keySignatureTimeline.remove(position)) {
+            return Result.failure(CompositionErrors.KEY_SIGNATURE_CHANGE_NOT_FOUND);
+        }
+
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Retrieves the key signature effective at the specified score position.
+     *
+     * @param position the score position at which to retrieve the key signature
+     * @return an Optional containing the key signature if found, or empty if not found
+     * @throws NullPointerException if position is null
+     */
+    public Optional<KeySignature> keySignatureAt(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        return keySignatureTimeline.latestTransitionAt(position).flatMap(transition -> {
+            if (transition instanceof StateTransition.Set<KeySignature> set) {
+                return Optional.of(set.value());
+            }
+            return Optional.empty();
+        });
+    }
+
+    /**
+     * Sets a key signature at the specified score position.
+     *
+     * @param partId the ID of the part for which to set the key signature
+     * @param position the score position at which to set the key signature
+     * @param keySignature the key signature to set
+     * @throws NullPointerException if position or keySignature is null
+     */
+    public Result<Unit> setKeySignature(PartId partId, ScorePosition position, KeySignature keySignature) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(keySignature, "keySignature must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.setKeySignature(position, keySignature);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Ends the key signature at the specified score position for a the given part.
+     *
+     * @param partId the ID of the part for which to end the key signature
+     * @param position the score position at which to end the key signature
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> endKeySignature(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.endKeySignature(position);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Removes the key signature at the specified score position for the given part.
+     *
+     * @param partId the ID of the part for which to remove the key signature
+     * @param position the score position at which to remove the key signature
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> removeKeySignatureChange(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                if (!part.removeKeySignatureChange(position)) {
+                    return Result.failure(CompositionErrors.KEY_SIGNATURE_CHANGE_NOT_FOUND);
+                }
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the key signature effective at the specified score position for the given part.
+     *
+     * @param partId the ID of the part for which to retrieve the key signature
+     * @param position the score position at which to retrieve the key signature
+     * @return a Result containing an Optional with the key signature if found, or empty if not found
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Optional<KeySignature>> keySignatureAt(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                Optional<KeySignature> effective = part
+                    .localKeySignatureAt(position)
+                    .or(() -> keySignatureAt(position));
+
+                return Result.success(effective);
+            }
+        }
+
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Sets the local key signature at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to set the key signature
+     * @param keySignature the key signature to set
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId, position, or keySignature is null
+     */
+    public Result<Unit> setKeySignature(VoiceId voiceId, ScorePosition position, KeySignature keySignature) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(keySignature, "keySignature must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    voice.setKeySignature(position, keySignature);
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Ends the local key signature at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to end the key signature
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Unit> endKeySignature(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    voice.endKeySignature(position);
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Removes a local key signature change at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to remove the key signature change
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Unit> removeKeySignatureChange(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    if (!voice.removeKeySignatureChange(position)) {
+                        return Result.failure(CompositionErrors.KEY_SIGNATURE_CHANGE_NOT_FOUND);
+                    }
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the effective key signature at the specified score position for the given voice.
+     * Resolution order: voice, part, composition.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to retrieve the key signature
+     * @return a Result containing an Optional with the effective key signature, or empty if none
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Optional<KeySignature>> keySignatureAt(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    Optional<KeySignature> effective = voice
+                        .localKeySignatureAt(position)
+                        .or(() -> part.localKeySignatureAt(position).or(() -> keySignatureAt(position)));
+                    return Result.success(effective);
                 }
             }
         }

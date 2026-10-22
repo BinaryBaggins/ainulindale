@@ -9,13 +9,17 @@ import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.Success;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.FreeMeter;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.meter.MeterComponent;
 import io.github.binarybaggins.ainulindale.domain.meter.StructuredMeter;
+import io.github.binarybaggins.ainulindale.domain.pitch.DiatonicStep;
+import io.github.binarybaggins.ainulindale.domain.pitch.PitchAlteration;
 import io.github.binarybaggins.ainulindale.domain.time.MusicalDuration;
 import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -205,6 +209,10 @@ class CompositionVoiceTest {
 
     private static Meter meter(int count, long denominator) {
         return new StructuredMeter(List.of(new MeterComponent(count, MusicalDuration.of(1, denominator))));
+    }
+
+    private static KeySignature signature(DiatonicStep step, PitchAlteration alteration) {
+        return KeySignature.of(Map.of(step, alteration));
     }
 
     @Test
@@ -417,5 +425,168 @@ class CompositionVoiceTest {
         assertThrows(NullPointerException.class, () -> composition.removeMeterChange(voiceId, null));
         assertThrows(NullPointerException.class, () -> composition.meterAt((VoiceId) null, ScorePosition.ZERO));
         assertThrows(NullPointerException.class, () -> composition.meterAt(voiceId, null));
+    }
+
+    @Test
+    void voiceMayHaveNoEffectiveKeySignature() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        assertEquals(new Success<>(Optional.empty()), composition.keySignatureAt(voiceId, ScorePosition.ZERO));
+    }
+
+    @Test
+    void voiceInheritsCompositionKeySignature() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        KeySignature keySignature = signature(DiatonicStep.F, PitchAlteration.of(1));
+
+        composition.setKeySignature(ScorePosition.ZERO, keySignature);
+
+        assertEquals(new Success<>(Optional.of(keySignature)), composition.keySignatureAt(voiceId, ScorePosition.ZERO));
+    }
+
+    @Test
+    void voiceInheritsPartKeySignatureBeforeCompositionKeySignature() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        KeySignature global = signature(DiatonicStep.F, PitchAlteration.of(1));
+        KeySignature local = signature(DiatonicStep.B, PitchAlteration.of(-1));
+
+        composition.setKeySignature(ScorePosition.ZERO, global);
+        composition.setKeySignature(partId, ScorePosition.ZERO, local);
+
+        assertEquals(new Success<>(Optional.of(local)), composition.keySignatureAt(voiceId, ScorePosition.ZERO));
+    }
+
+    @Test
+    void voiceOverrideTakesPrecedenceOverPartAndCompositionKeySignatures() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        KeySignature global = signature(DiatonicStep.F, PitchAlteration.of(1));
+        KeySignature part = signature(DiatonicStep.B, PitchAlteration.of(-1));
+        KeySignature local = signature(DiatonicStep.C, PitchAlteration.of(1));
+
+        composition.setKeySignature(ScorePosition.ZERO, global);
+        composition.setKeySignature(partId, ScorePosition.ZERO, part);
+        assertInstanceOf(Success.class, composition.setKeySignature(voiceId, ScorePosition.of(2, 1), local));
+
+        assertEquals(new Success<>(Optional.of(part)), composition.keySignatureAt(voiceId, ScorePosition.ZERO));
+        assertEquals(new Success<>(Optional.of(local)), composition.keySignatureAt(voiceId, ScorePosition.of(2, 1)));
+    }
+
+    @Test
+    void endingVoiceKeySignatureOverrideRestoresEffectivePartKeySignature() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        KeySignature part = signature(DiatonicStep.B, PitchAlteration.of(-1));
+        KeySignature local = signature(DiatonicStep.C, PitchAlteration.of(1));
+
+        composition.setKeySignature(partId, ScorePosition.ZERO, part);
+        composition.setKeySignature(voiceId, ScorePosition.of(10, 1), local);
+        composition.endKeySignature(voiceId, ScorePosition.of(20, 1));
+
+        assertEquals(new Success<>(Optional.of(local)), composition.keySignatureAt(voiceId, ScorePosition.of(19, 1)));
+        assertEquals(new Success<>(Optional.of(part)), composition.keySignatureAt(voiceId, ScorePosition.of(20, 1)));
+    }
+
+    @Test
+    void voiceFollowsLaterPartKeySignatureChangesAfterEnd() {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        KeySignature firstPart = signature(DiatonicStep.B, PitchAlteration.of(-1));
+        KeySignature laterPart = signature(DiatonicStep.E, PitchAlteration.of(-1));
+
+        composition.setKeySignature(partId, ScorePosition.ZERO, firstPart);
+        composition.setKeySignature(voiceId, ScorePosition.ZERO, signature(DiatonicStep.C, PitchAlteration.of(1)));
+        composition.endKeySignature(voiceId, ScorePosition.of(10, 1));
+        composition.setKeySignature(partId, ScorePosition.of(20, 1), laterPart);
+
+        assertEquals(
+            new Success<>(Optional.of(firstPart)),
+            composition.keySignatureAt(voiceId, ScorePosition.of(15, 1))
+        );
+        assertEquals(
+            new Success<>(Optional.of(laterPart)),
+            composition.keySignatureAt(voiceId, ScorePosition.of(20, 1))
+        );
+    }
+
+    @Test
+    void removingVoiceKeySignatureChangeRestoresInheritedSignature() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        KeySignature inherited = signature(DiatonicStep.F, PitchAlteration.of(1));
+
+        composition.setKeySignature(ScorePosition.ZERO, inherited);
+        composition.setKeySignature(voiceId, ScorePosition.ZERO, signature(DiatonicStep.C, PitchAlteration.of(1)));
+        assertInstanceOf(Success.class, composition.removeKeySignatureChange(voiceId, ScorePosition.ZERO));
+
+        assertEquals(new Success<>(Optional.of(inherited)), composition.keySignatureAt(voiceId, ScorePosition.ZERO));
+    }
+
+    @Test
+    void unknownVoiceReturnsFailureForKeySignatureOperations() {
+        Composition composition = Composition.create();
+        VoiceId unknown = VoiceId.create();
+
+        Failure<?> set = assertInstanceOf(
+            Failure.class,
+            composition.setKeySignature(unknown, ScorePosition.ZERO, signature(DiatonicStep.F, PitchAlteration.of(1)))
+        );
+        Failure<?> end = assertInstanceOf(Failure.class, composition.endKeySignature(unknown, ScorePosition.ZERO));
+        Failure<?> remove = assertInstanceOf(
+            Failure.class,
+            composition.removeKeySignatureChange(unknown, ScorePosition.ZERO)
+        );
+        Failure<?> query = assertInstanceOf(Failure.class, composition.keySignatureAt(unknown, ScorePosition.ZERO));
+
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, set.error());
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, end.error());
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, remove.error());
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, query.error());
+    }
+
+    @Test
+    void removingUnknownVoiceKeySignatureChangeReturnsFailure() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+
+        Failure<?> failure = assertInstanceOf(
+            Failure.class,
+            composition.removeKeySignatureChange(voiceId, ScorePosition.ZERO)
+        );
+
+        assertEquals(CompositionErrors.KEY_SIGNATURE_CHANGE_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void voiceKeySignatureOperationsRejectNullArguments() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        VoiceId voiceId = composition.parts().getFirst().voices().getFirst().id();
+        KeySignature keySignature = signature(DiatonicStep.F, PitchAlteration.of(1));
+
+        assertThrows(NullPointerException.class, () ->
+            composition.setKeySignature((VoiceId) null, ScorePosition.ZERO, keySignature)
+        );
+        assertThrows(NullPointerException.class, () -> composition.setKeySignature(voiceId, null, keySignature));
+        assertThrows(NullPointerException.class, () -> composition.setKeySignature(voiceId, ScorePosition.ZERO, null));
+        assertThrows(NullPointerException.class, () -> composition.endKeySignature((VoiceId) null, ScorePosition.ZERO));
+        assertThrows(NullPointerException.class, () -> composition.endKeySignature(voiceId, null));
+        assertThrows(NullPointerException.class, () ->
+            composition.removeKeySignatureChange((VoiceId) null, ScorePosition.ZERO)
+        );
+        assertThrows(NullPointerException.class, () -> composition.removeKeySignatureChange(voiceId, null));
+        assertThrows(NullPointerException.class, () -> composition.keySignatureAt((VoiceId) null, ScorePosition.ZERO));
+        assertThrows(NullPointerException.class, () -> composition.keySignatureAt(voiceId, null));
     }
 }

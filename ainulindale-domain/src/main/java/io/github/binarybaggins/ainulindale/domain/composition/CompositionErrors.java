@@ -48,4 +48,9 @@ final class CompositionErrors {
      * Error indicating that the specified meter was not found within the composition.
      */
     static final ResultError METER_CHANGE_NOT_FOUND = new ResultError("Composition.MeterChangeNotFound");
+
+    /**
+     * Error indicating that the specified key signature was not found within the composition.
+     */
+    static final ResultError KEY_SIGNATURE_CHANGE_NOT_FOUND = new ResultError("Composition.KeySignatureChangeNotFound");
 }
