@@ -1,6 +1,8 @@
 package io.github.binarybaggins.ainulindale.domain.meter;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.binarybaggins.ainulindale.domain.time.MusicalDuration;
 import org.junit.jupiter.api.Test;
