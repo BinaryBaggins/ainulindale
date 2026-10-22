@@ -296,7 +296,7 @@ class CompositionPartTest {
         Composition composition = Composition.create();
         PartId partId = composition.addPart();
 
-        assertThrows(NullPointerException.class, () -> composition.setMeter(null, ScorePosition.ZERO, meter(4, 4)));
+        assertThrows(NullPointerException.class, () -> composition.setMeter((PartId) null, ScorePosition.ZERO, meter(4, 4)));
         assertThrows(NullPointerException.class, () -> composition.setMeter(partId, null, meter(4, 4)));
         assertThrows(NullPointerException.class, () -> composition.setMeter(partId, ScorePosition.ZERO, null));
         assertThrows(NullPointerException.class, () -> composition.endMeter(partId, null));

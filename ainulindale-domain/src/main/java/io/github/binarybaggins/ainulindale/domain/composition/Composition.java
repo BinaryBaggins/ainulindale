@@ -593,12 +593,11 @@ public final class Composition {
         for (Part part : parts) {
             for (Voice voice : part.voices()) {
                 if (voice.id().equals(voiceId)) {
-                    boolean removed = voice.removeMeterChange(position);
-                    if (removed) {
-                        return Result.success(Unit.INSTANCE);
-                    } else {
+                    if (!voice.removeMeterChange(position)) {
                         return Result.failure(CompositionErrors.METER_CHANGE_NOT_FOUND);
                     }
+
+                    return Result.success(Unit.INSTANCE);
                 }
             }
         }
