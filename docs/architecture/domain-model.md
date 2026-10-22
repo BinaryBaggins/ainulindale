@@ -247,9 +247,13 @@ At least the following are planned:
 
 ```java
 record CompositionId(UUID value) {}
+
 record PartId(UUID value) {}
+
 record VoiceId(UUID value) {}
+
 record EventId(UUID value) {}
+
 record RelationId(UUID value) {}
 ```
 
@@ -391,6 +395,7 @@ The following is not intended:
 
 ```java
 composition.parts().add(part);
+
 part.voices().clear();
 ```
 
@@ -521,10 +526,7 @@ Canonical musical time uses only exact, normalized rational values.
 The accepted canonical representation uses `BigInteger numerator` and `BigInteger denominator`. Illustratively:
 
 ```java
-record Rational(
-    BigInteger numerator,
-    BigInteger denominator
-) {}
+record Rational(BigInteger numerator, BigInteger denominator) {}
 ```
 
 The denominator must never be zero. Normalization makes it positive, keeps the sign in the numerator, and fully reduces numerator and denominator by their greatest common divisor. Zero has exactly the canonical representation `0/1`. Exact Java method names are not prescribed.
@@ -698,10 +700,7 @@ Domain objects with a temporal extent can use a `ScoreRange`.
 Conceptually:
 
 ```java
-record ScoreRange(
-    ScorePosition start,
-    MusicalDuration duration
-) {}
+record ScoreRange(ScorePosition start, MusicalDuration duration) {}
 ```
 
 A range is half-open:
@@ -766,11 +765,7 @@ PlaybackPlan
 Its structural form is:
 
 ```java
-record Pitch(
-    DiatonicStep step,
-    PitchAlteration alteration,
-    int octave
-) {}
+record Pitch(DiatonicStep step, PitchAlteration alteration, int octave) {}
 ```
 
 `DiatonicStep` has exactly these values:
@@ -821,9 +816,7 @@ quarter flat   = -1/2
 Conceptually:
 
 ```java
-record PitchAlteration(
-    Rational semitones
-) {}
+record PitchAlteration(Rational semitones) {}
 ```
 
 Floating-point values are excluded.
@@ -1077,7 +1070,6 @@ Every `VoiceEvent` has a stable `EventId` and is anchored at a `ScorePosition`. 
 
 ```java
 public interface VoiceEvent {
-
     EventId id();
 
     ScorePosition position();
@@ -1178,6 +1170,29 @@ The timeline provides exact-position queries, latest-transition queries, and imm
 
 `StateTimeline<T>` is an internal implementation detail, not canonical musical vocabulary.
 
+### Implemented Meter State Inheritance
+
+Meter state is stored independently at three scopes:
+
+- `Composition` owns `StateTimeline<Meter>`.
+- Each `Part` owns a local `StateTimeline<Meter>`.
+- Each `Voice` owns a local `StateTimeline<Meter>`.
+
+All meter mutations are exposed through the `Composition` aggregate. `Part` and `Voice` provide package-private local state operations. These local state timelines use the shared absolute score timeline; they do not introduce separate score-time coordinates.
+
+Effective meter resolution follows:
+
+1. Active Voice-local meter, if present.
+2. Otherwise, active Part-local meter, if present.
+3. Otherwise, active Composition meter, if present.
+4. Otherwise, no specified meter.
+
+Inherited values are resolved dynamically and never copied into child timelines.
+
+An `End` transition terminates the local override and restores inheritance at Part and Voice scope. At Composition scope, it leaves meter unspecified. Removing a transition deletes that transition and may reactivate an earlier local value.
+
+`FreeMeter.INSTANCE` is an explicit value and takes precedence over inherited structured meters.
+
 ### Hierarchical Inheritance and Persistent Overrides
 
 For state types allowed at multiple hierarchical scopes, fallback follows:
@@ -1210,11 +1225,11 @@ Part B:
 
 The effective values are:
 
-| Score interval | Part A | Part B |
-| --- | --- | --- |
-| [0, 10) | All steps 0 | All steps 0 |
-| [10, 20) | All steps 0 | F: +1; others 0 |
-| [20, onward) | F: +1, C: +1; others 0 | F: +1; others 0 |
+| Score interval | Part A                 | Part B          |
+| -------------- | ---------------------- | --------------- |
+| [0, 10)        | All steps 0            | All steps 0     |
+| [10, 20)       | All steps 0            | F: +1; others 0 |
+| [20, onward)   | F: +1, C: +1; others 0 | F: +1; others 0 |
 
 The Composition change at position 20 is stored only once.
 
@@ -1234,7 +1249,7 @@ Active local state    → override parent
 Local override ended → inherit parent again
 ```
 
-The representation of an override ending and the API used to express it remain open. No concrete method or storage mechanism is prescribed.
+The generic timeline implements an override ending as `StateTransition.End<T>`. Tempo and Meter expose explicit end operations through `Composition`; section 39 documents the Meter API. Integration and APIs for the remaining state types are still open.
 
 ### Tempo
 
@@ -1283,16 +1298,16 @@ Sections 45 and 46 define InstrumentDefinition, InstrumentAssignment, and intrin
 
 ### Accepted Scope Matrix
 
-| Information | Temporal form | Allowed scope / ownership | Inheritance or status |
-| --- | --- | --- | --- |
-| Tempo | State | Composition | Composition-wide only |
-| Meter | State | Composition, Part, Voice | Hierarchical |
-| KeySignature | State | Composition, Part, Voice | Hierarchical |
-| InstrumentAssignment | State | Part | Part-local state |
-| NoteEvent | Ranged VoiceEvent | Voice | Owned by exactly one voice |
-| Tie / Slur | Relation | Composition | Explicit NoteEvent references |
-| TupletGroup | Relation / grouping | Composition-owned relation framework | Detailed model deferred |
-| Dynamics | Open | Open | Scope and temporal model open |
+| Information          | Temporal form       | Allowed scope / ownership            | Inheritance or status         |
+| -------------------- | ------------------- | ------------------------------------ | ----------------------------- |
+| Tempo                | State               | Composition                          | Composition-wide only         |
+| Meter                | State               | Composition, Part, Voice             | Hierarchical                  |
+| KeySignature         | State               | Composition, Part, Voice             | Hierarchical                  |
+| InstrumentAssignment | State               | Part                                 | Part-local state              |
+| NoteEvent            | Ranged VoiceEvent   | Voice                                | Owned by exactly one voice    |
+| Tie / Slur           | Relation            | Composition                          | Explicit NoteEvent references |
+| TupletGroup          | Relation / grouping | Composition-owned relation framework | Detailed model deferred       |
+| Dynamics             | Open                | Open                                 | Scope and temporal model open |
 
 “Ranged VoiceEvent” describes the temporal form of `NoteEvent`; it does not introduce `RangedVoiceEvent` as a type.
 
@@ -1312,11 +1327,32 @@ Meter
 └── FreeMeter
 ```
 
-The exact Java inheritance mechanism, collection types, and APIs remain implementation details. Meter retains the Composition, Part, and Voice scopes and inheritance rules defined in section 38.
+The current Java implementation uses a sealed `Meter` interface permitting `StructuredMeter` and `FreeMeter`. `StructuredMeter` and `MeterComponent` are records; `FreeMeter` is a singleton enum with the value `FreeMeter.INSTANCE`. Meter retains the Composition, Part, and Voice scopes and inheritance rules defined in section 38.
+
+### Composition Meter Operations
+
+`Composition` exposes overloaded operations for the supported Meter scopes. The ID parameters use the distinct `PartId` and `VoiceId` types; positions use `ScorePosition`.
+
+| Operation | Composition                   | Part                                  | Voice                                  |
+| --------- | ----------------------------- | ------------------------------------- | -------------------------------------- |
+| Set       | `setMeter(position, meter)`   | `setMeter(partId, position, meter)`   | `setMeter(voiceId, position, meter)`   |
+| End       | `endMeter(position)`          | `endMeter(partId, position)`          | `endMeter(voiceId, position)`          |
+| Remove    | `removeMeterChange(position)` | `removeMeterChange(partId, position)` | `removeMeterChange(voiceId, position)` |
+| Query     | `meterAt(position)`           | `meterAt(partId, position)`           | `meterAt(voiceId, position)`           |
+
+Composition-level queries return `Optional<Meter>`. Part- and Voice-level queries return `Result<Optional<Meter>>`. ID-based operations return `Result` so unknown entities can be distinguished from successfully resolved but unspecified meter state.
+
+Composition-level Set and End operations return `void`. ID-based mutations and all Remove operations return `Result<Unit>`; removing a nonexistent transition returns a failure.
+
+Set operations establish persistent state from the given position until the next transition. End operations explicitly terminate local state, restoring inheritance at Part and Voice scope or leaving Composition-level state unspecified. Remove operations delete a stored transition at exactly the given position.
+
+Query operations return the effective meter after hierarchical inheritance, not merely the locally stored value.
 
 ### StructuredMeter and MeterComponent
 
 A `StructuredMeter` contains a non-empty ordered sequence of `MeterComponent`s. Each component represents a positive number of equal musical-duration units forming one explicit component of the meter structure.
+
+The implementation stores the components as `List<MeterComponent>` and makes a defensive, immutable copy using `List.copyOf`. `MeterComponent` stores an `int count` and a `MusicalDuration unit`.
 
 Conceptually:
 
@@ -1371,7 +1407,7 @@ Components need not share the same unit. Mixed-unit meters are representable:
 
 ### Derived Nominal Duration and Structural Equality
 
-The nominal duration of a `StructuredMeter` is derived:
+The nominal duration of a `StructuredMeter` is derived. The implemented `nominalDuration()` method returns a `MusicalDuration`, calculated using exact `Rational` arithmetic:
 
 ```text
 nominalDuration = sum(component.count × component.unit)
@@ -1585,14 +1621,14 @@ This mapping is semantically total: each of `C`, `D`, `E`, `F`, `G`, `A`, and `B
 Steps omitted during construction or parsing have effective value `PitchAlteration.ZERO`. For example:
 
 | Step | No alterations | F-sharp-style signature |
-| --- | --- | --- |
-| C | 0 | 0 |
-| D | 0 | 0 |
-| E | 0 | 0 |
-| F | 0 | +1 |
-| G | 0 | 0 |
-| A | 0 | 0 |
-| B | 0 | 0 |
+| ---- | -------------- | ----------------------- |
+| C    | 0              | 0                       |
+| D    | 0              | 0                       |
+| E    | 0              | 0                       |
+| F    | 0              | +1                      |
+| G    | 0              | 0                       |
+| A    | 0              | 0                       |
+| B    | 0              | 0                       |
 
 The exact Java representation, constructors, and storage remain implementation details. Sparse input may be supported, but sparse storage is not part of the canonical contract.
 
@@ -1994,11 +2030,8 @@ The following points remain unresolved:
 - Persistence rehydration mechanism
 - Concrete extraction/adaptation details for Result in foundation and settings/i18n in desktop; initial placement is defined in [module-architecture.md](module-architecture.md)
 
-- Concrete Java implementation of the accepted Tempo value model
-- Concrete Java implementation of the accepted Meter value model
 - Concrete Java implementation of the accepted KeySignature value model
-- Concrete state timeline storage and APIs
-- Representation and API for explicitly ending a local override
+- Integration of KeySignature and further state types with the generic timeline, including scope-specific APIs and explicit override-ending operations
 - Concrete instrument, assignment, and interval APIs/storage
 - InstrumentAssignment timeline storage
 - Exact InstrumentDefinition metadata
@@ -2007,7 +2040,7 @@ The following points remain unresolved:
 - Catalog provenance schema and catalog implementation
 - Target-specific instrument mappings
 
-The accepted state scopes and inheritance semantics do not decide these details.
+The Tempo and Meter value models, the generic `StateTimeline<T>` with Set and End transitions, and its use by Composition-level Tempo and hierarchical Meter are implemented. The remaining state types are not yet fully integrated. The accepted state scopes and inheritance semantics do not decide these remaining implementation details.
 
 ### Tonal Semantics and Format Boundaries
 
