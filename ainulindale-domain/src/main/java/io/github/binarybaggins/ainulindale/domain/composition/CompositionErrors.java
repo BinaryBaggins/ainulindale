@@ -38,4 +38,9 @@ final class CompositionErrors {
      * Error indicating that the specified voice index is invalid within the composition.
      */
     static final ResultError INVALID_VOICE_INDEX = new ResultError("Composition.InvalidVoiceIndex");
+
+    /**
+     * Error indicating that the specified tempo change was not found within the composition.
+     */
+    static final ResultError TEMPO_CHANGE_NOT_FOUND = new ResultError("Composition.TempoChangeNotFound");
 }
