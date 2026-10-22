@@ -450,7 +450,7 @@ public final class Composition {
      * @return a Result indicating success or failure
      * @throws NullPointerException if partId, position, or meter is null
      */
-    public Result<Unit> setLocalMeter(PartId partId, ScorePosition position, Meter meter) {
+    public Result<Unit> setMeter(PartId partId, ScorePosition position, Meter meter) {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
         Objects.requireNonNull(meter, "meter must not be null");
@@ -471,7 +471,7 @@ public final class Composition {
      * @return a Result indicating success or failure
      * @throws NullPointerException if partId or position is null
      */
-    public Result<Unit> endLocalMeter(PartId partId, ScorePosition position) {
+    public Result<Unit> endMeter(PartId partId, ScorePosition position) {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
@@ -491,7 +491,7 @@ public final class Composition {
      * @return a Result indicating success or failure
      * @throws NullPointerException if partId or position is null
      */
-    public Result<Unit> removeLocalMeterChange(PartId partId, ScorePosition position) {
+    public Result<Unit> removeMeterChange(PartId partId, ScorePosition position) {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
