@@ -1170,7 +1170,13 @@ These rates are in whole notes per minute, equivalent to quarter-note metronome 
 
 A value at `ScorePosition.ZERO` is not required. An absent initial value is valid: state may be unspecified or inherited from an allowed parent scope. No canonical default value is introduced.
 
-Concrete data structures and APIs remain implementation details. A helper such as `StateTimeline<T>` may be considered internally later, but it is not part of the canonical musical vocabulary.
+The domain currently implements state transitions using the package-private `StateTimeline<T>` helper. Each timeline stores transitions at `ScorePosition` values, represented by `StateTransition.Set<T>` and `StateTransition.End<T>`.
+
+A `Set` transition establishes a value, while an `End` transition explicitly terminates the active local value. Removing a transition deletes that entry entirely, potentially restoring the effect of an earlier transition.
+
+The timeline provides exact-position queries, latest-transition queries, and immutable snapshots. It does not resolve hierarchical inheritance; that responsibility remains with the corresponding domain aggregate.
+
+`StateTimeline<T>` is an internal implementation detail, not canonical musical vocabulary.
 
 ### Hierarchical Inheritance and Persistent Overrides
 
@@ -1529,6 +1535,21 @@ position 8 → Tempo B
 Between state changes, the specified quantitative tempo is constant. Gradual changes such as ritardando, accelerando, and tempo curves have a different temporal character and remain open. The basic `Tempo` value object has no curve, interpolation, or transition-duration fields.
 
 Textual indications such as Largo, Andante, Allegro, and Presto do not define a unique mathematical score-to-real-time rate and are not themselves quantitative `Tempo` values. Possible future `TempoIndication` or `TempoExpression` concepts, and their relationship to quantitative tempo, remain undecided. No requirement about carrying either, both, or neither is introduced here.
+
+### Composition Tempo Operations
+
+`Composition` owns a `StateTimeline<Tempo>` and exposes the following public operations:
+
+- `setTempo(ScorePosition, Tempo)` establishes or replaces a tempo.
+- `endTempo(ScorePosition)` explicitly makes the quantitative tempo unspecified from that position.
+- `removeTempoChange(ScorePosition)` removes a stored transition and returns a `Result<Unit>`, failing if no transition exists at that position.
+- `tempoAt(ScorePosition)` returns the effective quantitative tempo as `Optional<Tempo>`.
+
+An absent tempo is valid and does not imply an implicit default rate.
+
+Tempo remains Composition-scoped. The internal timeline and its transition types are not exposed through the public aggregate API.
+
+An immutable public read model for enumerating stored tempo changes remains to be designed.
 
 ### Derived Real-Time Duration
 

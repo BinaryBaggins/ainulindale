@@ -78,7 +78,6 @@ In particular, the following have not yet been finalized:
 - Concrete instrument, assignment, and interval APIs/storage
 - InstrumentAssignment timeline storage
 - Tuning system and technical pitch mapping
-- Concrete Java implementation of the accepted Tempo value model
 - MetronomeMark and source/notation representation
 - Textual tempo indications and their relationship to quantitative Tempo
 - Gradual tempo changes, transitions, and tempo curves
@@ -98,8 +97,8 @@ In particular, the following have not yet been finalized:
 - Non-octave-periodic systems
 - Concrete Java APIs and storage for the accepted tonal and scale concepts
 - Concrete format mappings and adapters
-- Concrete state timeline implementation and APIs
-- Representation and API for explicitly ending local overrides
+- Public state-timeline read models and remaining state-specific APIs, including Meter, KeySignature, and InstrumentAssignment
+- Public APIs and inheritance resolution for explicitly ending local Meter and KeySignature overrides at Part and Voice scope
 - MusicalForm
 - PlaybackPlan
 - Editing transactions and undo/redo
