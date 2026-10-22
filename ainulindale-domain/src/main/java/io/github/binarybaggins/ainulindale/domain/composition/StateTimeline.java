@@ -80,7 +80,7 @@ final class StateTimeline<T> {
     }
 
     /**
-     * Returns an unmodifiable view of the transitions in this timeline.
+     * Returns an unmodifiable snapshot of the transitions in this timeline.
      *
      * @return an unmodifiable navigable map of transitions
      */
