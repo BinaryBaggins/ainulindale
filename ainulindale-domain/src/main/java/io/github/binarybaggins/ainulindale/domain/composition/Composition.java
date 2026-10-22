@@ -695,6 +695,7 @@ public final class Composition {
     /**
      * Sets a key signature at the specified score position.
      *
+     * @param partId the ID of the part for which to set the key signature
      * @param position the score position at which to set the key signature
      * @param keySignature the key signature to set
      * @throws NullPointerException if position or keySignature is null
@@ -716,8 +717,9 @@ public final class Composition {
     /**
      * Ends the key signature at the specified score position for a the given part.
      *
+     * @param partId the ID of the part for which to end the key signature
      * @param position the score position at which to end the key signature
-     * @throws NullPointerException if position is null
+     * @throws NullPointerException if partId or position is null
      */
     public Result<Unit> endKeySignature(PartId partId, ScorePosition position) {
         Objects.requireNonNull(partId, "partId must not be null");
@@ -735,9 +737,10 @@ public final class Composition {
     /**
      * Removes the key signature at the specified score position for the given part.
      *
+     * @param partId the ID of the part for which to remove the key signature
      * @param position the score position at which to remove the key signature
      * @return a Result indicating success or failure
-     * @throws NullPointerException if position is null
+     * @throws NullPointerException if partId or position is null
      */
     public Result<Unit> removeKeySignatureChange(PartId partId, ScorePosition position) {
         Objects.requireNonNull(partId, "partId must not be null");
@@ -759,18 +762,23 @@ public final class Composition {
      *
      * @param partId the ID of the part for which to retrieve the key signature
      * @param position the score position at which to retrieve the key signature
-     * @return an Optional containing the key signature if found, or empty if not found
+     * @return a Result containing an Optional with the key signature if found, or empty if not found
      * @throws NullPointerException if partId or position is null
      */
-    public Optional<KeySignature> keySignatureAt(PartId partId, ScorePosition position) {
+    public Result<Optional<KeySignature>> keySignatureAt(PartId partId, ScorePosition position) {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
         for (Part part : parts) {
             if (part.id().equals(partId)) {
-                return part.localKeySignatureAt(position).or(() -> keySignatureAt(position));
+                Optional<KeySignature> effective = part
+                    .localKeySignatureAt(position)
+                    .or(() -> keySignatureAt(position));
+
+                return Result.success(effective);
             }
         }
-        return Optional.empty();
+
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
 }
