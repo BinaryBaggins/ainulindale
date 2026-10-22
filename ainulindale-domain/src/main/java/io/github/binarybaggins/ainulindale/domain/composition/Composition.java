@@ -8,11 +8,14 @@ import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
+import io.github.binarybaggins.ainulindale.domain.tempo.Tempo;
+import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
 import io.github.binarybaggins.ainulindale.domain.time.ScoreRange;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents a composition which contains a unique identifier and a collection of parts.
@@ -21,6 +24,7 @@ public final class Composition {
 
     private final CompositionId id;
     private final List<Part> parts;
+    private final StateTimeline<Tempo> tempoTimeline = new StateTimeline<>();
 
     private Composition(CompositionId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -317,5 +321,66 @@ public final class Composition {
         }
 
         return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Establishes a tempo at the specified score position.
+     * Replaces any existing tempo transition at that position.
+     * @param position the score position at which to set the tempo
+     * @param tempo the tempo to establish at the specified position
+     * @throws NullPointerException if position or tempo is null
+     */
+    public void setTempo(ScorePosition position, Tempo tempo) {
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(tempo, "tempo must not be null");
+
+        tempoTimeline.set(position, tempo);
+    }
+
+    /**
+     * Explicitly ends the specified tempo state at a score position.
+     * The tempo becomes unspecified until another tempo is established.
+     * @param position the score position at which to end the tempo
+     * @throws NullPointerException if position is null
+     */
+    public void endTempo(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        tempoTimeline.end(position);
+    }
+
+    /**
+     * Removes the tempo transition stored exactly at the given position.
+     * Earlier transitions may become effective again.
+     * @param position the score position of the tempo change to remove
+     * @return a Result indicating success or failure of the removal operation
+     * @throws NullPointerException if position is null
+     */
+    public Result<Unit> removeTempoChange(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        if (!tempoTimeline.remove(position)) {
+            return Result.failure(CompositionErrors.TEMPO_CHANGE_NOT_FOUND);
+        }
+
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Returns the effective tempo at the specified score position.
+     * An empty result means that no quantitative tempo is specified.
+     * @param position the score position at which to query the tempo
+     * @return an Optional containing the effective tempo at the specified score position, or empty if no tempo is specified
+     * @throws NullPointerException if position is null
+     */
+    public Optional<Tempo> tempoAt(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        return tempoTimeline.latestTransitionAt(position).flatMap(transition -> {
+            if (transition instanceof StateTransition.Set<Tempo> set) {
+                return Optional.of(set.value());
+            }
+            return Optional.empty();
+        });
     }
 }
