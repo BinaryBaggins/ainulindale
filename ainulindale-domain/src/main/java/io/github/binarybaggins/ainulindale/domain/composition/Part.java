@@ -152,7 +152,6 @@ public final class Part {
      * @return true if a meter change was removed, false otherwise
      * @throws NullPointerException if position is null
      */
-
     boolean removeMeterChange(ScorePosition position) {
         Objects.requireNonNull(position, "position must not be null");
         return meterTimeline.remove(position);
