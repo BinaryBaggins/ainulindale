@@ -443,7 +443,7 @@ public final class Composition {
     }
 
     /**
-     * Sets the local meter for a specific part at the specified score position.
+     * Sets the local meter at the specified score position for the given part.
      * @param partId the unique identifier of the part
      * @param position the score position at which to set the meter
      * @param meter the meter to establish at the specified position
@@ -465,7 +465,7 @@ public final class Composition {
     }
 
     /**
-     * Ends the local meter for a specific part at the specified score position.
+     * Ends the local meter at the specified score position for the given part.
      * @param partId the unique identifier of the part
      * @param position the score position at which to end the meter
      * @return a Result indicating success or failure
@@ -485,7 +485,7 @@ public final class Composition {
     }
 
     /**
-     * Removes the local meter change for a specific part at the specified score position.
+     * Removes the local meter change at the specified score position for the given part.
      * @param partId the unique identifier of the part
      * @param position the score position at which to remove the meter change
      * @return a Result indicating success or failure
@@ -508,7 +508,7 @@ public final class Composition {
     }
 
     /**
-     * Retrieves the effective meter for a specific part at the specified score position.
+     * Retrieves the effective meter at the specified score position for the given part.
      * If the part has a local meter at the position, it is returned; otherwise, the global meter is returned.
      * @param partId the unique identifier of the part
      * @param position the score position at which to retrieve the effective meter
@@ -528,5 +528,105 @@ public final class Composition {
         }
 
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Sets the local meter at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to set the meter
+     * @param meter the meter to set
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId, position, or meter is null
+     */
+    public Result<Unit> setMeter(VoiceId voiceId, ScorePosition position, Meter meter) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(meter, "meter must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    voice.setMeter(position, meter);
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Ends the local meter change at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to end the meter change
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Unit> endMeter(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    voice.endMeter(position);
+                    return Result.success(Unit.INSTANCE);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Removes a local meter change at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to remove the local meter change
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Unit> removeMeterChange(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    boolean removed = voice.removeMeterChange(position);
+                    if (removed) {
+                        return Result.success(Unit.INSTANCE);
+                    } else {
+                        return Result.failure(CompositionErrors.METER_CHANGE_NOT_FOUND);
+                    }
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the effective meter at the specified score position for the given voice.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param position the score position at which to retrieve the effective meter
+     * @return a Result containing an Optional with the effective meter if found, or an empty Optional if not
+     * @throws NullPointerException if voiceId or position is null
+     */
+    public Result<Optional<Meter>> meterAt(VoiceId voiceId, ScorePosition position) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                if (voice.id().equals(voiceId)) {
+                    Optional<Meter> effectiveMeter = voice
+                        .localMeterAt(position)
+                        .or(() -> part.localMeterAt(position).or(() -> meterAt(position)));
+                    return Result.success(effectiveMeter);
+                }
+            }
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
 }
