@@ -7,6 +7,7 @@ import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
 import io.github.binarybaggins.ainulindale.domain.tempo.Tempo;
@@ -27,6 +28,7 @@ public final class Composition {
     private final List<Part> parts;
     private final StateTimeline<Tempo> tempoTimeline = new StateTimeline<>();
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
+    private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
 
     private Composition(CompositionId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -627,5 +629,66 @@ public final class Composition {
             }
         }
         return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Sets a key signature at the specified score position.
+     *
+     * @param position the score position at which to set the key signature
+     * @param keySignature the key signature to set
+     * @throws NullPointerException if position or keySignature is null
+     */
+    public void setKeySignature(ScorePosition position, KeySignature keySignature) {
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(keySignature, "keySignature must not be null");
+
+        keySignatureTimeline.set(position, keySignature);
+    }
+
+    /**
+     * Ends the key signature at the specified score position.
+     *
+     * @param position the score position at which to end the key signature
+     * @throws NullPointerException if position is null
+     */
+    public void endKeySignature(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        keySignatureTimeline.end(position);
+    }
+
+    /**
+     * Removes the key signature at the specified score position.
+     *
+     * @param position the score position at which to remove the key signature
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if position is null
+     */
+    public Result<Unit> removeKeySignatureChange(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        if (!keySignatureTimeline.remove(position)) {
+            return Result.failure(CompositionErrors.KEY_SIGNATURE_CHANGE_NOT_FOUND);
+        }
+
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Retrieves the key signature effective at the specified score position.
+     *
+     * @param position the score position at which to retrieve the key signature
+     * @return an Optional containing the key signature if found, or empty if not found
+     * @throws NullPointerException if position is null
+     */
+    public Optional<KeySignature> keySignatureAt(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+
+        return keySignatureTimeline.latestTransitionAt(position).flatMap(transition -> {
+            if (transition instanceof StateTransition.Set<KeySignature> set) {
+                return Optional.of(set.value());
+            }
+            return Optional.empty();
+        });
     }
 }
