@@ -4,7 +4,7 @@
 
 This document collects the accepted editing constraints. The editing model is still
 being designed; transactions and undo/redo remain open decisions.
-Their placement in editing is accepted; their exact semantics and implementation remain open.
+Their placement in editing is accepted; their exact semantics and implementation remain open. The ainulindale-editing module exists as scaffolding without Java implementation. Legacy selection and undo code does not constitute implementation of the greenfield editing model.
 These concerns belong in `ainulindale-editing`, which depends on domain without a reverse dependency. See [module-architecture.md](module-architecture.md).
 
 ## Accepted Constraints

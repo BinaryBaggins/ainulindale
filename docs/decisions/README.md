@@ -48,18 +48,24 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0040 – Foundation Contains Only Minimal Domain-Independent Shared Primitives](0040-foundation-module-boundary.md)
 - [ADR-0041 – Project Organizes Arrangements, Revisions, and Shared Instrument Definitions](0041-project-arrangements-revisions-and-instrument-library.md)
 
+## Implementation Status
+
+Accepted ADRs retain their historical decision context. Their original references to open implementation choices are not a current task list. See the [domain implementation status](../architecture/domain-model.md#current-implementation-status) and [module progress](../architecture/module-architecture.md#implementation-progress-and-remaining-work).
+
+The Maven reactor and child POMs, legacy relocation, Result extraction, fundamental values and IDs, basic Composition/Part/Voice/note operations, and Tempo/Meter/KeySignature integration are implemented. Meter and KeySignature include explicit override endings and inheritance resolution. Accepted instruments, relations, and Project concepts are still pending.
+
 ## Open Decisions
 
 In particular, the following have not yet been finalized:
 
-- Concrete event storage and derived index implementations
+- Future derived event indexes, if needed; Voice currently stores events in an ID-keyed HashMap
 - Technical ordering policies for simultaneous events
-- Exact aggregate mutation API and internal delegation mechanisms
-- Query views/snapshots and command result shapes
-- Exact domain-error hierarchy
+- Aggregate APIs and delegation for unimplemented concepts; basic structure, note, and state operations are implemented
+- Public state-timeline read models and query/result shapes for future concepts; basic collection views and command results are implemented
+- Additional domain errors for future concepts; implemented failures use CompositionErrors and ResultError
 - Persistence rehydration mechanism
-- Exact package layout and child-POM implementation
-- Concrete Result extraction and settings/i18n reuse details
+- Package layout and APIs for unimplemented concepts; initial child POMs are implemented
+- Settings/i18n reuse in desktop; Result extraction into foundation is complete
 - Future persistence and LOTRO/TargetRuleset module boundaries
 - Possible future settings/i18n extraction for genuine cross-application use
 - Additional event types and any further event hierarchy
@@ -90,12 +96,10 @@ In particular, the following have not yet been finalized:
 - Fallback policies for unspecified quantitative tempo
 - Playback implementation and PlaybackTime representation
 - Technical rounding, clock units, scheduling, MIDI timing, and audio timing
-- Concrete Java implementation of the accepted Meter value model
 - Measure and barline model, including MeasureStructure
 - MeasurePosition model and derivation
 - Interchangeable or alternate meter relationships
 - Conventional meter-grouping interpretation rules
-- Concrete Java implementation of the accepted KeySignature value model
 - Named mode classification and its relationship to ScaleStructure
 - Whether additional tonal or harmonic concepts are needed
 - TonalContext scope and timeline semantics
@@ -103,8 +107,7 @@ In particular, the following have not yet been finalized:
 - Non-octave-periodic systems
 - Concrete Java APIs and storage for the accepted tonal and scale concepts
 - Concrete format mappings and adapters
-- Public state-timeline read models and remaining state-specific APIs, including Meter, KeySignature, and InstrumentAssignment
-- Public APIs and inheritance resolution for explicitly ending local Meter and KeySignature overrides at Part and Voice scope
+- Public state-timeline read models and remaining state-specific APIs, including InstrumentAssignment
 - MusicalForm
 - PlaybackPlan
 - Editing transactions and undo/redo
