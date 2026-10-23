@@ -72,7 +72,7 @@ The following rules apply:
 
 ## 3. Composition
 
-`Composition` represents the complete canonical musical work.
+`Composition` represents the complete canonical musical content of an Arrangement in the planned Project model. It remains the musical aggregate root, independently of Project organization and revision history.
 
 Conceptually:
 
@@ -87,7 +87,7 @@ Composition
 
 `Composition` answers the domain question:
 
-> What is the musical work?
+> What is the canonical musical content?
 
 The following are outside `Composition`, among other things:
 
@@ -99,13 +99,38 @@ The following are outside `Composition`, among other things:
 - Scroll position
 - Swing components
 - Undo/redo history
+- Project organization and Arrangement revision history
 - Open files or file paths
 
-These states belong in future editing, workspace, UI, or persistence layers.
+Editor and session states belong in future editing, workspace, UI, or persistence layers. Placement of Project organization and revision-history responsibilities remains open, as described below.
 
 ### Invariant
 
 An empty `Composition` is valid.
+
+### Project, Arrangement, and Revision
+
+The following conceptual responsibilities are accepted by [ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md); their implementation is still open.
+
+| Concept | Responsibility and relationships |
+| --- | --- |
+| Project | Represents a musical work and organizes related Arrangements for alternative interpretations, adaptations, and comparisons. It is not currently a general-purpose collection of unrelated works. |
+| Arrangement | An independently editable adaptation or interpretation within a Project, with its own canonical Composition. Examples include original, LOTRO-specific, alternative-instrumentation, and alternative-musical adaptations. |
+| Composition | Canonical musical content and the established aggregate root for musical editing, including its Parts, Voices, events, state, and relations. |
+| Revision | An earlier recorded state in an Arrangement's own optional revision history; history and parallel Arrangements are separate concepts. |
+| Shared Instrument Library | Project-owned or Project-managed locally retained InstrumentDefinitions, which may be referenced by multiple Arrangements and their Compositions through InstrumentDefinitionId. |
+
+Arrangements must not depend directly on another Arrangement's mutable musical state. An Arrangement is not merely a revision of another Arrangement. Composition, Part, and Voice gain no project-management or versioning responsibilities.
+
+The architecture must eventually support preserving and restoring earlier Arrangement states, comparing revisions of the same Arrangement, and comparing different Arrangements. Existing entity identifiers alone must not be assumed sufficient to match musical elements across Arrangements.
+
+Project and Arrangement introduce no additional musical-state inheritance scopes. The Composition → Part → Voice rules in section 38 remain authoritative, including Part-local InstrumentAssignment.
+
+Conceptual ownership does not imply that Project is one large transactional aggregate containing all Arrangements, Compositions, and Revisions. Composition retains its established aggregate and mutation boundaries. Aggregate or application-coordination representation and module placement of the other concepts remain open.
+
+The Project library must preserve interpretation of historical revisions using the instrument definitions relevant to their recorded musical state. A Composition must also be transferable with the definitions needed to interpret it, without permanent access to its originating Project or an external catalog. Sections 45–47 describe the instrument semantics and catalog boundary.
+
+Revision storage, capture policy, restoration mechanics, comparison correspondence and algorithms, definition versioning, and standalone exchange formats/APIs remain undecided. No event sourcing, Git-style branching or merging, snapshot frequency or format, automatic change tracking, or persistence technology is selected.
 
 ---
 
@@ -1887,6 +1912,8 @@ Names and descriptive metadata are not identity. Exact metadata fields and Java 
 
 `InstrumentAssignment` is a value object used as Part-scoped state. It answers which instrument definition is assigned to the part at a `ScorePosition`, by referencing `InstrumentDefinitionId`. It has no separate entity identity and does not redundantly embed the full definition in every assignment.
 
+In the planned Project model, these definitions are retained in a shared Project instrument library and may be referenced by multiple Arrangements and their Compositions. Conceptual library ownership does not decide a storage or aggregate boundary; see section 3 and [ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md).
+
 Intrinsic written-to-sounding transposition belongs to InstrumentDefinition: it is part of what the instrument is, not where it is assigned. Assignments must not override that transposition. Every definition has a well-defined relation; non-transposing instruments use identity transposition rather than missing or null state.
 
 Capo, scordatura, alternate tuning, and other temporary performance configurations are separate future setup concepts. They must not mutate or override intrinsic transposition or be placed into InstrumentAssignment as transposition overrides. Their exact names, types, and behavior remain open.
@@ -1966,13 +1993,15 @@ Locally retained InstrumentDefinition
 InstrumentAssignment
 ```
 
-The Composition or Project retains a local semantic snapshot/copy of the required definition. Saved musical meaning must remain interpretable if the catalog is unavailable, an entry changes, or a newer catalog version exists. External updates must not silently change existing composition semantics.
+The planned Project owns or manages a shared library of locally retained InstrumentDefinitions. Saved musical meaning must remain interpretable if the catalog is unavailable, an entry changes, or a newer catalog version exists. External updates must not silently change locally retained instrument semantics.
 
-Whether definitions ultimately belong directly to Composition or to a Project layer remains open. No persistence ownership or storage mechanism is chosen here.
+[ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md) resolves the conceptual Composition-versus-Project ownership question left open by ADR-0033 in favor of Project-scoped sharing. Technical storage and aggregate boundaries remain open. Historical revisions must remain interpretable with the definitions relevant to their recorded musical state; no specific definition-versioning or immutable-snapshot mechanism is selected.
+
+A standalone Composition can be exchanged, exported, or transferred together with the definitions necessary to interpret it, without permanent access to the originating Project or external catalog. Packaging, exchange format, and import/export APIs remain open.
 
 Optional provenance may later record a source catalog identifier, entry identifier, or catalog version. These are possible metadata, not finalized fields or prerequisites for interpreting the definition.
 
-> Catalog provides definitions; the Composition/Project retains the musical meaning it actually uses.
+> Catalog provides definitions; the Project retains the musical meaning it actually uses, and transferred Compositions carry the definitions needed for interpretation.
 
 The architecture anticipates this boundary from the start, but the full catalog feature is deferred. No module, persistence, network service, synchronization, version-resolution logic, or catalog-browser UI is introduced.
 
@@ -2084,7 +2113,7 @@ The following points remain unresolved:
 - InstrumentAssignment timeline storage
 - Exact InstrumentDefinition metadata
 - Performance/setup models, including capo, scordatura, and alternate tuning
-- Composition-versus-Project persistence ownership of local instrument definitions
+- Technical storage and aggregate boundaries of the Project-scoped instrument library
 - Catalog provenance schema and catalog implementation
 - Target-specific instrument mappings
 
@@ -2093,6 +2122,16 @@ The Tempo, Meter, and KeySignature value models are implemented. The generic `St
 Tempo is integrated at Composition scope. Meter and KeySignature are integrated at Composition, Part, and Voice scopes, including persistent overrides, dynamic inheritance, and explicit ending and removal of transitions.
 
 Integration of further state types remains open.
+
+### Projects, Arrangements, and Revisions
+
+- Aggregate or application-coordination representation and module placement of Project, Arrangement, InstrumentLibrary, and Revision
+- Revision capture, storage, restoration, and comparison mechanisms
+- Musical-element correspondence across Arrangements and concrete diff algorithms
+- Definition lifecycle/versioning and preservation of historically relevant instrument semantics
+- Standalone Composition exchange format, packaging, and import/export APIs
+
+Conceptual Project organization, independent Arrangements with their own Compositions, revision-history capabilities, and Project-scoped shared instrument ownership are accepted in [ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md). The mechanisms above remain open.
 
 ### Tonal Semantics and Format Boundaries
 

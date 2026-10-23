@@ -46,6 +46,7 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0038 – Reuse Suitable Domain-Independent Infrastructure Across the Greenfield Architecture](0038-reuse-domain-independent-infrastructure.md)
 - [ADR-0039 – Greenfield Architecture Uses Focused Maven Modules Alongside Temporary Legacy](0039-maven-multi-module-architecture.md)
 - [ADR-0040 – Foundation Contains Only Minimal Domain-Independent Shared Primitives](0040-foundation-module-boundary.md)
+- [ADR-0041 – Project Organizes Arrangements, Revisions, and Shared Instrument Definitions](0041-project-arrangements-revisions-and-instrument-library.md)
 
 ## Open Decisions
 
@@ -72,7 +73,12 @@ In particular, the following have not yet been finalized:
 - Dynamics scope and temporal model
 - Exact InstrumentDefinition metadata
 - Performance/setup models, including capo, scordatura, and alternate tuning
-- Composition-versus-Project persistence ownership of local instrument definitions
+- Aggregate or application-coordination representation and module placement of Project, Arrangement, InstrumentLibrary, and Revision
+- Revision capture, storage, restoration, and comparison mechanisms
+- Musical-element correspondence across Arrangements and concrete diff algorithms
+- Technical storage and aggregate boundaries of the Project-scoped instrument library
+- Definition lifecycle/versioning and preservation of historically relevant instrument semantics
+- Standalone Composition exchange format, packaging, and import/export APIs
 - Catalog provenance schema and catalog implementation
 - Target-specific instrument mappings
 - Concrete instrument, assignment, and interval APIs/storage

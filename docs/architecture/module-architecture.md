@@ -123,6 +123,8 @@ There is no reverse domain dependency on the modules that use it. Reusing existi
 
 ## Deferred Modules and JPMS
 
+The Project, Arrangement, Revision, and shared InstrumentLibrary responsibilities in [ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md) establish conceptual organization, not new Maven modules or dependencies. Their module placement and aggregate or application-coordination representation remain open. Composition remains the canonical musical editing aggregate; Project is not required to be one transactional aggregate containing all musical content and history.
+
 Do not create speculative modules for LOTRO targets, persistence, instrument catalog, playback, MusicXML, CLI, settings, i18n, or generic utilities. Future modules require a concrete responsibility and dependency boundary. A future LOTRO adapter/rules module may depend on domain, but is deferred.
 
 The first migration does not introduce JPMS or `module-info.java`. Maven modules provide useful compile-time dependency boundaries without adding simultaneous JPMS migration complexity. JPMS may be reconsidered for a concrete future requirement.
