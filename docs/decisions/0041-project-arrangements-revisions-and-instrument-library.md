@@ -48,6 +48,18 @@ Project organization and shared library ownership describe conceptual responsibi
 
 Composition remains the established aggregate root for canonical musical editing. Its Part, Voice, event, and relation ownership and invariant-safe mutation boundaries remain unchanged. How Project, Arrangement, InstrumentLibrary, and Revision are represented as aggregates or application-level coordination concepts remains open, as do their module placement and technical storage.
 
+### Preferred Direction: Instrument Definition Versioning
+
+The preferred future approach is to preserve an instrument's logical identity across revisions of its definition.
+
+An `InstrumentDefinitionId` should continue to identify the same logical instrument, while distinct immutable definition versions preserve its intrinsic musical properties at different points in its history.
+
+Changes to intrinsic properties, particularly `WrittenToSoundingTransposition`, must not silently reinterpret existing Arrangements or historical Revisions. Each recorded musical state must remain interpretable using the instrument semantics applicable to that state.
+
+For the initial implementation, `InstrumentDefinition` remains immutable. Definition updates and version management are deferred until the Project Instrument Library is designed.
+
+**This is a preferred architectural direction, not yet a finalized versioning contract.** Version identifiers, historical references, update semantics, metadata versioning, and persistence mechanisms remain open design questions.
+
 ## Consequences
 
 - Related musical adaptations can be organized and compared within one Project while retaining independent canonical musical content.
