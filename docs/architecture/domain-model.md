@@ -10,6 +10,18 @@ Greenfield does not require rewriting suitable domain-independent infrastructure
 
 Unresolved design questions are explicitly marked as open.
 
+### Current Implementation Status
+
+The accepted model is broader than the implementation. Historical ADRs retain their original rationale; current progress is recorded here and in [module-architecture.md](module-architecture.md).
+
+- Rational, score-time values, Pitch/PitchAlteration, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented. RelationId and InstrumentDefinitionId do not imply implementations of their entities.
+- [Composition](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/Composition.java), Part, Voice, VoiceEvent, and NoteEvent implement structure, ordering, note creation/removal, pitch/range changes, and movement between Voices.
+- Tempo is integrated at Composition scope. Meter and KeySignature support Composition/Part/Voice state, inherited effective queries, and explicit ending/removal of overrides. Internal StateTimeline uses Set/End transitions in a TreeMap.
+- [CompositionErrors](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/CompositionErrors.java) provides semantic ResultError codes for implemented failures, using the Result infrastructure extracted into foundation.
+- PitchClass, ScaleDegree, ScaleStructure, TonalContext, PitchInterval, instruments, relations, and Project/Arrangement/Revision/library concepts remain unimplemented. Metadata editing, persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
+
+The [domain tests](../../ainulindale-domain/src/test/java/io/github/binarybaggins/ainulindale/domain) cover implemented values, aggregate operations, and state behavior. This review inspected source and tests; it does not report a new test run.
+
 ---
 
 ## 1. Core Principles
@@ -72,7 +84,7 @@ The following rules apply:
 
 ## 3. Composition
 
-`Composition` represents the complete canonical musical work.
+`Composition` represents the complete canonical musical content of an Arrangement in the planned Project model. It remains the musical aggregate root, independently of Project organization and revision history.
 
 Conceptually:
 
@@ -87,7 +99,7 @@ Composition
 
 `Composition` answers the domain question:
 
-> What is the musical work?
+> What is the canonical musical content?
 
 The following are outside `Composition`, among other things:
 
@@ -99,13 +111,38 @@ The following are outside `Composition`, among other things:
 - Scroll position
 - Swing components
 - Undo/redo history
+- Project organization and Arrangement revision history
 - Open files or file paths
 
-These states belong in future editing, workspace, UI, or persistence layers.
+Editor and session states belong in future editing, workspace, UI, or persistence layers. Placement of Project organization and revision-history responsibilities remains open, as described below.
 
 ### Invariant
 
 An empty `Composition` is valid.
+
+### Project, Arrangement, and Revision
+
+The following conceptual responsibilities are accepted by [ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md); their implementation is still open.
+
+| Concept                   | Responsibility and relationships                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project                   | Represents a musical work and organizes related Arrangements for alternative interpretations, adaptations, and comparisons. It is not currently a general-purpose collection of unrelated works.                          |
+| Arrangement               | An independently editable adaptation or interpretation within a Project, with its own canonical Composition. Examples include original, LOTRO-specific, alternative-instrumentation, and alternative-musical adaptations. |
+| Composition               | Canonical musical content and the established aggregate root for musical editing, including its Parts, Voices, events, state, and relations.                                                                              |
+| Revision                  | An earlier recorded state in an Arrangement's own optional revision history; history and parallel Arrangements are separate concepts.                                                                                     |
+| Shared Instrument Library | Project-owned or Project-managed locally retained InstrumentDefinitions, which may be referenced by multiple Arrangements and their Compositions through InstrumentDefinitionId.                                          |
+
+Arrangements must not depend directly on another Arrangement's mutable musical state. An Arrangement is not merely a revision of another Arrangement. Composition, Part, and Voice gain no project-management or versioning responsibilities.
+
+The architecture must eventually support preserving and restoring earlier Arrangement states, comparing revisions of the same Arrangement, and comparing different Arrangements. Existing entity identifiers alone must not be assumed sufficient to match musical elements across Arrangements.
+
+Project and Arrangement introduce no additional musical-state inheritance scopes. The Composition → Part → Voice rules in section 38 remain authoritative, including Part-local InstrumentAssignment.
+
+Conceptual ownership does not imply that Project is one large transactional aggregate containing all Arrangements, Compositions, and Revisions. Composition retains its established aggregate and mutation boundaries. Aggregate or application-coordination representation and module placement of the other concepts remain open.
+
+The Project library must preserve interpretation of historical revisions using the instrument definitions relevant to their recorded musical state. A Composition must also be transferable with the definitions needed to interpret it, without permanent access to its originating Project or an external catalog. Sections 45–47 describe the instrument semantics and catalog boundary.
+
+Revision storage, capture policy, restoration mechanics, comparison correspondence and algorithms, definition versioning, and standalone exchange formats/APIs remain undecided. No event sourcing, Git-style branching or merging, snapshot frequency or format, automatic change tracking, or persistence technology is selected.
 
 ---
 
@@ -243,7 +280,7 @@ External domain mutations enter through the aggregate root, as described in sect
 
 Entities that can be persisted and referenced have explicit, stable, typed IDs.
 
-At least the following are planned:
+The following identity types are implemented:
 
 ```java
 record CompositionId(UUID value) {}
@@ -255,6 +292,8 @@ record VoiceId(UUID value) {}
 record EventId(UUID value) {}
 
 record RelationId(UUID value) {}
+
+record InstrumentDefinitionId(UUID value) {}
 ```
 
 For the first implementation, each ID is a distinct type backed by a non-null `UUID`. UUID is a technical representation without musical meaning. New identities use UUIDv4 via `UUID.randomUUID()`, not a central numeric sequence. Public domain identities are typed values, not untyped strings or raw UUIDs. No common `DomainId` base class is introduced solely for technical uniformity.
@@ -414,17 +453,17 @@ composition.removeEvent(eventId);
 composition.changeNotePitch(eventId, pitch);
 ```
 
-These examples illustrate the mutation boundary, not a finalized API.
+These examples correspond to implemented operations; they are not a complete API inventory.
 
-Internally, `Composition` may delegate to nested entities. `Part`, `Voice`, `VoiceEvent`, `NoteEvent`, and `MusicalRelation` may be externally readable, but must not expose unrestricted public setters or mutation paths that bypass the root. For example, `note.setPitch(...)`, `note.setRange(...)`, `part.voices().add(...)`, and `voice.events().remove(...)` are not public command boundaries. Internal or package-restricted mutation may be used; the exact Java visibility strategy remains open.
+Internally, `Composition` may delegate to nested entities. `Part`, `Voice`, `VoiceEvent`, `NoteEvent`, and `MusicalRelation` may be externally readable, but must not expose unrestricted public setters or mutation paths that bypass the root. For example, `note.setPitch(...)`, `note.setRange(...)`, `part.voices().add(...)`, and `voice.events().remove(...)` are not public command boundaries. The current implementation delegates to package-private Part and Voice operations. NoteEvent is immutable: aggregate updates replace the stored instance while preserving EventId. Its public withPitch/withRange methods create copies without mutating the aggregate. Visibility details for future relations remain open.
 
 This protects composition-wide invariants, including `EventId` uniqueness, valid ownership, and relation referential integrity. Relation references must resolve to entities of the correct type in the same Composition, and relation-specific invariants must hold. Further cross-entity invariants and relation-specific deletion behavior remain open.
 
 ### Queries and Identity-Based Commands
 
-Reads may naturally traverse `Composition → Part → Voice → VoiceEvent`. Conceptual queries such as `composition.parts()`, `part.voices()`, `voice.events()`, `note.pitch()`, and `note.range()` do not all need flat root-level equivalents. Returned collections and entities must not permit unrestricted aggregate mutation. Concrete read-only views or snapshots remain implementation details.
+Reads may naturally traverse `Composition → Part → Voice → VoiceEvent`. Conceptual queries such as `composition.parts()`, `part.voices()`, `voice.events()`, `note.pitch()`, and `note.range()` do not all need flat root-level equivalents. Returned collections and entities must not permit unrestricted aggregate mutation. The implemented collection queries return unmodifiable live views. NoteEvent instances are immutable, so an earlier note reference does not change when the aggregate replaces that note. Public state-timeline read models and views for future concepts remain open.
 
-Commands addressing existing entities use stable typed IDs such as PartId, VoiceId, EventId, RelationId, and InstrumentDefinitionId, rather than Java object identity or mutable entity references as the primary boundary. Creation makes the new identity available to the caller; exact return/result shapes remain open.
+Commands addressing existing entities use stable typed IDs such as PartId, VoiceId, EventId, RelationId, and InstrumentDefinitionId, rather than Java object identity or mutable entity references as the primary boundary. Implemented creation returns `PartId` from `addPart()`, `Result<VoiceId>` from `addVoice(...)`, and `Result<EventId>` from `addNote(...)`. Structural removals, moves, and note changes return `Result<Unit>`. State APIs are described in sections 38–42; APIs for future instruments and relations remain open.
 
 Normal domain creation creates new identities. Persistence rehydration restores existing identities through a separate reconstruction mechanism, not ordinary editing. A factory, builder, repository mapper, or dedicated path may later be suitable. Persistence-oriented operations such as `addPartWithId(...)` or `addNoteWithExistingId(...)` are not introduced into the normal editing API without implementation evidence justifying them.
 
@@ -444,9 +483,9 @@ Predictable domain rejection is represented explicitly as a result. Examples inc
 
 Programming-contract violations and broken internal invariants are a different category and may use exceptions where appropriate. Expected domain rejection is not a programming error.
 
-Reuse the existing Result abstraction where it remains domain-independent and suitable for the new boundaries; do not create a competing framework solely for the greenfield domain. No generic signature is specified here. New canonical domain errors are semantic, programmatically distinguishable values carried by that abstraction.
+The domain reuses foundation's `Result<T>` abstraction; no competing framework is introduced for the greenfield domain. Canonical domain errors are semantic, programmatically distinguishable values carried by that abstraction.
 
-Names such as LastVoiceRemoval, EntityNotFound, InvalidTie, and ReferencedEntity illustrate error categories, not a finalized hierarchy. Localized strings are not the primary error contract. Application/UI code maps semantic errors to messages through existing i18n infrastructure, outside the domain. The domain does not depend on ResourceBundle semantics, UI locale, or translated messages.
+CompositionErrors currently defines ResultError codes for missing Parts, Voices, Events, and state changes, invalid Part/Voice indices, and last-Voice removal. Relation and instrument errors remain unimplemented. Localized strings are not the primary error contract. Application/UI code maps semantic errors to messages through existing i18n infrastructure, outside the domain. The domain does not depend on ResourceBundle semantics, UI locale, or translated messages.
 
 Value objects remain immutable.
 
@@ -1076,7 +1115,7 @@ public interface VoiceEvent {
 }
 ```
 
-This example describes the semantic contract; the exact Java interface or class shape remains an implementation choice.
+This interface is implemented in the domain event package.
 
 A `VoiceEvent` does not necessarily have a duration or `ScoreRange`. `NoteEvent` is the first concrete event type and retains its positive-duration range and pitch. Its position is the start of that range.
 
@@ -1104,13 +1143,13 @@ Serialization, testing, export, or other technical processing may require determ
 
 The canonical contract is independent of the concrete storage strategy and must not be defined as `List<VoiceEvent>`.
 
-An implementation may initially use an ID-based store:
+The current Voice implementation uses a `HashMap<EventId, VoiceEvent>` as its ID-based store:
 
 ```text
 EventId → VoiceEvent
 ```
 
-This is an option, not a canonical requirement.
+This is an implemented storage choice, not a canonical requirement. Composition currently traverses Parts and Voices for event lookup; no composition-wide event index or temporal index is implemented.
 
 Temporal indexes or composition-wide event lookup indexes may be introduced later for performance. Such indexes must remain derived and must not become a second source of truth.
 
@@ -1515,7 +1554,7 @@ Conceptually:
 record Tempo(Rational wholeNotesPerMinute) {}
 ```
 
-This illustrates the semantic value only; the exact Java representation and API remain implementation details.
+The implementation is a Tempo record with a Rational wholeNotesPerMinute component and an of(Rational) factory.
 
 The invariant is:
 
@@ -1887,6 +1926,8 @@ Names and descriptive metadata are not identity. Exact metadata fields and Java 
 
 `InstrumentAssignment` is a value object used as Part-scoped state. It answers which instrument definition is assigned to the part at a `ScorePosition`, by referencing `InstrumentDefinitionId`. It has no separate entity identity and does not redundantly embed the full definition in every assignment.
 
+In the planned Project model, these definitions are retained in a shared Project instrument library and may be referenced by multiple Arrangements and their Compositions. Conceptual library ownership does not decide a storage or aggregate boundary; see section 3 and [ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md).
+
 Intrinsic written-to-sounding transposition belongs to InstrumentDefinition: it is part of what the instrument is, not where it is assigned. Assignments must not override that transposition. Every definition has a well-defined relation; non-transposing instruments use identity transposition rather than missing or null state.
 
 Capo, scordatura, alternate tuning, and other temporary performance configurations are separate future setup concepts. They must not mutate or override intrinsic transposition or be placed into InstrumentAssignment as transposition overrides. Their exact names, types, and behavior remain open.
@@ -1966,13 +2007,15 @@ Locally retained InstrumentDefinition
 InstrumentAssignment
 ```
 
-The Composition or Project retains a local semantic snapshot/copy of the required definition. Saved musical meaning must remain interpretable if the catalog is unavailable, an entry changes, or a newer catalog version exists. External updates must not silently change existing composition semantics.
+The planned Project owns or manages a shared library of locally retained InstrumentDefinitions. Saved musical meaning must remain interpretable if the catalog is unavailable, an entry changes, or a newer catalog version exists. External updates must not silently change locally retained instrument semantics.
 
-Whether definitions ultimately belong directly to Composition or to a Project layer remains open. No persistence ownership or storage mechanism is chosen here.
+[ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md) resolves the conceptual Composition-versus-Project ownership question left open by ADR-0033 in favor of Project-scoped sharing. Technical storage and aggregate boundaries remain open. Historical revisions must remain interpretable with the definitions relevant to their recorded musical state; no specific definition-versioning or immutable-snapshot mechanism is selected.
+
+A standalone Composition can be exchanged, exported, or transferred together with the definitions necessary to interpret it, without permanent access to the originating Project or external catalog. Packaging, exchange format, and import/export APIs remain open.
 
 Optional provenance may later record a source catalog identifier, entry identifier, or catalog version. These are possible metadata, not finalized fields or prerequisites for interpreting the definition.
 
-> Catalog provides definitions; the Composition/Project retains the musical meaning it actually uses.
+> Catalog provides definitions; the Project retains the musical meaning it actually uses, and transferred Compositions carry the definitions needed for interpretation.
 
 The architecture anticipates this boundary from the start, but the full catalog feature is deferred. No module, persistence, network service, synchronization, version-resolution logic, or catalog-browser UI is introduced.
 
@@ -2074,17 +2117,17 @@ The following points remain unresolved:
 
 ### State Representations and Implementation
 
-- Exact Composition Java API, command result shapes, and read-view mechanism
-- Exact domain-error hierarchy
+- Additional Composition APIs and views for unimplemented concepts; basic structure, notes, Tempo, Meter, and KeySignature APIs are implemented
+- Additional domain errors for unimplemented concepts; current failures use CompositionErrors and ResultError
 - Persistence rehydration mechanism
-- Concrete extraction/adaptation details for Result in foundation and settings/i18n in desktop; initial placement is defined in [module-architecture.md](module-architecture.md)
+- Settings/i18n integration into desktop; Result extraction into foundation is complete, as described in [module-architecture.md](module-architecture.md)
 
 - Integration of further state types, particularly InstrumentAssignment, including their storage and scope-specific APIs
 - Concrete instrument, assignment, and interval APIs/storage
 - InstrumentAssignment timeline storage
 - Exact InstrumentDefinition metadata
 - Performance/setup models, including capo, scordatura, and alternate tuning
-- Composition-versus-Project persistence ownership of local instrument definitions
+- Technical storage and aggregate boundaries of the Project-scoped instrument library
 - Catalog provenance schema and catalog implementation
 - Target-specific instrument mappings
 
@@ -2093,6 +2136,16 @@ The Tempo, Meter, and KeySignature value models are implemented. The generic `St
 Tempo is integrated at Composition scope. Meter and KeySignature are integrated at Composition, Part, and Voice scopes, including persistent overrides, dynamic inheritance, and explicit ending and removal of transitions.
 
 Integration of further state types remains open.
+
+### Projects, Arrangements, and Revisions
+
+- Aggregate or application-coordination representation and module placement of Project, Arrangement, InstrumentLibrary, and Revision
+- Revision capture, storage, restoration, and comparison mechanisms
+- Musical-element correspondence across Arrangements and concrete diff algorithms
+- Definition lifecycle/versioning and preservation of historically relevant instrument semantics
+- Standalone Composition exchange format, packaging, and import/export APIs
+
+Conceptual Project organization, independent Arrangements with their own Compositions, revision-history capabilities, and Project-scoped shared instrument ownership are accepted in [ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md). The mechanisms above remain open.
 
 ### Tonal Semantics and Format Boundaries
 
@@ -2140,10 +2193,9 @@ Further event types require concrete voice-level musical semantics. No additiona
 
 The following remain open:
 
-- Concrete event storage implementation
-- ID lookup and temporal indexing strategies, including whether and when indexes are needed
+- Future derived composition-wide lookup and temporal indexes, if needed; current Voice storage uses an ID-keyed HashMap
 - Technical ordering policies for serialization, testing, export, and other processing
-- Exact public mutation API and internal delegation mechanisms
+- Mutation APIs and delegation for future event types; current note operations and package-private delegation are implemented
 
 ### Relations
 
