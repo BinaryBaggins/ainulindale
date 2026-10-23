@@ -36,4 +36,14 @@ public record PitchInterval(int diatonicSteps, Rational chromaticOffset) {
     public static PitchInterval of(int diatonicSteps, Rational chromaticOffset) {
         return new PitchInterval(diatonicSteps, chromaticOffset);
     }
+
+    /**
+     * Returns the interval that is the negation of this interval.
+     *
+     * @return the negated interval
+     * @throws ArithmeticException if the negation of diatonicSteps overflows
+     */
+    public PitchInterval negated() {
+        return new PitchInterval(Math.negateExact(diatonicSteps), chromaticOffset.negated());
+    }
 }

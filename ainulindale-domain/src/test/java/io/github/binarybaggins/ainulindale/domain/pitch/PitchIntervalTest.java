@@ -101,4 +101,25 @@ class PitchIntervalTest {
 
         assertThrows(NullPointerException.class, () -> PitchInterval.of(0, null));
     }
+
+    @Test
+    void negatedReversesBothDisplacements() {
+        PitchInterval interval = PitchInterval.of(-1, Rational.of(-2));
+
+        assertEquals(PitchInterval.of(1, Rational.of(2)), interval.negated());
+    }
+
+    @Test
+    void doubleNegationRestoresOriginalInterval() {
+        PitchInterval interval = PitchInterval.of(2, Rational.of(3, 2));
+
+        assertEquals(interval, interval.negated().negated());
+    }
+
+    @Test
+    void negatingMinimumDiatonicDisplacementThrows() {
+        PitchInterval interval = PitchInterval.of(Integer.MIN_VALUE, Rational.ZERO);
+
+        assertThrows(ArithmeticException.class, interval::negated);
+    }
 }
