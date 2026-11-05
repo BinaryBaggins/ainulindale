@@ -290,7 +290,7 @@ public class CompositionExplorer extends JPanel {
         int number = 1;
 
         while (true) {
-            String name = "Track " + number; // TODO: i18n
+            String name = "Track " + number;
 
             boolean exists = workspace
                 .getTracks()

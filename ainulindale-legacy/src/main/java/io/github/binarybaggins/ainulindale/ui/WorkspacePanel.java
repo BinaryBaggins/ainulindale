@@ -36,9 +36,8 @@ public class WorkspacePanel extends JPanel {
         workspace.addListener(() -> syncActiveTrackEditor(workspace));
 
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Composition", compositionExplorer); // TODO: i18n
-        tabbedPane.addTab("Project", projectExplorer); // TODO: i18n
-
+        tabbedPane.addTab("Composition", compositionExplorer);
+        tabbedPane.addTab("Project", projectExplorer);
         setLayout(new BorderLayout());
 
         add(editorToolbar, BorderLayout.NORTH);
