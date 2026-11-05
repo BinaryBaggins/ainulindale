@@ -470,11 +470,10 @@ public final class Composition {
         Objects.requireNonNull(position, "position must not be null");
         Objects.requireNonNull(meter, "meter must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                part.setMeter(position, meter);
-                return Result.success(Unit.INSTANCE);
-            }
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().setMeter(position, meter);
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -491,11 +490,10 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                part.endMeter(position);
-                return Result.success(Unit.INSTANCE);
-            }
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().endMeter(position);
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -512,14 +510,13 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                if (!part.removeMeterChange(position)) {
-                    return Result.failure(CompositionErrors.METER_CHANGE_NOT_FOUND);
-                }
-
-                return Result.success(Unit.INSTANCE);
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            if (!part.get().removeMeterChange(position)) {
+                return Result.failure(CompositionErrors.METER_CHANGE_NOT_FOUND);
             }
+
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -537,12 +534,14 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                Optional<Meter> effectiveMeter = part.localMeterAt(position).or(() -> meterAt(position));
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            Optional<Meter> effectiveMeter = part
+                .get()
+                .localMeterAt(position)
+                .or(() -> meterAt(position));
 
-                return Result.success(effectiveMeter);
-            }
+            return Result.success(effectiveMeter);
         }
 
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
@@ -728,11 +727,10 @@ public final class Composition {
         Objects.requireNonNull(position, "position must not be null");
         Objects.requireNonNull(keySignature, "keySignature must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                part.setKeySignature(position, keySignature);
-                return Result.success(Unit.INSTANCE);
-            }
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().setKeySignature(position, keySignature);
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -750,11 +748,10 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                part.endKeySignature(position);
-                return Result.success(Unit.INSTANCE);
-            }
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().endKeySignature(position);
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -772,13 +769,12 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                if (!part.removeKeySignatureChange(position)) {
-                    return Result.failure(CompositionErrors.KEY_SIGNATURE_CHANGE_NOT_FOUND);
-                }
-                return Result.success(Unit.INSTANCE);
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            if (!part.get().removeKeySignatureChange(position)) {
+                return Result.failure(CompositionErrors.KEY_SIGNATURE_CHANGE_NOT_FOUND);
             }
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -797,14 +793,14 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                Optional<KeySignature> effective = part
-                    .localKeySignatureAt(position)
-                    .or(() -> keySignatureAt(position));
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            Optional<KeySignature> effective = part
+                .get()
+                .localKeySignatureAt(position)
+                .or(() -> keySignatureAt(position));
 
-                return Result.success(effective);
-            }
+            return Result.success(effective);
         }
 
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
@@ -930,11 +926,10 @@ public final class Composition {
         Objects.requireNonNull(position, "position must not be null");
         Objects.requireNonNull(assignment, "assignment must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                part.setInstrumentAssignment(position, assignment);
-                return Result.success(Unit.INSTANCE);
-            }
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().setInstrumentAssignment(position, assignment);
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -952,11 +947,10 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                part.endInstrumentAssignment(position);
-                return Result.success(Unit.INSTANCE);
-            }
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().endInstrumentAssignment(position);
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -974,13 +968,12 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                if (!part.removeInstrumentAssignmentChange(position)) {
-                    return Result.failure(CompositionErrors.INSTRUMENT_ASSIGNMENT_CHANGE_NOT_FOUND);
-                }
-                return Result.success(Unit.INSTANCE);
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            if (!part.get().removeInstrumentAssignmentChange(position)) {
+                return Result.failure(CompositionErrors.INSTRUMENT_ASSIGNMENT_CHANGE_NOT_FOUND);
             }
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -998,12 +991,21 @@ public final class Composition {
         Objects.requireNonNull(partId, "partId must not be null");
         Objects.requireNonNull(position, "position must not be null");
 
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                Optional<InstrumentAssignment> assignment = part.instrumentAssignmentAt(position);
-                return Result.success(assignment);
-            }
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            Optional<InstrumentAssignment> assignment = part.get().instrumentAssignmentAt(position);
+            return Result.success(assignment);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    private Optional<Part> findPart(PartId partId) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                return Optional.of(part);
+            }
+        }
+        return Optional.empty();
     }
 }
