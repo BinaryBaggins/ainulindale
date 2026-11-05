@@ -53,4 +53,9 @@ final class CompositionErrors {
      * Error indicating that the specified key signature state transition was not found within the composition.
      */
     static final ResultError KEY_SIGNATURE_CHANGE_NOT_FOUND = new ResultError("Composition.KeySignatureChangeNotFound");
+    
+    /**
+     * Error indicating that the specified instrument assignment state transition was not found within the composition.
+     */
+    static final ResultError INSTRUMENT_ASSIGNMENT_CHANGE_NOT_FOUND = new ResultError("Composition.InstrumentAssignmentChangeNotFound");
 }

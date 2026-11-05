@@ -7,6 +7,7 @@ import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.instrument.InstrumentAssignment;
 import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
@@ -879,5 +880,97 @@ public final class Composition {
             }
         }
         return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Sets the instrument assignment for the specified part at the given score position.
+     *
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to set the instrument assignment
+     * @param assignment the instrument assignment to set
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId, position, or assignment is null
+     */
+    public Result<Unit> setInstrumentAssignment(
+        PartId partId,
+        ScorePosition position,
+        InstrumentAssignment assignment
+    ) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(assignment, "assignment must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.setInstrumentAssignment(position, assignment);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Ends the instrument assignment for the specified part at the given score position.
+     *
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to end the instrument assignment
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> endInstrumentAssignment(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.endInstrumentAssignment(position);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Removes the instrument assignment state transition for the specified part at the given score position.
+     *
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to remove the instrument assignment
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> removeInstrumentAssignmentChange(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                if (!part.removeInstrumentAssignmentChange(position)) {
+                    return Result.failure(CompositionErrors.INSTRUMENT_ASSIGNMENT_CHANGE_NOT_FOUND);
+                }
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the instrument assignment for the specified part at the given score position.
+     *
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to retrieve the instrument assignment
+     * @return a Result containing an Optional with the instrument assignment if present, or failure if the part is not found
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Optional<InstrumentAssignment>> instrumentAssignmentAt(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                Optional<InstrumentAssignment> assignment = part.instrumentAssignmentAt(position);
+                return Result.success(assignment);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
 }
