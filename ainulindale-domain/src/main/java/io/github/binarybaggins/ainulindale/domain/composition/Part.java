@@ -2,6 +2,7 @@ package io.github.binarybaggins.ainulindale.domain.composition;
 
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.instrument.InstrumentAssignment;
 import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
@@ -20,6 +21,7 @@ public final class Part {
     private final List<Voice> voices;
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
+    private final StateTimeline<InstrumentAssignment> instrumentAssignmentTimeline = new StateTimeline<>();
 
     private Part(PartId id, Voice initialVoice) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -46,7 +48,7 @@ public final class Part {
     }
 
     /**
-     * Returns an unmodifiable list of all voices associated with this part.
+     * Returns an unmodifiable live view of all voices associated with this part.
      *
      * @return an unmodifiable list of voices
      */
@@ -123,7 +125,8 @@ public final class Part {
     }
 
     /**
-     * Sets the meter at the specified score position within this part.
+     * Sets the meter from the specified score position until the next transition,
+     * replacing any transition at that position within this part.
      *
      * @param position the score position at which to set the meter
      * @param meter the meter to establish at the specified position
@@ -138,6 +141,7 @@ public final class Part {
 
     /**
      * Ends the meter at the specified score position within this part.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param position the score position at which to end the meter
      * @throws NullPointerException if position is null
@@ -148,10 +152,11 @@ public final class Part {
     }
 
     /**
-     * Removes the meter change at the specified score position within this part.
+     * Removes the meter state transition (Set or End) at the specified score position within this part.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
      *
-     * @param position the score position at which to remove the meter change
-     * @return true if a meter change was removed, false otherwise
+     * @param position the score position at which to remove the meter state transition
+     * @return true if a meter state transition was removed, false otherwise
      * @throws NullPointerException if position is null
      */
     boolean removeMeterChange(ScorePosition position) {
@@ -163,7 +168,8 @@ public final class Part {
      * Retrieves the local meter at the specified score position within this part.
      *
      * @param position the score position at which to retrieve the local meter
-     * @return an Optional containing the local meter if present, or an empty Optional if not
+     * @return an Optional containing the local meter, empty if no Set is active at that position;
+     *         does not resolve inherited state
      * @throws NullPointerException if position is null
      */
     Optional<Meter> localMeterAt(ScorePosition position) {
@@ -177,7 +183,8 @@ public final class Part {
     }
 
     /**
-     * Sets the key signature at the specified score position within this part.
+     * Sets the key signature from the specified score position until the next transition,
+     * replacing any transition at that position within this part.
      *
      * @param position the score position at which to set the key signature
      * @param keySignature the key signature to set
@@ -192,6 +199,7 @@ public final class Part {
 
     /**
      * Ends the key signature at the specified score position within this part.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param position the score position at which to end the key signature
      * @throws NullPointerException if position is null
@@ -202,10 +210,11 @@ public final class Part {
     }
 
     /**
-     * Removes the key signature change at the specified score position within this part.
+     * Removes the key signature state transition (Set or End) at the specified score position within this part.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
      *
-     * @param position the score position at which to remove the key signature change
-     * @return true if a key signature change was removed, false otherwise
+     * @param position the score position at which to remove the key signature state transition
+     * @return true if a key signature state transition was removed, false otherwise
      * @throws NullPointerException if position is null
      */
     boolean removeKeySignatureChange(ScorePosition position) {
@@ -217,13 +226,71 @@ public final class Part {
      * Retrieves the local key signature at the specified score position within this part.
      *
      * @param position the score position at which to retrieve the local key signature
-     * @return an Optional containing the local key signature if present, or an empty Optional if not
+     * @return an Optional containing the local key signature, empty if no Set is active at that position;
+     *         does not resolve inherited state
      * @throws NullPointerException if position is null
      */
     Optional<KeySignature> localKeySignatureAt(ScorePosition position) {
         Objects.requireNonNull(position, "position must not be null");
         return keySignatureTimeline.latestTransitionAt(position).flatMap(transition -> {
             if (transition instanceof StateTransition.Set<KeySignature> set) {
+                return Optional.of(set.value());
+            }
+            return Optional.empty();
+        });
+    }
+
+    /**
+     * Sets the instrument assignment from the specified score position until the next transition,
+     * replacing any transition at that position within this part.
+     *
+     * @param position the score position at which to set the instrument assignment
+     * @param assignment the instrument assignment to set
+     * @throws NullPointerException if position or assignment is null
+     */
+    void setInstrumentAssignment(ScorePosition position, InstrumentAssignment assignment) {
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(assignment, "assignment must not be null");
+
+        instrumentAssignmentTimeline.set(position, assignment);
+    }
+
+    /**
+     * Ends the instrument assignment at the specified score position within this part.
+     * The part remains unassigned until the next assignment; there is no inherited fallback.
+     *
+     * @param position the score position at which to end the instrument assignment
+     * @throws NullPointerException if position is null
+     */
+    void endInstrumentAssignment(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        instrumentAssignmentTimeline.end(position);
+    }
+
+    /**
+     * Removes the instrument assignment state transition (Set or End) at the specified score position within this part.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
+     *
+     * @param position the score position at which to remove the instrument assignment state transition
+     * @return true if an instrument assignment state transition was removed, false otherwise
+     * @throws NullPointerException if position is null
+     */
+    boolean removeInstrumentAssignmentChange(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        return instrumentAssignmentTimeline.remove(position);
+    }
+
+    /**
+     * Retrieves the instrument assignment at the specified score position within this part.
+     *
+     * @param position the score position at which to retrieve the instrument assignment
+     * @return an Optional containing the assignment, empty if no Set is active at that position
+     * @throws NullPointerException if position is null
+     */
+    Optional<InstrumentAssignment> instrumentAssignmentAt(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        return instrumentAssignmentTimeline.latestTransitionAt(position).flatMap(transition -> {
+            if (transition instanceof StateTransition.Set<InstrumentAssignment> set) {
                 return Optional.of(set.value());
             }
             return Optional.empty();

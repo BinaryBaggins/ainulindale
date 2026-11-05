@@ -14,11 +14,12 @@ Unresolved design questions are explicitly marked as open.
 
 The accepted model is broader than the implementation. Historical ADRs retain their original rationale; current progress is recorded here and in [module-architecture.md](module-architecture.md).
 
-- Rational, score-time values, Pitch/PitchAlteration, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented. RelationId and InstrumentDefinitionId do not imply implementations of their entities.
+- Rational, score-time values, Pitch/PitchAlteration, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented. RelationId does not imply an implementation of musical relations.
 - [Composition](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/Composition.java), Part, Voice, VoiceEvent, and NoteEvent implement structure, ordering, note creation/removal, pitch/range changes, and movement between Voices.
 - Tempo is integrated at Composition scope. Meter and KeySignature support Composition/Part/Voice state, inherited effective queries, and explicit ending/removal of overrides. Internal StateTimeline uses Set/End transitions in a TreeMap.
 - [CompositionErrors](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/CompositionErrors.java) provides semantic ResultError codes for implemented failures, using the Result infrastructure extracted into foundation.
-- PitchClass, ScaleDegree, ScaleStructure, TonalContext, PitchInterval, instruments, relations, and Project/Arrangement/Revision/library concepts remain unimplemented. Metadata editing, persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
+- PitchInterval, WrittenToSoundingTransposition, InstrumentDefinition, and InstrumentAssignment are implemented. Part-local assignment timelines support setting, ending, removing transitions, and querying through Composition. Referential integrity between InstrumentAssignment and the future Project Instrument Library is not implemented; referenced InstrumentDefinitionIds are not checked against a library.
+- PitchClass, ScaleDegree, ScaleStructure, TonalContext, relations, and Project/Arrangement/Revision/library concepts remain unimplemented. Metadata editing, Composition persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
 
 The [domain tests](../../ainulindale-domain/src/test/java/io/github/binarybaggins/ainulindale/domain) cover implemented values, aggregate operations, and state behavior. This review inspected source and tests; it does not report a new test run.
 
@@ -485,7 +486,7 @@ Programming-contract violations and broken internal invariants are a different c
 
 The domain reuses foundation's `Result<T>` abstraction; no competing framework is introduced for the greenfield domain. Canonical domain errors are semantic, programmatically distinguishable values carried by that abstraction.
 
-CompositionErrors currently defines ResultError codes for missing Parts, Voices, Events, and state changes, invalid Part/Voice indices, and last-Voice removal. Relation and instrument errors remain unimplemented. Localized strings are not the primary error contract. Application/UI code maps semantic errors to messages through existing i18n infrastructure, outside the domain. The domain does not depend on ResourceBundle semantics, UI locale, or translated messages.
+CompositionErrors currently defines ResultError codes for missing Parts, Voices, Events, and state changes, invalid Part/Voice indices, and last-Voice removal. Missing instrument-assignment transitions use Composition.InstrumentAssignmentChangeNotFound. Relation errors and instrument-library reference validation remain unimplemented. Localized strings are not the primary error contract. Application/UI code maps semantic errors to messages through existing i18n infrastructure, outside the domain. The domain does not depend on ResourceBundle semantics, UI locale, or translated messages.
 
 Value objects remain immutable.
 
@@ -1306,7 +1307,7 @@ Active local state    → override parent
 Local override ended → inherit parent again
 ```
 
-The generic timeline implements an override ending as `StateTransition.End<T>`. Tempo, Meter, and KeySignature expose explicit end operations through `Composition`. Integration and APIs for further state types remain open.
+The generic timeline implements an override ending as `StateTransition.End<T>`. Tempo, Meter, KeySignature, and InstrumentAssignment expose explicit end operations through `Composition`. Integration and APIs for further state types remain open.
 
 ### Tempo
 
@@ -1345,13 +1346,15 @@ The stored pitch explicitly represents F♯4. A key signature is not hidden inpu
 
 ### InstrumentAssignment
 
-`InstrumentAssignment` is currently Part-scoped state. A part may change instruments over score time; the generic domain does not require one fixed instrument per part.
+`InstrumentAssignment` is implemented as Part-scoped state using an internal `StateTimeline<InstrumentAssignment>`. A part may change instruments over score time; the generic domain does not require one fixed instrument per part.
+
+Composition exposes `setInstrumentAssignment`, `endInstrumentAssignment`, `removeInstrumentAssignmentChange`, and `instrumentAssignmentAt`. Ending an assignment leaves the Part unassigned, with no inherited fallback. Removing a Set or End transition reveals the preceding state. Queries return `Result<Optional<InstrumentAssignment>>`, distinguishing an unassigned Part from an unknown Part.
 
 A concrete target such as LOTRO may impose stricter constraints through a `TargetRuleset`.
 
 Voice-local instrument assignment is deliberately deferred. Independently assigned instruments in different voices may indicate separate parts unless a concrete future domain requirement justifies voice-local assignment.
 
-Sections 45 and 46 define InstrumentDefinition, InstrumentAssignment, and intrinsic directed transposition. Exact metadata, temporary setup models, and target-specific instrument mappings remain open.
+Sections 45 and 46 define InstrumentDefinition, InstrumentAssignment, and intrinsic directed transposition. Additional metadata, temporary setup models, and target-specific instrument mappings remain open.
 
 ### Accepted Scope Matrix
 
@@ -1922,9 +1925,11 @@ InstrumentDefinition
 └── WrittenToSoundingTransposition
 ```
 
-Names and descriptive metadata are not identity. Exact metadata fields and Java APIs remain open.
+Names and descriptive metadata are not identity. Additional metadata beyond the implemented name and intrinsic transposition remains open.
 
 `InstrumentAssignment` is a value object used as Part-scoped state. It answers which instrument definition is assigned to the part at a `ScorePosition`, by referencing `InstrumentDefinitionId`. It has no separate entity identity and does not redundantly embed the full definition in every assignment.
+
+The implemented InstrumentDefinition provides an ID, a non-blank name, and intrinsic WrittenToSoundingTransposition, with creation and restoration factories. InstrumentAssignment is an immutable record holding a non-null InstrumentDefinitionId. Referential integrity with the future Project Instrument Library remains pending: assignment creation and Composition mutations do not verify that the referenced definition exists in that library.
 
 In the planned Project model, these definitions are retained in a shared Project instrument library and may be referenced by multiple Arrangements and their Compositions. Conceptual library ownership does not decide a storage or aggregate boundary; see section 3 and [ADR-0041](../decisions/0041-project-arrangements-revisions-and-instrument-library.md).
 
@@ -1947,7 +1952,7 @@ diatonicSteps: signed integer
 chromaticOffset: Rational
 ```
 
-Both components may be negative, zero, or positive. Chromatic offset uses the accepted abstract semitone unit, without floating-point representation or tuning assumptions. Exact Java types and APIs remain implementation details.
+Both components may be negative, zero, or positive. Chromatic offset uses the accepted abstract semitone unit, without floating-point representation or tuning assumptions. The implemented record uses `int diatonicSteps` and `Rational chromaticOffset`, with `ZERO`, an `of` factory, and `negated()`.
 
 Equality preserves both components. An augmented unison `(0, +1)` and a minor second `(+1, +1)` are distinct even if acoustically equivalent under a particular tuning. Intervals must not be normalized solely by chromatic distance.
 
@@ -1989,7 +1994,7 @@ canonical sounding Pitch
 
 A separate independent SoundingToWrittenTransposition must not be stored. The inverse is derived, avoiding two potentially inconsistent sources of truth.
 
-For a non-transposing/concert instrument, WrittenToSoundingTransposition contains `PitchInterval(0, 0)`. Identity is explicit, not absent or null.
+For a non-transposing/concert instrument, WrittenToSoundingTransposition contains `PitchInterval(0, 0)`. Identity is explicit, not absent or null. The implemented WrittenToSoundingTransposition record wraps a non-null PitchInterval and provides an `IDENTITY` constant and an `of` factory.
 
 See [ADR-0032](../decisions/0032-written-to-sounding-transposition.md).
 
@@ -2117,15 +2122,13 @@ The following points remain unresolved:
 
 ### State Representations and Implementation
 
-- Additional Composition APIs and views for unimplemented concepts; basic structure, notes, Tempo, Meter, and KeySignature APIs are implemented
+- Additional Composition APIs and views for unimplemented concepts; basic structure, notes, Tempo, Meter, KeySignature, and Part-local InstrumentAssignment APIs are implemented
 - Additional domain errors for unimplemented concepts; current failures use CompositionErrors and ResultError
-- Persistence rehydration mechanism
+- Composition persistence rehydration mechanism
 - Settings/i18n integration into desktop; Result extraction into foundation is complete, as described in [module-architecture.md](module-architecture.md)
 
-- Integration of further state types, particularly InstrumentAssignment, including their storage and scope-specific APIs
-- Concrete instrument, assignment, and interval APIs/storage
-- InstrumentAssignment timeline storage
-- Exact InstrumentDefinition metadata
+- Referential integrity between InstrumentAssignment and the future Project Instrument Library; referenced definitions are not yet validated
+- Additional InstrumentDefinition metadata beyond the implemented name and intrinsic transposition
 - Performance/setup models, including capo, scordatura, and alternate tuning
 - Technical storage and aggregate boundaries of the Project-scoped instrument library
 - Catalog provenance schema and catalog implementation
@@ -2135,7 +2138,7 @@ The Tempo, Meter, and KeySignature value models are implemented. The generic `St
 
 Tempo is integrated at Composition scope. Meter and KeySignature are integrated at Composition, Part, and Voice scopes, including persistent overrides, dynamic inheritance, and explicit ending and removal of transitions.
 
-Integration of further state types remains open.
+InstrumentAssignment is integrated at Part scope with Set/End transitions, transition removal, and assignment queries. Project Instrument Library integration and reference validation remain open.
 
 ### Projects, Arrangements, and Revisions
 

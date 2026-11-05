@@ -40,17 +40,22 @@ final class CompositionErrors {
     static final ResultError INVALID_VOICE_INDEX = new ResultError("Composition.InvalidVoiceIndex");
 
     /**
-     * Error indicating that the specified tempo change was not found within the composition.
+     * Error indicating that the specified tempo state transition was not found within the composition.
      */
     static final ResultError TEMPO_CHANGE_NOT_FOUND = new ResultError("Composition.TempoChangeNotFound");
 
     /**
-     * Error indicating that the specified meter was not found within the composition.
+     * Error indicating that the specified meter state transition was not found within the composition.
      */
     static final ResultError METER_CHANGE_NOT_FOUND = new ResultError("Composition.MeterChangeNotFound");
 
     /**
-     * Error indicating that the specified key signature was not found within the composition.
+     * Error indicating that the specified key signature state transition was not found within the composition.
      */
     static final ResultError KEY_SIGNATURE_CHANGE_NOT_FOUND = new ResultError("Composition.KeySignatureChangeNotFound");
+    
+    /**
+     * Error indicating that the specified instrument assignment state transition was not found within the composition.
+     */
+    static final ResultError INSTRUMENT_ASSIGNMENT_CHANGE_NOT_FOUND = new ResultError("Composition.InstrumentAssignmentChangeNotFound");
 }

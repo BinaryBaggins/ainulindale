@@ -7,6 +7,7 @@ import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.instrument.InstrumentAssignment;
 import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
@@ -20,7 +21,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Represents a composition which contains a unique identifier and a collection of parts.
+ * Represents the musical aggregate root with a unique identifier and ordered parts.
+ * Public mutations of parts, voices, notes, and musical state enter through this class.
+ *
+ * <p>State setters establish a value from the given position until the next transition,
+ * replacing any transition at that exact position. End operations replace any transition
+ * at their position and do not require a previously active value. Meter and key signature
+ * inherit from composition to part to voice when no local value is active.
+ * Tempo is composition-scoped; instrument assignments are part-local without inheritance.
  */
 public final class Composition {
 
@@ -54,7 +62,7 @@ public final class Composition {
     }
 
     /**
-     * Returns an unmodifiable view of the parts contained in this composition.
+     * Returns an unmodifiable live view of the parts contained in this composition.
      *
      * @return an unmodifiable list of parts
      */
@@ -63,7 +71,7 @@ public final class Composition {
     }
 
     /**
-     * Adds a new part to this composition and returns its unique identifier.
+     * Adds a new part with one initial voice to this composition and returns its unique identifier.
      *
      * @return the unique identifier of the newly added part
      */
@@ -100,6 +108,7 @@ public final class Composition {
      * @return a result containing the unique identifier of the newly added note if successful,
      *         or an error if the voice was not found
      * @throws NullPointerException if the voiceId, scoreRange, or pitch is null
+     * @throws IllegalArgumentException if the voice is found and scoreRange has zero duration
      */
     public Result<EventId> addNote(VoiceId voiceId, ScoreRange scoreRange, Pitch pitch) {
         Objects.requireNonNull(voiceId, "voiceId must not be null");
@@ -202,6 +211,7 @@ public final class Composition {
      *
      * @param voiceId the unique identifier of the voice to be moved
      * @param newIndex the final zero-based index of the voice after moving it
+     * (must be between 0 and the number of voices in its part minus one)
      * @return a result indicating success if the voice was moved, or an error
      * if the voice was not found or if the new index is invalid
      * @throws NullPointerException if the voiceId is null
@@ -253,7 +263,7 @@ public final class Composition {
      * @return a result indicating success if the score range was successfully changed, or an error
      * if the note was not found
      * @throws NullPointerException if the noteId or newRange is null
-     * @throws IllegalArgumentException if the newRange has a negative duration
+     * @throws IllegalArgumentException if the note is found and newRange has zero duration
      */
     public Result<Unit> changeNoteRange(EventId noteId, ScoreRange newRange) {
         Objects.requireNonNull(noteId, "noteId must not be null");
@@ -270,6 +280,7 @@ public final class Composition {
 
     /**
      * Moves a note from its current voice to another voice within this composition.
+     * Moving to the current voice succeeds without changing the note. Its identity, pitch, and range are preserved.
      *
      * @param noteId the unique identifier of the note event to be moved
      * @param targetVoiceId the unique identifier of the target voice
@@ -343,7 +354,7 @@ public final class Composition {
 
     /**
      * Explicitly ends the specified tempo state at a score position.
-     * The tempo becomes unspecified until another tempo is established.
+     * The tempo becomes unspecified until the next value on this timeline.
      * @param position the score position at which to end the tempo
      * @throws NullPointerException if position is null
      */
@@ -354,10 +365,10 @@ public final class Composition {
     }
 
     /**
-     * Removes the tempo transition stored exactly at the given position.
+     * Removes the tempo state transition (Set or End) stored exactly at the given position.
      * Earlier transitions may become effective again.
-     * @param position the score position of the tempo change to remove
-     * @return a Result indicating success or failure of the removal operation
+     * @param position the score position of the tempo state transition to remove
+     * @return a Result indicating successful removal, or failure if no transition exists at that position
      * @throws NullPointerException if position is null
      */
     public Result<Unit> removeTempoChange(ScorePosition position) {
@@ -402,7 +413,8 @@ public final class Composition {
     }
 
     /**
-     * Ends the meter at the specified score position.
+     * Ends the meter state at the specified score position.
+     * The meter becomes unspecified until the next value on this timeline.
      * @param position the score position at which to end the meter
      * @throws NullPointerException if position is null
      */
@@ -412,9 +424,10 @@ public final class Composition {
     }
 
     /**
-     * Removes the meter at the specified score position.
-     * @param position the score position at which to remove the meter
-     * @return a Result indicating success or failure
+     * Removes the meter state transition (Set or End) stored exactly at the specified score position.
+     * Earlier transitions may become effective again.
+     * @param position the score position at which to remove the meter state transition
+     * @return a Result indicating successful removal, or failure if no transition exists at that position
      * @throws NullPointerException if position is null
      */
     public Result<Unit> removeMeterChange(ScorePosition position) {
@@ -428,9 +441,9 @@ public final class Composition {
     }
 
     /**
-     * Retrieves the meter at the specified score position.
+     * Retrieves the meter effective at the specified score position.
      * @param position the score position at which to retrieve the meter
-     * @return an Optional containing the meter if found, or empty if not found
+     * @return an Optional containing the composition-level meter, empty if no Set is active at that position
      * @throws NullPointerException if position is null
      */
     public Optional<Meter> meterAt(ScorePosition position) {
@@ -449,7 +462,7 @@ public final class Composition {
      * @param partId the unique identifier of the part
      * @param position the score position at which to set the meter
      * @param meter the meter to establish at the specified position
-     * @return a Result indicating success or failure
+     * @return a Result indicating success, or failure if the part was not found
      * @throws NullPointerException if partId, position, or meter is null
      */
     public Result<Unit> setMeter(PartId partId, ScorePosition position, Meter meter) {
@@ -467,10 +480,11 @@ public final class Composition {
     }
 
     /**
-     * Ends the local meter at the specified score position for the given part.
+     * Ends the local meter state at the specified score position for the given part.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      * @param partId the unique identifier of the part
      * @param position the score position at which to end the meter
-     * @return a Result indicating success or failure
+     * @return a Result indicating success, or failure if the part was not found
      * @throws NullPointerException if partId or position is null
      */
     public Result<Unit> endMeter(PartId partId, ScorePosition position) {
@@ -487,10 +501,11 @@ public final class Composition {
     }
 
     /**
-     * Removes the local meter change at the specified score position for the given part.
+     * Removes the local meter state transition (Set or End) stored exactly at the specified score position for the given part.
+     * Earlier transitions may become effective again.
      * @param partId the unique identifier of the part
-     * @param position the score position at which to remove the meter change
-     * @return a Result indicating success or failure
+     * @param position the score position at which to remove the meter state transition
+     * @return a Result indicating successful removal, or failure if the part was not found or no transition exists at that position
      * @throws NullPointerException if partId or position is null
      */
     public Result<Unit> removeMeterChange(PartId partId, ScorePosition position) {
@@ -514,7 +529,8 @@ public final class Composition {
      * If the part has a local meter at the position, it is returned; otherwise, the global meter is returned.
      * @param partId the unique identifier of the part
      * @param position the score position at which to retrieve the effective meter
-     * @return a Result containing an Optional with the effective meter if found, or an empty Optional if not
+     * @return a successful Result containing an Optional with the effective meter, empty if no scope specifies one;
+     *         failure if the part was not found
      * @throws NullPointerException if partId or position is null
      */
     public Result<Optional<Meter>> meterAt(PartId partId, ScorePosition position) {
@@ -538,7 +554,7 @@ public final class Composition {
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to set the meter
      * @param meter the meter to set
-     * @return a Result indicating success or failure
+     * @return a Result indicating success, or failure if the voice was not found
      * @throws NullPointerException if voiceId, position, or meter is null
      */
     public Result<Unit> setMeter(VoiceId voiceId, ScorePosition position, Meter meter) {
@@ -558,11 +574,12 @@ public final class Composition {
     }
 
     /**
-     * Ends the local meter change at the specified score position for the given voice.
+     * Ends the local meter state at the specified score position for the given voice.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param voiceId the unique identifier of the voice
-     * @param position the score position at which to end the meter change
-     * @return a Result indicating success or failure
+     * @param position the score position at which to end the meter
+     * @return a Result indicating success, or failure if the voice was not found
      * @throws NullPointerException if voiceId or position is null
      */
     public Result<Unit> endMeter(VoiceId voiceId, ScorePosition position) {
@@ -581,11 +598,12 @@ public final class Composition {
     }
 
     /**
-     * Removes a local meter change at the specified score position for the given voice.
+     * Removes a local meter state transition (Set or End) stored exactly at the specified score position for the given voice.
+     * Earlier transitions may become effective again.
      *
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to remove the local meter change
-     * @return a Result indicating success or failure
+     * @return a Result indicating successful removal, or failure if the voice was not found or no transition exists at that position
      * @throws NullPointerException if voiceId or position is null
      */
     public Result<Unit> removeMeterChange(VoiceId voiceId, ScorePosition position) {
@@ -608,10 +626,12 @@ public final class Composition {
 
     /**
      * Retrieves the effective meter at the specified score position for the given voice.
+     * Resolution order: voice, part, composition.
      *
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to retrieve the effective meter
-     * @return a Result containing an Optional with the effective meter if found, or an empty Optional if not
+     * @return a successful Result containing an Optional with the effective meter, empty if no scope specifies one;
+     *         failure if the voice was not found
      * @throws NullPointerException if voiceId or position is null
      */
     public Result<Optional<Meter>> meterAt(VoiceId voiceId, ScorePosition position) {
@@ -646,7 +666,8 @@ public final class Composition {
     }
 
     /**
-     * Ends the key signature at the specified score position.
+     * Ends the key signature state at the specified score position.
+     * The key signature becomes unspecified until the next value on this timeline.
      *
      * @param position the score position at which to end the key signature
      * @throws NullPointerException if position is null
@@ -658,10 +679,11 @@ public final class Composition {
     }
 
     /**
-     * Removes the key signature at the specified score position.
+     * Removes the key signature state transition (Set or End) stored exactly at the specified score position.
+     * Earlier transitions may become effective again.
      *
-     * @param position the score position at which to remove the key signature
-     * @return a Result indicating success or failure
+     * @param position the score position at which to remove the key signature state transition
+     * @return a Result indicating successful removal, or failure if no transition exists at that position
      * @throws NullPointerException if position is null
      */
     public Result<Unit> removeKeySignatureChange(ScorePosition position) {
@@ -678,7 +700,7 @@ public final class Composition {
      * Retrieves the key signature effective at the specified score position.
      *
      * @param position the score position at which to retrieve the key signature
-     * @return an Optional containing the key signature if found, or empty if not found
+     * @return an Optional containing the composition-level key signature, empty if no Set is active at that position
      * @throws NullPointerException if position is null
      */
     public Optional<KeySignature> keySignatureAt(ScorePosition position) {
@@ -693,12 +715,13 @@ public final class Composition {
     }
 
     /**
-     * Sets a key signature at the specified score position.
+     * Sets a key signature at the specified score position for the given part.
      *
      * @param partId the ID of the part for which to set the key signature
      * @param position the score position at which to set the key signature
      * @param keySignature the key signature to set
-     * @throws NullPointerException if position or keySignature is null
+     * @return a Result indicating success, or failure if the part was not found
+     * @throws NullPointerException if partId, position or keySignature is null
      */
     public Result<Unit> setKeySignature(PartId partId, ScorePosition position, KeySignature keySignature) {
         Objects.requireNonNull(partId, "partId must not be null");
@@ -715,10 +738,12 @@ public final class Composition {
     }
 
     /**
-     * Ends the key signature at the specified score position for a the given part.
+     * Ends the key signature state at the specified score position for the given part.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param partId the ID of the part for which to end the key signature
      * @param position the score position at which to end the key signature
+     * @return a Result indicating success, or failure if the part was not found
      * @throws NullPointerException if partId or position is null
      */
     public Result<Unit> endKeySignature(PartId partId, ScorePosition position) {
@@ -735,11 +760,12 @@ public final class Composition {
     }
 
     /**
-     * Removes the key signature at the specified score position for the given part.
+     * Removes the key signature state transition (Set or End) stored exactly at the specified score position for the given part.
+     * Earlier transitions may become effective again.
      *
      * @param partId the ID of the part for which to remove the key signature
-     * @param position the score position at which to remove the key signature
-     * @return a Result indicating success or failure
+     * @param position the score position at which to remove the key signature state transition
+     * @return a Result indicating successful removal, or failure if the part was not found or no transition exists at that position
      * @throws NullPointerException if partId or position is null
      */
     public Result<Unit> removeKeySignatureChange(PartId partId, ScorePosition position) {
@@ -759,10 +785,12 @@ public final class Composition {
 
     /**
      * Retrieves the key signature effective at the specified score position for the given part.
+     * Resolution order: part, composition.
      *
      * @param partId the ID of the part for which to retrieve the key signature
      * @param position the score position at which to retrieve the key signature
-     * @return a Result containing an Optional with the key signature if found, or empty if not found
+     * @return a successful Result containing an Optional with the effective key signature, empty if no scope specifies one;
+     *         failure if the part was not found
      * @throws NullPointerException if partId or position is null
      */
     public Result<Optional<KeySignature>> keySignatureAt(PartId partId, ScorePosition position) {
@@ -788,7 +816,7 @@ public final class Composition {
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to set the key signature
      * @param keySignature the key signature to set
-     * @return a Result indicating success or failure
+     * @return a Result indicating success, or failure if the voice was not found
      * @throws NullPointerException if voiceId, position, or keySignature is null
      */
     public Result<Unit> setKeySignature(VoiceId voiceId, ScorePosition position, KeySignature keySignature) {
@@ -808,11 +836,12 @@ public final class Composition {
     }
 
     /**
-     * Ends the local key signature at the specified score position for the given voice.
+     * Ends the local key signature state at the specified score position for the given voice.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to end the key signature
-     * @return a Result indicating success or failure
+     * @return a Result indicating success, or failure if the voice was not found
      * @throws NullPointerException if voiceId or position is null
      */
     public Result<Unit> endKeySignature(VoiceId voiceId, ScorePosition position) {
@@ -831,11 +860,12 @@ public final class Composition {
     }
 
     /**
-     * Removes a local key signature change at the specified score position for the given voice.
+     * Removes a local key signature state transition (Set or End) at the specified score position for the given voice.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
      *
      * @param voiceId the unique identifier of the voice
-     * @param position the score position at which to remove the key signature change
-     * @return a Result indicating success or failure
+     * @param position the score position at which to remove the key signature state transition
+     * @return a Result indicating successful removal, or failure if the voice was not found or no transition exists at that position
      * @throws NullPointerException if voiceId or position is null
      */
     public Result<Unit> removeKeySignatureChange(VoiceId voiceId, ScorePosition position) {
@@ -861,7 +891,8 @@ public final class Composition {
      *
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to retrieve the key signature
-     * @return a Result containing an Optional with the effective key signature, or empty if none
+     * @return a successful Result containing an Optional with the effective key signature, empty if no scope specifies one;
+     *         failure if the voice was not found
      * @throws NullPointerException if voiceId or position is null
      */
     public Result<Optional<KeySignature>> keySignatureAt(VoiceId voiceId, ScorePosition position) {
@@ -879,5 +910,100 @@ public final class Composition {
             }
         }
         return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Sets the instrument assignment for the specified part at the given score position.
+     *
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to set the instrument assignment
+     * @param assignment the instrument assignment to set
+     * @return a Result indicating success, or failure if the part was not found
+     * @throws NullPointerException if partId, position, or assignment is null
+     */
+    public Result<Unit> setInstrumentAssignment(
+        PartId partId,
+        ScorePosition position,
+        InstrumentAssignment assignment
+    ) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(assignment, "assignment must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.setInstrumentAssignment(position, assignment);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Ends the instrument assignment for the specified part at the given score position.
+     * The part remains unassigned until the next assignment; there is no inherited fallback.
+     *
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to end the instrument assignment
+     * @return a Result indicating success, or failure if the part was not found
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> endInstrumentAssignment(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                part.endInstrumentAssignment(position);
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Removes the instrument assignment state transition (Set or End) for the specified part at the given score position.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
+     *
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to remove the instrument assignment state transition
+     * @return a Result indicating successful removal, or failure if the part was not found or no transition exists at that position
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Unit> removeInstrumentAssignmentChange(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                if (!part.removeInstrumentAssignmentChange(position)) {
+                    return Result.failure(CompositionErrors.INSTRUMENT_ASSIGNMENT_CHANGE_NOT_FOUND);
+                }
+                return Result.success(Unit.INSTANCE);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the instrument assignment for the specified part at the given score position.
+     *
+     * @param partId the unique identifier of the part
+     * @param position the score position at which to retrieve the instrument assignment
+     * @return a successful Result containing an Optional with the assignment, empty if the part is unassigned;
+     *         failure if the part was not found
+     * @throws NullPointerException if partId or position is null
+     */
+    public Result<Optional<InstrumentAssignment>> instrumentAssignmentAt(PartId partId, ScorePosition position) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+
+        for (Part part : parts) {
+            if (part.id().equals(partId)) {
+                Optional<InstrumentAssignment> assignment = part.instrumentAssignmentAt(position);
+                return Result.success(assignment);
+            }
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
 }
