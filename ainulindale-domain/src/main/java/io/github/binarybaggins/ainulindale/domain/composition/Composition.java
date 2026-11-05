@@ -354,9 +354,9 @@ public final class Composition {
     }
 
     /**
-     * Removes the tempo transition stored exactly at the given position.
+     * Removes the tempo state transition stored exactly at the given position.
      * Earlier transitions may become effective again.
-     * @param position the score position of the tempo change to remove
+     * @param position the score position of the tempo state transition to remove
      * @return a Result indicating success or failure of the removal operation
      * @throws NullPointerException if position is null
      */
@@ -412,8 +412,8 @@ public final class Composition {
     }
 
     /**
-     * Removes the meter at the specified score position.
-     * @param position the score position at which to remove the meter
+     * Removes the meter state transition at the specified score position.
+     * @param position the score position at which to remove the meter state transition
      * @return a Result indicating success or failure
      * @throws NullPointerException if position is null
      */
@@ -487,9 +487,9 @@ public final class Composition {
     }
 
     /**
-     * Removes the local meter change at the specified score position for the given part.
+     * Removes the local meter state transition at the specified score position for the given part.
      * @param partId the unique identifier of the part
-     * @param position the score position at which to remove the meter change
+     * @param position the score position at which to remove the meter state transition
      * @return a Result indicating success or failure
      * @throws NullPointerException if partId or position is null
      */
@@ -693,7 +693,7 @@ public final class Composition {
     }
 
     /**
-     * Sets a key signature at the specified score position.
+     * Sets a key signature state transition at the specified score position.
      *
      * @param partId the ID of the part for which to set the key signature
      * @param position the score position at which to set the key signature
@@ -715,7 +715,7 @@ public final class Composition {
     }
 
     /**
-     * Ends the key signature at the specified score position for a the given part.
+     * Ends the key signature state transition at the specified score position for a the given part.
      *
      * @param partId the ID of the part for which to end the key signature
      * @param position the score position at which to end the key signature
@@ -735,7 +735,7 @@ public final class Composition {
     }
 
     /**
-     * Removes the key signature at the specified score position for the given part.
+     * Removes the key signature state transition at the specified score position for the given part.
      *
      * @param partId the ID of the part for which to remove the key signature
      * @param position the score position at which to remove the key signature
@@ -783,7 +783,7 @@ public final class Composition {
     }
 
     /**
-     * Sets the local key signature at the specified score position for the given voice.
+     * Sets the local key signature state transition at the specified score position for the given voice.
      *
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to set the key signature
@@ -808,7 +808,7 @@ public final class Composition {
     }
 
     /**
-     * Ends the local key signature at the specified score position for the given voice.
+     * Ends the local key signature state transition at the specified score position for the given voice.
      *
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to end the key signature
@@ -831,7 +831,7 @@ public final class Composition {
     }
 
     /**
-     * Removes a local key signature change at the specified score position for the given voice.
+     * Removes a local key signature state transition at the specified score position for the given voice.
      *
      * @param voiceId the unique identifier of the voice
      * @param position the score position at which to remove the key signature change

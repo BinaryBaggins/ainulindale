@@ -121,7 +121,11 @@ class CompositionTempoTest {
         Composition composition = Composition.create();
         composition.addPart();
         List<Part> partsBefore = List.copyOf(composition.parts());
-        List<Integer> voiceCountsBefore = composition.parts().stream().map(part -> part.voices().size()).toList();
+        List<Integer> voiceCountsBefore = composition
+            .parts()
+            .stream()
+            .map(part -> part.voices().size())
+            .toList();
 
         composition.setTempo(ScorePosition.of(0, 1), tempo(30));
         composition.endTempo(ScorePosition.of(4, 1));
@@ -130,7 +134,11 @@ class CompositionTempoTest {
         assertEquals(partsBefore, composition.parts());
         assertEquals(
             voiceCountsBefore,
-            composition.parts().stream().map(part -> part.voices().size()).toList()
+            composition
+                .parts()
+                .stream()
+                .map(part -> part.voices().size())
+                .toList()
         );
     }
 }

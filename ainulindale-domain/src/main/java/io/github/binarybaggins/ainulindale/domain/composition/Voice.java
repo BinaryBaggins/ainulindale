@@ -176,7 +176,7 @@ public final class Voice {
     }
 
     /**
-     * Removes the meter change at the specified score position within this voice.
+     * Removes the meter state transition at the specified score position within this voice.
      *
      * @param position the score position at which to remove the meter change
      * @return true if a meter change was removed, false otherwise
@@ -230,7 +230,7 @@ public final class Voice {
     }
 
     /**
-     * Removes the key signature change at the specified score position within this voice.
+     * Removes the key signature state transition at the specified score position within this voice.
      *
      * @param position the score position at which to remove the key signature change
      * @return true if a key signature change was removed, false otherwise

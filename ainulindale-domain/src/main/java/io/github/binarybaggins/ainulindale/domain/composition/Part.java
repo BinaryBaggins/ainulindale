@@ -2,6 +2,7 @@ package io.github.binarybaggins.ainulindale.domain.composition;
 
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
+import io.github.binarybaggins.ainulindale.domain.instrument.InstrumentAssignment;
 import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
@@ -20,6 +21,7 @@ public final class Part {
     private final List<Voice> voices;
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
+    private final StateTimeline<InstrumentAssignment> instrumentAssignmentTimeline = new StateTimeline<>();
 
     private Part(PartId id, Voice initialVoice) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -31,6 +33,7 @@ public final class Part {
      * Creates a new part with a unique identifier and an initial voice.
      *
      * @return a new part instance
+     * @throws NullPointerException if the generated PartId or initial Voice is null
      */
     static Part create() {
         return new Part(PartId.create(), Voice.create());
@@ -148,10 +151,10 @@ public final class Part {
     }
 
     /**
-     * Removes the meter change at the specified score position within this part.
+     * Removes the meter state transition at the specified score position within this part.
      *
-     * @param position the score position at which to remove the meter change
-     * @return true if a meter change was removed, false otherwise
+     * @param position the score position at which to remove the meter state transition
+     * @return true if a meter state transition was removed, false otherwise
      * @throws NullPointerException if position is null
      */
     boolean removeMeterChange(ScorePosition position) {
@@ -202,10 +205,10 @@ public final class Part {
     }
 
     /**
-     * Removes the key signature change at the specified score position within this part.
+     * Removes the key signature state transition at the specified score position within this part.
      *
-     * @param position the score position at which to remove the key signature change
-     * @return true if a key signature change was removed, false otherwise
+     * @param position the score position at which to remove the key signature state transition
+     * @return true if a key signature state transition was removed, false otherwise
      * @throws NullPointerException if position is null
      */
     boolean removeKeySignatureChange(ScorePosition position) {
@@ -224,6 +227,60 @@ public final class Part {
         Objects.requireNonNull(position, "position must not be null");
         return keySignatureTimeline.latestTransitionAt(position).flatMap(transition -> {
             if (transition instanceof StateTransition.Set<KeySignature> set) {
+                return Optional.of(set.value());
+            }
+            return Optional.empty();
+        });
+    }
+
+    /**
+     * Sets the instrument assignment at the specified score position within this part.
+     *
+     * @param position the score position at which to set the instrument assignment
+     * @param assignment the instrument assignment to set
+     * @throws NullPointerException if position or assignment is null
+     */
+    void setInstrumentAssignment(ScorePosition position, InstrumentAssignment assignment) {
+        Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(assignment, "assignment must not be null");
+
+        instrumentAssignmentTimeline.set(position, assignment);
+    }
+
+    /**
+     * Ends the instrument assignment at the specified score position within this part.
+     *
+     * @param position the score position at which to end the instrument assignment
+     * @throws NullPointerException if position is null
+     */
+    void endInstrumentAssignment(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        instrumentAssignmentTimeline.end(position);
+    }
+
+    /**
+     * Removes the instrument assignment state transition (Set or End) at the specified score position within this part.
+     *
+     * @param position the score position at which to remove the instrument assignment state transition
+     * @return true if an instrument assignment state transition was removed, false otherwise
+     * @throws NullPointerException if position is null
+     */
+    boolean removeInstrumentAssignmentChange(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        return instrumentAssignmentTimeline.remove(position);
+    }
+
+    /**
+     * Retrieves the instrument assignment at the specified score position within this part.
+     *
+     * @param position the score position at which to retrieve the instrument assignment
+     * @return an Optional containing the instrument assignment if present, or an empty Optional if not
+     * @throws NullPointerException if position is null
+     */
+    Optional<InstrumentAssignment> instrumentAssignmentAt(ScorePosition position) {
+        Objects.requireNonNull(position, "position must not be null");
+        return instrumentAssignmentTimeline.latestTransitionAt(position).flatMap(transition -> {
+            if (transition instanceof StateTransition.Set<InstrumentAssignment> set) {
                 return Optional.of(set.value());
             }
             return Optional.empty();
