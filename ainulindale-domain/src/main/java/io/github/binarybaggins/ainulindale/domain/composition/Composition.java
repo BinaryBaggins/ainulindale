@@ -218,7 +218,7 @@ public final class Composition {
             return Result.failure(CompositionErrors.INVALID_VOICE_INDEX);
         }
         Optional<VoiceLocation> location = findVoice(voiceId);
-        if (!location.isPresent()) {
+        if (location.isEmpty()) {
             return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
         }
         Part part = location.get().part();
