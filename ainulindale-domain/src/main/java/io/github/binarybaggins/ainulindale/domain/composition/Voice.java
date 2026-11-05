@@ -51,7 +51,8 @@ public final class Voice {
     }
 
     /**
-     * Returns an unmodifiable collection of all events associated with this voice.
+     * Returns an unmodifiable live view of all events associated with this voice.
+     * Iteration order is unspecified.
      *
      * @return an unmodifiable collection of voice events
      */
@@ -66,6 +67,7 @@ public final class Voice {
      * @param pitch the pitch of the note
      * @return the unique identifier of the newly added note
      * @throws NullPointerException if the range or pitch is null
+     * @throws IllegalArgumentException if range has zero duration
      */
     EventId addNote(ScoreRange range, Pitch pitch) {
         Objects.requireNonNull(range, "range must not be null");
@@ -92,6 +94,7 @@ public final class Voice {
      *
      * @param eventId the unique identifier of the event to be removed
      * @return true if the event was successfully removed, false otherwise
+     * @throws NullPointerException if eventId is null
      */
     boolean removeEvent(EventId eventId) {
         Objects.requireNonNull(eventId, "eventId must not be null");
@@ -115,7 +118,7 @@ public final class Voice {
      *
      * @param eventId the unique identifier of the note event to be changed
      * @param newPitch the new pitch for the note
-     * @return true if the pitch was successfully changed, false otherwise
+     * @return true if the pitch was successfully changed, false if no note with that ID exists
      * @throws NullPointerException if the eventId or newPitch is null
      */
     boolean changeNotePitch(EventId eventId, Pitch newPitch) {
@@ -135,8 +138,9 @@ public final class Voice {
      *
      * @param eventId the unique identifier of the note event to be changed
      * @param newRange the new score range for the note
-     * @return true if the score range was successfully changed, false otherwise
+     * @return true if the score range was successfully changed, false if no note with that ID exists
      * @throws NullPointerException if the eventId or newRange is null
+     * @throws IllegalArgumentException if the note is found and newRange has zero duration
      */
     boolean changeNoteRange(EventId eventId, ScoreRange newRange) {
         Objects.requireNonNull(eventId, "eventId must not be null");
@@ -151,7 +155,8 @@ public final class Voice {
     }
 
     /**
-     * Sets the meter at the specified score position within this voice.
+     * Sets the meter from the specified score position until the next transition,
+     * replacing any transition at that position within this voice.
      *
      * @param position the score position at which to set the meter
      * @param meter the meter to establish at the specified position
@@ -166,6 +171,7 @@ public final class Voice {
 
     /**
      * Ends the meter at the specified score position within this voice.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param position the score position at which to end the meter
      * @throws NullPointerException if position is null
@@ -176,7 +182,8 @@ public final class Voice {
     }
 
     /**
-     * Removes the meter state transition at the specified score position within this voice.
+     * Removes the meter state transition (Set or End) at the specified score position within this voice.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
      *
      * @param position the score position at which to remove the meter change
      * @return true if a meter change was removed, false otherwise
@@ -191,7 +198,8 @@ public final class Voice {
      * Retrieves the local meter at the specified score position within this voice.
      *
      * @param position the score position at which to retrieve the local meter
-     * @return an Optional containing the local meter if present, or an empty Optional if not
+     * @return an Optional containing the local meter, empty if no Set is active at that position;
+     *         does not resolve inherited state
      * @throws NullPointerException if position is null
      */
     Optional<Meter> localMeterAt(ScorePosition position) {
@@ -205,7 +213,8 @@ public final class Voice {
     }
 
     /**
-     * Sets the key signature at the specified score position within this voice.
+     * Sets the key signature from the specified score position until the next transition,
+     * replacing any transition at that position within this voice.
      *
      * @param position the score position at which to set the key signature
      * @param keySignature the key signature to set
@@ -220,6 +229,7 @@ public final class Voice {
 
     /**
      * Ends the key signature at the specified score position within this voice.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param position the score position at which to end the key signature
      * @throws NullPointerException if position is null
@@ -230,7 +240,8 @@ public final class Voice {
     }
 
     /**
-     * Removes the key signature state transition at the specified score position within this voice.
+     * Removes the key signature state transition (Set or End) at the specified score position within this voice.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
      *
      * @param position the score position at which to remove the key signature change
      * @return true if a key signature change was removed, false otherwise
@@ -245,7 +256,8 @@ public final class Voice {
      * Retrieves the local key signature at the specified score position within this voice.
      *
      * @param position the score position at which to retrieve the local key signature
-     * @return an Optional containing the local key signature if present, or an empty Optional if not
+     * @return an Optional containing the local key signature, empty if no Set is active at that position;
+     *         does not resolve inherited state
      * @throws NullPointerException if position is null
      */
     Optional<KeySignature> localKeySignatureAt(ScorePosition position) {

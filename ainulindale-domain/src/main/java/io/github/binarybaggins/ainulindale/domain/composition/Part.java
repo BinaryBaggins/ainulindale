@@ -33,7 +33,6 @@ public final class Part {
      * Creates a new part with a unique identifier and an initial voice.
      *
      * @return a new part instance
-     * @throws NullPointerException if the generated PartId or initial Voice is null
      */
     static Part create() {
         return new Part(PartId.create(), Voice.create());
@@ -49,7 +48,7 @@ public final class Part {
     }
 
     /**
-     * Returns an unmodifiable list of all voices associated with this part.
+     * Returns an unmodifiable live view of all voices associated with this part.
      *
      * @return an unmodifiable list of voices
      */
@@ -126,7 +125,8 @@ public final class Part {
     }
 
     /**
-     * Sets the meter at the specified score position within this part.
+     * Sets the meter from the specified score position until the next transition,
+     * replacing any transition at that position within this part.
      *
      * @param position the score position at which to set the meter
      * @param meter the meter to establish at the specified position
@@ -141,6 +141,7 @@ public final class Part {
 
     /**
      * Ends the meter at the specified score position within this part.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param position the score position at which to end the meter
      * @throws NullPointerException if position is null
@@ -151,7 +152,8 @@ public final class Part {
     }
 
     /**
-     * Removes the meter state transition at the specified score position within this part.
+     * Removes the meter state transition (Set or End) at the specified score position within this part.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
      *
      * @param position the score position at which to remove the meter state transition
      * @return true if a meter state transition was removed, false otherwise
@@ -166,7 +168,8 @@ public final class Part {
      * Retrieves the local meter at the specified score position within this part.
      *
      * @param position the score position at which to retrieve the local meter
-     * @return an Optional containing the local meter if present, or an empty Optional if not
+     * @return an Optional containing the local meter, empty if no Set is active at that position;
+     *         does not resolve inherited state
      * @throws NullPointerException if position is null
      */
     Optional<Meter> localMeterAt(ScorePosition position) {
@@ -180,7 +183,8 @@ public final class Part {
     }
 
     /**
-     * Sets the key signature at the specified score position within this part.
+     * Sets the key signature from the specified score position until the next transition,
+     * replacing any transition at that position within this part.
      *
      * @param position the score position at which to set the key signature
      * @param keySignature the key signature to set
@@ -195,6 +199,7 @@ public final class Part {
 
     /**
      * Ends the key signature at the specified score position within this part.
+     * The local override ends; effective queries fall back to parent scopes until the next local value.
      *
      * @param position the score position at which to end the key signature
      * @throws NullPointerException if position is null
@@ -205,7 +210,8 @@ public final class Part {
     }
 
     /**
-     * Removes the key signature state transition at the specified score position within this part.
+     * Removes the key signature state transition (Set or End) at the specified score position within this part.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
      *
      * @param position the score position at which to remove the key signature state transition
      * @return true if a key signature state transition was removed, false otherwise
@@ -220,7 +226,8 @@ public final class Part {
      * Retrieves the local key signature at the specified score position within this part.
      *
      * @param position the score position at which to retrieve the local key signature
-     * @return an Optional containing the local key signature if present, or an empty Optional if not
+     * @return an Optional containing the local key signature, empty if no Set is active at that position;
+     *         does not resolve inherited state
      * @throws NullPointerException if position is null
      */
     Optional<KeySignature> localKeySignatureAt(ScorePosition position) {
@@ -234,7 +241,8 @@ public final class Part {
     }
 
     /**
-     * Sets the instrument assignment at the specified score position within this part.
+     * Sets the instrument assignment from the specified score position until the next transition,
+     * replacing any transition at that position within this part.
      *
      * @param position the score position at which to set the instrument assignment
      * @param assignment the instrument assignment to set
@@ -249,6 +257,7 @@ public final class Part {
 
     /**
      * Ends the instrument assignment at the specified score position within this part.
+     * The part remains unassigned until the next assignment; there is no inherited fallback.
      *
      * @param position the score position at which to end the instrument assignment
      * @throws NullPointerException if position is null
@@ -260,6 +269,7 @@ public final class Part {
 
     /**
      * Removes the instrument assignment state transition (Set or End) at the specified score position within this part.
+     * Removes only the transition at this exact position, potentially revealing an earlier state.
      *
      * @param position the score position at which to remove the instrument assignment state transition
      * @return true if an instrument assignment state transition was removed, false otherwise
@@ -274,7 +284,7 @@ public final class Part {
      * Retrieves the instrument assignment at the specified score position within this part.
      *
      * @param position the score position at which to retrieve the instrument assignment
-     * @return an Optional containing the instrument assignment if present, or an empty Optional if not
+     * @return an Optional containing the assignment, empty if no Set is active at that position
      * @throws NullPointerException if position is null
      */
     Optional<InstrumentAssignment> instrumentAssignmentAt(ScorePosition position) {
