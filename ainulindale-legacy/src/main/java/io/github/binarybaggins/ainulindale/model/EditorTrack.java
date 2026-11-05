@@ -23,7 +23,6 @@ public class EditorTrack {
         return name;
     }
 
-    // TODO: Track metadata mutations should go through EditorWorkspace.
     // Visibility can be restricted further once package boundaries are refactored.
     public void rename(String newName) {
         this.name = Objects.requireNonNull(newName);

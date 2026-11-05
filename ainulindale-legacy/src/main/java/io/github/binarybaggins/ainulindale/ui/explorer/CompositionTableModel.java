@@ -33,8 +33,8 @@ final class CompositionTableModel extends AbstractTableModel {
     @Override
     public String getColumnName(int column) {
         return switch (column) {
-            case VISIBILITY_COLUMN -> "visible"; // TODO: i18n
-            case NAME_COLUMN -> "Track"; // TODO: i18n
+            case VISIBILITY_COLUMN -> "visible";
+            case NAME_COLUMN -> "Track";
             default -> throw new IndexOutOfBoundsException();
         };
     }
