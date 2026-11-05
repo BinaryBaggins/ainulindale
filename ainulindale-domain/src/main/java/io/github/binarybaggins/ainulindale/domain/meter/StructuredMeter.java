@@ -32,6 +32,7 @@ public record StructuredMeter(List<MeterComponent> components) implements Meter 
 
     /**
      * Calculates the nominal duration of this structured meter.
+     *
      * @return the nominal duration of this structured meter
      */
     public MusicalDuration nominalDuration() {
