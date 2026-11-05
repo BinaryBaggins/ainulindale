@@ -52,7 +52,7 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 
 Accepted ADRs retain their historical decision context. Their original references to open implementation choices are not a current task list. See the [domain implementation status](../architecture/domain-model.md#current-implementation-status) and [module progress](../architecture/module-architecture.md#implementation-progress-and-remaining-work).
 
-The Maven reactor and child POMs, legacy relocation, Result extraction, fundamental values and IDs, basic Composition/Part/Voice/note operations, and Tempo/Meter/KeySignature integration are implemented. Meter and KeySignature include explicit override endings and inheritance resolution. Accepted instruments, relations, and Project concepts are still pending.
+The Maven reactor and child POMs, legacy relocation, Result extraction, fundamental values and IDs, basic Composition/Part/Voice/note operations, and Tempo/Meter/KeySignature integration are implemented. Meter and KeySignature include explicit override endings and inheritance resolution. PitchInterval, WrittenToSoundingTransposition, InstrumentDefinition, and InstrumentAssignment are also implemented. Part-local assignment timelines support setting, ending, removing transitions, and querying through Composition. Relations and Project/Arrangement/Revision/library concepts remain pending. Referential integrity between InstrumentAssignment and the future Project Instrument Library is not implemented; referenced InstrumentDefinitionIds are not checked against a library.
 
 ## Open Decisions
 
@@ -63,7 +63,7 @@ In particular, the following have not yet been finalized:
 - Aggregate APIs and delegation for unimplemented concepts; basic structure, note, and state operations are implemented
 - Public state-timeline read models and query/result shapes for future concepts; basic collection views and command results are implemented
 - Additional domain errors for future concepts; implemented failures use CompositionErrors and ResultError
-- Persistence rehydration mechanism
+- Composition persistence rehydration mechanism
 - Package layout and APIs for unimplemented concepts; initial child POMs are implemented
 - Settings/i18n reuse in desktop; Result extraction into foundation is complete
 - Future persistence and LOTRO/TargetRuleset module boundaries
@@ -77,7 +77,7 @@ In particular, the following have not yet been finalized:
 - Playback and notation interpretation of relations
 - Lyrics association
 - Dynamics scope and temporal model
-- Exact InstrumentDefinition metadata
+- Additional InstrumentDefinition metadata beyond the implemented name and intrinsic transposition
 - Performance/setup models, including capo, scordatura, and alternate tuning
 - Aggregate or application-coordination representation and module placement of Project, Arrangement, InstrumentLibrary, and Revision
 - Revision capture, storage, restoration, and comparison mechanisms
@@ -87,8 +87,6 @@ In particular, the following have not yet been finalized:
 - Standalone Composition exchange format, packaging, and import/export APIs
 - Catalog provenance schema and catalog implementation
 - Target-specific instrument mappings
-- Concrete instrument, assignment, and interval APIs/storage
-- InstrumentAssignment timeline storage
 - Tuning system and technical pitch mapping
 - MetronomeMark and source/notation representation
 - Textual tempo indications and their relationship to quantitative Tempo
@@ -107,7 +105,7 @@ In particular, the following have not yet been finalized:
 - Non-octave-periodic systems
 - Concrete Java APIs and storage for the accepted tonal and scale concepts
 - Concrete format mappings and adapters
-- Public state-timeline read models and remaining state-specific APIs, including InstrumentAssignment
+- Public state-timeline read models and APIs for future state types; Part-local InstrumentAssignment set/end/remove/query operations are implemented
 - MusicalForm
 - PlaybackPlan
 - Editing transactions and undo/redo
