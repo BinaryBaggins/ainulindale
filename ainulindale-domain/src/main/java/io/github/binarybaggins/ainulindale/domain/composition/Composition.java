@@ -91,10 +91,9 @@ public final class Composition {
      */
     public Result<VoiceId> addVoice(PartId partId) {
         Objects.requireNonNull(partId, "partId must not be null");
-        for (Part part : parts) {
-            if (part.id().equals(partId)) {
-                return Result.success(part.addVoice());
-            }
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            return Result.success(part.get().addVoice());
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
@@ -114,12 +113,10 @@ public final class Composition {
         Objects.requireNonNull(voiceId, "voiceId must not be null");
         Objects.requireNonNull(scoreRange, "scoreRange must not be null");
         Objects.requireNonNull(pitch, "pitch must not be null");
-        for (Part part : parts) {
-            for (Voice voice : part.voices()) {
-                if (voice.id().equals(voiceId)) {
-                    return Result.success(voice.addNote(scoreRange, pitch));
-                }
-            }
+        Optional<VoiceLocation> location = findVoice(voiceId);
+        if (location.isPresent()) {
+            Voice voice = location.get().voice();
+            return Result.success(voice.addNote(scoreRange, pitch));
         }
         return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
@@ -153,15 +150,14 @@ public final class Composition {
      */
     public Result<Unit> removeVoice(VoiceId voiceId) {
         Objects.requireNonNull(voiceId, "voiceId must not be null");
-        for (Part part : parts) {
-            if (part.containsVoice(voiceId)) {
-                if (part.hasSingleVoice()) {
-                    return Result.failure(CompositionErrors.CANNOT_REMOVE_LAST_VOICE);
-                }
-
-                part.removeVoice(voiceId);
-                return Result.success(Unit.INSTANCE);
+        Optional<VoiceLocation> location = findVoice(voiceId);
+        if (location.isPresent()) {
+            Part part = location.get().part();
+            if (part.hasSingleVoice()) {
+                return Result.failure(CompositionErrors.CANNOT_REMOVE_LAST_VOICE);
             }
+            part.removeVoice(voiceId);
+            return Result.success(Unit.INSTANCE);
         }
         return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
@@ -221,16 +217,16 @@ public final class Composition {
         if (newIndex < 0) {
             return Result.failure(CompositionErrors.INVALID_VOICE_INDEX);
         }
-        for (Part part : parts) {
-            if (part.containsVoice(voiceId)) {
-                if (newIndex >= part.voices().size()) {
-                    return Result.failure(CompositionErrors.INVALID_VOICE_INDEX);
-                }
-                part.moveVoice(voiceId, newIndex);
-                return Result.success(Unit.INSTANCE);
-            }
+        Optional<VoiceLocation> location = findVoice(voiceId);
+        if (!location.isPresent()) {
+            return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
         }
-        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+        Part part = location.get().part();
+        if (newIndex >= part.voices().size()) {
+            return Result.failure(CompositionErrors.INVALID_VOICE_INDEX);
+        }
+        part.moveVoice(voiceId, newIndex);
+        return Result.success(Unit.INSTANCE);
     }
 
     /**
