@@ -279,4 +279,99 @@ class CompositionTieTest {
         assertEquals(expectedError, failure.error());
         assertEquals(originalTieCount, composition.ties().size());
     }
+
+    @Test
+    void moveTiedNoteToSameVoiceSucceeds() {
+        Composition composition = compositionWithPart();
+        VoiceId voiceId = firstVoiceId(composition);
+
+        EventId source = addNote(composition, voiceId, 0, 1, C4);
+        EventId target = addNote(composition, voiceId, 1, 1, C4);
+
+        assertInstanceOf(Success.class, composition.addTie(source, target));
+
+        assertInstanceOf(Success.class, composition.moveNoteToVoice(source, voiceId));
+
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+
+        assertEquals(2, voice.events().size());
+        assertTrue(
+            voice
+                .events()
+                .stream()
+                .anyMatch(e -> e.id().equals(source))
+        );
+        assertEquals(1, composition.ties().size());
+    }
+
+    @Test
+    void moveTiedNoteToUnknownVoiceReturnsFailure() {
+        Composition composition = compositionWithPart();
+        VoiceId voiceId = firstVoiceId(composition);
+
+        EventId source = addNote(composition, voiceId, 0, 1, C4);
+        EventId target = addNote(composition, voiceId, 1, 1, C4);
+
+        assertInstanceOf(Success.class, composition.addTie(source, target));
+
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.moveNoteToVoice(source, VoiceId.create()));
+
+        assertEquals(CompositionErrors.VOICE_NOT_FOUND, failure.error());
+
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        assertEquals(2, voice.events().size());
+        assertEquals(1, composition.ties().size());
+    }
+
+    @Test
+    void moveTieSourceToDifferentVoiceReturnsFailure() {
+        assertMovingTiedNoteToDifferentVoiceFails(true);
+    }
+
+    @Test
+    void moveTieTargetToDifferentVoiceReturnsFailure() {
+        assertMovingTiedNoteToDifferentVoiceFails(false);
+    }
+
+    private static void assertMovingTiedNoteToDifferentVoiceFails(boolean moveSource) {
+        Composition composition = Composition.create();
+        PartId partId = composition.addPart();
+
+        VoiceId sourceVoiceId = firstVoiceId(composition);
+        Success<?> addedVoice = assertInstanceOf(Success.class, composition.addVoice(partId));
+        VoiceId destinationVoiceId = assertInstanceOf(VoiceId.class, addedVoice.value());
+
+        EventId source = addNote(composition, sourceVoiceId, 0, 1, C4);
+        EventId target = addNote(composition, sourceVoiceId, 1, 1, C4);
+
+        assertInstanceOf(Success.class, composition.addTie(source, target));
+
+        EventId noteToMove = moveSource ? source : target;
+
+        Failure<?> failure = assertInstanceOf(
+            Failure.class,
+            composition.moveNoteToVoice(noteToMove, destinationVoiceId)
+        );
+
+        assertEquals(CompositionErrors.TIE_VOICE_CONSTRAINT_WOULD_BE_BROKEN, failure.error());
+
+        Voice originalVoice = composition.parts().getFirst().voices().getFirst();
+        Voice destinationVoice = composition.parts().getFirst().voices().get(1);
+
+        assertEquals(2, originalVoice.events().size());
+        assertTrue(
+            originalVoice
+                .events()
+                .stream()
+                .anyMatch(e -> e.id().equals(source))
+        );
+        assertTrue(
+            originalVoice
+                .events()
+                .stream()
+                .anyMatch(e -> e.id().equals(target))
+        );
+        assertTrue(destinationVoice.events().isEmpty());
+        assertEquals(1, composition.ties().size());
+    }
 }
