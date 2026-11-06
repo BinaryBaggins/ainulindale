@@ -22,9 +22,11 @@ source.range.end() == target.range.start()
 
 Pitch equality is canonical structural equality, not MIDI-number or sounding-frequency equivalence. Enharmonic acoustic equivalence alone is insufficient.
 
-Exact adjacency expresses continuous continuation: gaps and overlaps are invalid. The two notes retain independent identities and are not merged by the Tie.
+Exact adjacency expresses continuous continuation: gaps and overlaps are invalid. Even though two notes retain independent identities and are not merged by the Tie, editing and deletion of notes present in a Tie should be rejected.
 
-Same-Voice restriction is currently imposed. Future notation rules, editing policies, target validation, or a refined relation decision may lift this restriction if justified by concrete requirements.
+Same-Voice restriction is currently imposed.
+
+Future notation rules, editing policies, target validation, or a refined relation decision may lift this restriction if justified by concrete requirements.
 
 ### Slur
 
@@ -39,4 +41,4 @@ Same-Voice requirements, cross-Voice restrictions, nesting, overlapping Slur res
 - Tie preserves explicit pitch continuity and exact temporal adjacency.
 - Slur preserves its two anchors without duplicating intermediate membership state.
 - Neither relation introduces shared ownership. Ties are restricted to notes within the same Voice.
-- Detailed interpretation, editing APIs, and deletion/cascade behavior remain open.
+- Some detailed interpretations and behaviors remain open.
