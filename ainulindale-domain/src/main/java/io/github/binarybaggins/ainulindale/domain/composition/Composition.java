@@ -3,21 +3,25 @@ package io.github.binarybaggins.ainulindale.domain.composition;
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.domain.event.NoteEvent;
-import io.github.binarybaggins.ainulindale.domain.event.VoiceEvent;
 import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
+import io.github.binarybaggins.ainulindale.domain.identity.RelationId;
 import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
 import io.github.binarybaggins.ainulindale.domain.instrument.InstrumentAssignment;
 import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
+import io.github.binarybaggins.ainulindale.domain.relation.Tie;
 import io.github.binarybaggins.ainulindale.domain.tempo.Tempo;
 import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
 import io.github.binarybaggins.ainulindale.domain.time.ScoreRange;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -38,6 +42,7 @@ public final class Composition {
     private final StateTimeline<Tempo> tempoTimeline = new StateTimeline<>();
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
+    private final Map<RelationId, Tie> ties = new HashMap<>();
 
     private Composition(CompositionId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -69,6 +74,15 @@ public final class Composition {
      */
     public List<Part> parts() {
         return Collections.unmodifiableList(parts);
+    }
+
+    /**
+     * Returns an unmodifiable live view of the ties contained in this composition.
+     *
+     * @return an unmodifiable collection of ties
+     */
+    public Collection<Tie> ties() {
+        return Collections.unmodifiableCollection(ties.values());
     }
 
     /**
@@ -975,6 +989,71 @@ public final class Composition {
             return Result.success(assignment);
         }
         return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Adds a tie between the specified source and target notes.
+     *
+     * @param sourceId the unique identifier of the source note
+     * @param targetId the unique identifier of the target note
+     * @return a successful Result containing the relation ID of the created tie;
+     *          failure if a note is not found, the notes are identical,
+     *          belong to different voices, have mismatched pitches, are not
+     *          adjacent, or the source already has an outgoing tie or the
+     *          target already has an incoming tie
+     * @throws NullPointerException if sourceId or targetId is null
+     */
+    public Result<RelationId> addTie(EventId sourceId, EventId targetId) {
+        Objects.requireNonNull(sourceId, "sourceId must not be null");
+        Objects.requireNonNull(targetId, "targetId must not be null");
+
+        Optional<NoteLocation> sourceNote = findNote(sourceId);
+        Optional<NoteLocation> targetNote = findNote(targetId);
+
+        if (sourceNote.isEmpty() || targetNote.isEmpty()) {
+            return Result.failure(CompositionErrors.NOTE_NOT_FOUND);
+        }
+
+        NoteLocation source = sourceNote.get();
+        NoteLocation target = targetNote.get();
+
+        if (sourceId.equals(targetId)) {
+            return Result.failure(CompositionErrors.TIE_NOTES_IDENTICAL);
+        }
+
+        if (source.voice() != target.voice()) {
+            return Result.failure(CompositionErrors.TIE_NOTES_IN_DIFFERENT_VOICES);
+        }
+
+        if (!source.note().pitch().equals(target.note().pitch())) {
+            return Result.failure(CompositionErrors.TIE_NOTES_PITCH_MISMATCH);
+        }
+
+        if (!source.note().range().end().equals(target.note().range().start())) {
+            return Result.failure(CompositionErrors.TIE_NOTES_NOT_ADJACENT);
+        }
+
+        if (
+            ties
+                .values()
+                .stream()
+                .anyMatch(t -> t.sourceNoteId().equals(sourceId))
+        ) {
+            return Result.failure(CompositionErrors.TIE_SOURCE_ALREADY_A_SOURCE);
+        }
+
+        if (
+            ties
+                .values()
+                .stream()
+                .anyMatch(t -> t.targetNoteId().equals(targetId))
+        ) {
+            return Result.failure(CompositionErrors.TIE_TARGET_ALREADY_A_TARGET);
+        }
+
+        Tie tie = Tie.create(sourceId, targetId);
+        ties.put(tie.id(), tie);
+        return Result.success(tie.id());
     }
 
     private Optional<Part> findPart(PartId partId) {
