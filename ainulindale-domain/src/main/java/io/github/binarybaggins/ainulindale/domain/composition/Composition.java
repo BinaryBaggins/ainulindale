@@ -3,6 +3,7 @@ package io.github.binarybaggins.ainulindale.domain.composition;
 import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.Unit;
 import io.github.binarybaggins.ainulindale.domain.event.NoteEvent;
+import io.github.binarybaggins.ainulindale.domain.event.VoiceEvent;
 import io.github.binarybaggins.ainulindale.domain.identity.CompositionId;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
 import io.github.binarybaggins.ainulindale.domain.identity.PartId;
@@ -994,6 +995,21 @@ public final class Composition {
             for (Voice voice : part.voices()) {
                 if (voice.id().equals(voiceId)) {
                     return Optional.of(new VoiceLocation(part, voice));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private record NoteLocation(Voice voice, NoteEvent note) {}
+
+    private Optional<NoteLocation> findNote(EventId eventId) {
+        Objects.requireNonNull(eventId, "eventId must not be null");
+        for (Part part : parts) {
+            for (Voice voice : part.voices()) {
+                NoteEvent note = voice.findNote(eventId);
+                if (note != null) {
+                    return Optional.of(new NoteLocation(voice, note));
                 }
             }
         }
