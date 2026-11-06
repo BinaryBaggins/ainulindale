@@ -2079,7 +2079,7 @@ Pitch comparison uses canonical structural Pitch equality, not MIDI note numbers
 
 Temporal adjacency is exact: neither gaps nor overlaps form a canonical Tie. The notes remain independently identified entities; the relation does not merge them.
 
-No same-Voice restriction is imposed. A future concrete requirement may justify constraints in notation rules, editing policy, target validation, or a refined relation decision.
+A same-Voice restriction is imposed. A future concrete requirement may lift constraints in notation rules, editing policy, target validation, or a refined relation decision.
 
 ### Slur
 
