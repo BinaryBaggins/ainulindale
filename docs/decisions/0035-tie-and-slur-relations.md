@@ -22,7 +22,9 @@ source.range.end() == target.range.start()
 
 Pitch equality is canonical structural equality, not MIDI-number or sounding-frequency equivalence. Enharmonic acoustic equivalence alone is insufficient.
 
-Exact adjacency expresses continuous continuation: gaps and overlaps are invalid. Even though two notes retain independent identities and are not merged by the Tie, editing and deletion of notes present in a Tie should be rejected.
+Exact adjacency expresses continuous continuation: gaps and overlaps are invalid. The two notes retain independent identities and are not merged by the Tie.
+
+Any operation that would violate an existing Tie's invariants must be rejected. Changes that preserve these invariants remain allowed. Removing either referenced note, directly or through removal of its containing Voice or Part, must be rejected while the Tie exists.
 
 Same-Voice restriction is currently imposed.
 
