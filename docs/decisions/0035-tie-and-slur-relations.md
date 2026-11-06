@@ -38,5 +38,5 @@ Same-Voice requirements, cross-Voice restrictions, nesting, overlapping Slur res
 
 - Tie preserves explicit pitch continuity and exact temporal adjacency.
 - Slur preserves its two anchors without duplicating intermediate membership state.
-- Neither relation introduces shared ownership or current same-Voice restrictions.
+- Neither relation introduces shared ownership. Ties are restricted to notes within the same Voice.
 - Detailed interpretation, editing APIs, and deletion/cascade behavior remain open.
