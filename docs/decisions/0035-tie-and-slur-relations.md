@@ -24,7 +24,7 @@ Pitch equality is canonical structural equality, not MIDI-number or sounding-fre
 
 Exact adjacency expresses continuous continuation: gaps and overlaps are invalid. The two notes retain independent identities and are not merged by the Tie.
 
-No same-Voice restriction is currently imposed. Future notation rules, editing policies, target validation, or a refined relation decision may impose a restriction if justified by concrete requirements.
+Same-Voice restriction is currently imposed. Future notation rules, editing policies, target validation, or a refined relation decision may lift this restriction if justified by concrete requirements.
 
 ### Slur
 
