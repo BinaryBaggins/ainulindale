@@ -149,7 +149,7 @@ public final class Composition {
 
         for (Tie tie : ties()) {
             if (tie.sourceNoteId().equals(eventId) || tie.targetNoteId().equals(eventId)) {
-                return Result.failure(CompositionErrors.CANNOT_REMOVE_NOTE_PARTICIPATING_IN_TIE);
+                return Result.failure(CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
             }
         }
 
@@ -187,7 +187,7 @@ public final class Composition {
         Voice voice = location.get().voice();
         for (Tie tie : ties.values()) {
             if (voice.findNote(tie.sourceNoteId()) != null || voice.findNote(tie.targetNoteId()) != null) {
-                return Result.failure(CompositionErrors.CANNOT_REMOVE_VOICE_CONTAINING_TIED_NOTES);
+                return Result.failure(CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
             }
         }
 
@@ -200,27 +200,29 @@ public final class Composition {
      *
      * @param partId the unique identifier of the part to be removed
      * @return a result indicating success if the part was removed, or an error if the part was not found
+     *         or if the part contains tied notes
      * @throws NullPointerException if the partId is null
      */
     public Result<Unit> removePart(PartId partId) {
         Objects.requireNonNull(partId, "partId must not be null");
 
-        for (Tie tie : ties()) {
-            for (Part part : parts) {
-                for (Voice voice : part.voices()) {
-                    NoteEvent note = voice.findNote(tie.sourceNoteId());
-                    if (note != null && part.id().equals(partId)) {
-                        return Result.failure(CompositionErrors.CANNOT_REMOVE_PART_CONTAINING_TIED_NOTES);
-                    }
+        Optional<Part> location = findPart(partId);
+        if (location.isEmpty()) {
+            return Result.failure(CompositionErrors.PART_NOT_FOUND);
+        }
+
+        Part part = location.get();
+
+        for (Voice voice : part.voices()) {
+            for (Tie tie : ties.values()) {
+                if (voice.findNote(tie.sourceNoteId()) != null || voice.findNote(tie.targetNoteId()) != null) {
+                    return Result.failure(CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
                 }
             }
         }
 
-        if (parts.removeIf(part -> part.id().equals(partId))) {
-            return Result.success(Unit.INSTANCE);
-        }
-
-        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+        parts.remove(part);
+        return Result.success(Unit.INSTANCE);
     }
 
     /**
@@ -280,28 +282,36 @@ public final class Composition {
      *
      * @param noteId the unique identifier of the note event to be changed
      * @param newPitch the new pitch for the note
-     * @return a result indicating success if the pitch was successfully changed, or an error
-     * if the note was not found
+     * @return a result indicating success if the pitch was successfully changed,
+     *         or failure if the note was not found or the change would violate
+     *         the pitch equality of an existing tie
      * @throws NullPointerException if the noteId or newPitch is null
      */
     public Result<Unit> changeNotePitch(EventId noteId, Pitch newPitch) {
         Objects.requireNonNull(noteId, "noteId must not be null");
         Objects.requireNonNull(newPitch, "newPitch must not be null");
 
-        for (Tie tie : ties()) {
-            if (tie.sourceNoteId().equals(noteId) || tie.targetNoteId().equals(noteId)) {
-                return Result.failure(CompositionErrors.CANNOT_CHANGE_PITCH_OF_NOTE_PARTICIPATING_IN_TIE);
-            }
+        Optional<NoteLocation> location = findNote(noteId);
+        if (location.isEmpty()) {
+            return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
         }
 
-        for (Part part : parts) {
-            for (Voice voice : part.voices()) {
-                if (voice.changeNotePitch(noteId, newPitch)) {
-                    return Result.success(Unit.INSTANCE);
-                }
-            }
+        NoteLocation note = location.get();
+
+        boolean pitchChanges = !note.note().pitch().equals(newPitch);
+
+        if (
+            pitchChanges &&
+            ties
+                .values()
+                .stream()
+                .anyMatch(tie -> tie.sourceNoteId().equals(noteId) || tie.targetNoteId().equals(noteId))
+        ) {
+            return Result.failure(CompositionErrors.TIE_PITCH_EQUALITY_WOULD_BE_BROKEN);
         }
-        return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+
+        note.voice().changeNotePitch(noteId, newPitch);
+        return Result.success(Unit.INSTANCE);
     }
 
     /**
@@ -309,22 +319,43 @@ public final class Composition {
      *
      * @param noteId the unique identifier of the note event to be changed
      * @param newRange the new score range for the note
-     * @return a result indicating success if the score range was successfully changed, or an error
-     * if the note was not found
+     * @return a result indicating success if the score range was successfully changed,
+     *         or failure if the note was not found or the change would violate
+     *         the adjacency of an existing tie
      * @throws NullPointerException if the noteId or newRange is null
-     * @throws IllegalArgumentException if the note is found and newRange has zero duration
      */
     public Result<Unit> changeNoteRange(EventId noteId, ScoreRange newRange) {
         Objects.requireNonNull(noteId, "noteId must not be null");
         Objects.requireNonNull(newRange, "newRange must not be null");
-        for (Part part : parts) {
-            for (Voice voice : part.voices()) {
-                if (voice.changeNoteRange(noteId, newRange)) {
-                    return Result.success(Unit.INSTANCE);
-                }
-            }
+
+        Optional<NoteLocation> location = findNote(noteId);
+        if (location.isEmpty()) {
+            return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
         }
-        return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+
+        boolean participatesInTieAsSource = ties
+            .values()
+            .stream()
+            .anyMatch(tie -> tie.sourceNoteId().equals(noteId));
+
+        boolean participatesInTieAsTarget = ties
+            .values()
+            .stream()
+            .anyMatch(tie -> tie.targetNoteId().equals(noteId));
+
+        NoteLocation noteLocation = location.get();
+        ScoreRange currentRange = noteLocation.note().range();
+
+        if (participatesInTieAsSource && !currentRange.end().equals(newRange.end())) {
+            return Result.failure(CompositionErrors.TIE_ADJACENCY_WOULD_BE_BROKEN);
+        }
+
+        if (participatesInTieAsTarget && !currentRange.start().equals(newRange.start())) {
+            return Result.failure(CompositionErrors.TIE_ADJACENCY_WOULD_BE_BROKEN);
+        }
+
+        noteLocation.voice().changeNoteRange(noteId, newRange);
+        return Result.success(Unit.INSTANCE);
     }
 
     /**
@@ -333,8 +364,9 @@ public final class Composition {
      *
      * @param noteId the unique identifier of the note event to be moved
      * @param targetVoiceId the unique identifier of the target voice
-     * @return a result indicating success if the note was successfully moved, or an error
-     * if the note or target voice was not found
+     * @return a result indicating success if the note was successfully moved,
+     *         or failure if the note or target voice was not found, or if the move would violate
+     *         the voice constraint of an existing tie
      * @throws NullPointerException if the noteId or targetVoiceId is null
      * @throws IllegalStateException if a duplicate event ID is found in the target voice or
      * if the source note disappears during the transfer
@@ -373,6 +405,15 @@ public final class Composition {
 
         if (sourceVoice == targetVoice) {
             return Result.success(Unit.INSTANCE);
+        }
+
+        boolean participatesInTie = ties
+            .values()
+            .stream()
+            .anyMatch(tie -> tie.sourceNoteId().equals(noteId) || tie.targetNoteId().equals(noteId));
+
+        if (participatesInTie) {
+            return Result.failure(CompositionErrors.TIE_VOICE_CONSTRAINT_WOULD_BE_BROKEN);
         }
 
         if (!targetVoice.addEvent(note)) {
@@ -1077,7 +1118,7 @@ public final class Composition {
                 .stream()
                 .anyMatch(t -> t.sourceNoteId().equals(sourceId))
         ) {
-            return Result.failure(CompositionErrors.TIE_SOURCE_ALREADY_A_SOURCE);
+            return Result.failure(CompositionErrors.TIE_SOURCE_ALREADY_HAS_OUTGOING_TIE);
         }
 
         if (
@@ -1086,7 +1127,7 @@ public final class Composition {
                 .stream()
                 .anyMatch(t -> t.targetNoteId().equals(targetId))
         ) {
-            return Result.failure(CompositionErrors.TIE_TARGET_ALREADY_A_TARGET);
+            return Result.failure(CompositionErrors.TIE_TARGET_ALREADY_HAS_INCOMING_TIE);
         }
 
         Tie tie = Tie.create(sourceId, targetId);

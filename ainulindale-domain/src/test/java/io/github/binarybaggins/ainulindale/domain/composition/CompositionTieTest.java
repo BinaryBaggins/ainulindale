@@ -164,7 +164,7 @@ class CompositionTieTest {
 
         assertInstanceOf(Success.class, composition.addTie(source, firstTarget));
 
-        assertFailure(composition, source, secondTarget, CompositionErrors.TIE_SOURCE_ALREADY_A_SOURCE);
+        assertFailure(composition, source, secondTarget, CompositionErrors.TIE_SOURCE_ALREADY_HAS_OUTGOING_TIE);
     }
 
     @Test
@@ -178,7 +178,7 @@ class CompositionTieTest {
 
         assertInstanceOf(Success.class, composition.addTie(firstSource, target));
 
-        assertFailure(composition, secondSource, target, CompositionErrors.TIE_TARGET_ALREADY_A_TARGET);
+        assertFailure(composition, secondSource, target, CompositionErrors.TIE_TARGET_ALREADY_HAS_INCOMING_TIE);
     }
 
     @Test

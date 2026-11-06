@@ -94,31 +94,40 @@ final class CompositionErrors {
     /**
      * Error indicating that the source note is already a source in another tie.
      */
-    static final ResultError TIE_SOURCE_ALREADY_A_SOURCE = new ResultError("Composition.TieSourceAlreadyASource");
+    static final ResultError TIE_SOURCE_ALREADY_HAS_OUTGOING_TIE = new ResultError(
+        "Composition.TieSourceAlreadyHasOutgoingTie"
+    );
 
     /**
      * Error indicating that the target note is already a target in another tie.
      */
-    static final ResultError TIE_TARGET_ALREADY_A_TARGET = new ResultError("Composition.TieTargetAlreadyATarget");
+    static final ResultError TIE_TARGET_ALREADY_HAS_INCOMING_TIE = new ResultError(
+        "Composition.TieTargetAlreadyHasIncomingTie"
+    );
 
     /**
      * Error indicating that a note participating in a tie cannot be removed from the composition.
      */
-    static final ResultError CANNOT_REMOVE_NOTE_PARTICIPATING_IN_TIE = new ResultError(
-        "Composition.CannotRemoveNoteParticipatingInTie"
+    static final ResultError TIE_NOTE_REFERENCE_WOULD_BE_BROKEN = new ResultError(
+        "Composition.TieNoteReferenceWouldBeBroken"
     );
 
     /**
-     * Error indicating that a voice containing tied notes cannot be removed from the composition.
+     * Error indicating that the pitch equality of a tie would be broken by changing the pitch of a note.
      */
-    static final ResultError CANNOT_REMOVE_VOICE_CONTAINING_TIED_NOTES = new ResultError(
-        "Composition.CannotRemoveVoiceContainingTiedNotes"
+    static final ResultError TIE_PITCH_EQUALITY_WOULD_BE_BROKEN = new ResultError(
+        "Composition.TiePitchEqualityWouldBeBroken"
     );
 
     /**
-     * Error indicating that a part containing tied notes cannot be removed from the composition.
+     * Error indicating that the adjacency of a tie would be broken by changing the score range of a note.
      */
-    static final ResultError CANNOT_REMOVE_PART_CONTAINING_TIED_NOTES = new ResultError(
-        "Composition.CannotRemovePartContainingTiedNotes"
+    static final ResultError TIE_ADJACENCY_WOULD_BE_BROKEN = new ResultError("Composition.TieAdjacencyWouldBeBroken");
+
+    /**
+     * Error indicating that the voice constraint of a tie would be broken by changing the voice of a note.
+     */
+    static final ResultError TIE_VOICE_CONSTRAINT_WOULD_BE_BROKEN = new ResultError(
+        "Composition.TieVoiceConstraintWouldBeBroken"
     );
 }
