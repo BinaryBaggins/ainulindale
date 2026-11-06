@@ -3,10 +3,12 @@ package io.github.binarybaggins.ainulindale.domain.composition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.binarybaggins.ainulindale.core.result.Failure;
+import io.github.binarybaggins.ainulindale.core.result.Result;
 import io.github.binarybaggins.ainulindale.core.result.ResultError;
 import io.github.binarybaggins.ainulindale.core.result.Success;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
@@ -373,5 +375,295 @@ class CompositionTieTest {
         );
         assertTrue(destinationVoice.events().isEmpty());
         assertEquals(1, composition.ties().size());
+    }
+
+    @Test
+    void removeTiePreservesReferencedNotes() {
+        TiedPair pair = tiedPair();
+        RelationId tieId = pair.composition().ties().iterator().next().id();
+        Collection<Tie> view = pair.composition().ties();
+
+        assertInstanceOf(Success.class, pair.composition().removeTie(tieId));
+
+        assertTrue(view.isEmpty());
+        assertNotNull(pair.voice().findNote(pair.source()));
+        assertNotNull(pair.voice().findNote(pair.target()));
+    }
+
+    @Test
+    void removeUnknownTieReturnsFailure() {
+        Composition composition = Composition.create();
+
+        assertRejected(composition.removeTie(RelationId.create()), CompositionErrors.TIE_NOT_FOUND);
+    }
+
+    @Test
+    void removeTieRejectsNullId() {
+        Composition composition = Composition.create();
+
+        assertThrows(NullPointerException.class, () -> composition.removeTie(null));
+    }
+
+    @Test
+    void removeTieFromChainPreservesRemainingTie() {
+        Composition composition = compositionWithPart();
+        VoiceId voiceId = firstVoiceId(composition);
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+
+        EventId first = addNote(composition, voiceId, 0, 1, C4);
+        EventId middle = addNote(composition, voiceId, 1, 1, C4);
+        EventId last = addNote(composition, voiceId, 2, 1, C4);
+
+        Success<?> firstTie = assertInstanceOf(Success.class, composition.addTie(first, middle));
+        Success<?> secondTie = assertInstanceOf(Success.class, composition.addTie(middle, last));
+
+        RelationId firstId = assertInstanceOf(RelationId.class, firstTie.value());
+        RelationId secondId = assertInstanceOf(RelationId.class, secondTie.value());
+
+        assertInstanceOf(Success.class, composition.removeTie(firstId));
+
+        assertEquals(1, composition.ties().size());
+
+        Tie remaining = composition.ties().iterator().next();
+        assertEquals(secondId, remaining.id());
+        assertEquals(middle, remaining.sourceNoteId());
+        assertEquals(last, remaining.targetNoteId());
+
+        assertEquals(3, voice.events().size());
+    }
+
+    @Test
+    void removeTieAllowsSubsequentNoteRemoval() {
+        TiedPair pair = tiedPair();
+        RelationId tieId = pair.composition().ties().iterator().next().id();
+
+        assertInstanceOf(Success.class, pair.composition().removeTie(tieId));
+        assertInstanceOf(Success.class, pair.composition().removeEvent(pair.source()));
+
+        assertEquals(1, pair.voice().events().size());
+        assertNotNull(pair.voice().findNote(pair.target()));
+        assertTrue(pair.composition().ties().isEmpty());
+    }
+
+    @Test
+    void removeTiedSourceReturnsFailureWithoutMutation() {
+        assertRemovingTiedNoteFails(true);
+    }
+
+    @Test
+    void removeTiedTargetReturnsFailureWithoutMutation() {
+        assertRemovingTiedNoteFails(false);
+    }
+
+    private static void assertRemovingTiedNoteFails(boolean removeSource) {
+        TiedPair pair = tiedPair();
+        EventId noteId = removeSource ? pair.source() : pair.target();
+
+        assertRejected(pair.composition().removeEvent(noteId), CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
+
+        assertEquals(2, pair.voice().events().size());
+        assertNotNull(pair.voice().findNote(pair.source()));
+        assertNotNull(pair.voice().findNote(pair.target()));
+        assertEquals(1, pair.composition().ties().size());
+    }
+
+    @Test
+    void removeVoiceContainingTiedNotesReturnsFailure() {
+        TiedPair pair = tiedPair();
+        Composition composition = pair.composition();
+        PartId partId = composition.parts().getFirst().id();
+
+        assertInstanceOf(Success.class, composition.addVoice(partId));
+
+        assertRejected(
+            composition.removeVoice(pair.voice().id()),
+            CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN
+        );
+
+        assertEquals(2, composition.parts().getFirst().voices().size());
+        assertEquals(2, pair.voice().events().size());
+        assertEquals(1, composition.ties().size());
+    }
+
+    @Test
+    void removePartContainingTiedNotesReturnsFailure() {
+        TiedPair pair = tiedPair();
+        Composition composition = pair.composition();
+        PartId partId = composition.parts().getFirst().id();
+
+        assertRejected(composition.removePart(partId), CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
+
+        assertEquals(1, composition.parts().size());
+        assertEquals(partId, composition.parts().getFirst().id());
+        assertEquals(2, pair.voice().events().size());
+        assertEquals(1, composition.ties().size());
+    }
+
+    @Test
+    void removeUnrelatedPartPreservesExistingTie() {
+        TiedPair pair = tiedPair();
+        Composition composition = pair.composition();
+        PartId unrelatedPart = composition.addPart();
+
+        assertInstanceOf(Success.class, composition.removePart(unrelatedPart));
+
+        assertEquals(1, composition.parts().size());
+        assertEquals(2, pair.voice().events().size());
+        assertEquals(1, composition.ties().size());
+    }
+
+    @Test
+    void changeTiedSourcePitchReturnsFailure() {
+        assertChangingTiedPitchFails(true);
+    }
+
+    @Test
+    void changeTiedTargetPitchReturnsFailure() {
+        assertChangingTiedPitchFails(false);
+    }
+
+    private static void assertChangingTiedPitchFails(boolean changeSource) {
+        TiedPair pair = tiedPair();
+        EventId noteId = changeSource ? pair.source() : pair.target();
+
+        assertRejected(
+            pair.composition().changeNotePitch(noteId, D4),
+            CompositionErrors.TIE_PITCH_EQUALITY_WOULD_BE_BROKEN
+        );
+
+        assertEquals(C4, pair.voice().findNote(noteId).pitch());
+        assertEquals(1, pair.composition().ties().size());
+    }
+
+    @Test
+    void changeTiedNoteToSamePitchSucceeds() {
+        TiedPair pair = tiedPair();
+
+        assertInstanceOf(Success.class, pair.composition().changeNotePitch(pair.source(), C4));
+
+        assertEquals(C4, pair.voice().findNote(pair.source()).pitch());
+        assertEquals(1, pair.composition().ties().size());
+    }
+
+    @Test
+    void changeUnrelatedNotePitchPreservesExistingTie() {
+        TiedPair pair = tiedPair();
+
+        EventId unrelated = addNote(pair.composition(), pair.voice().id(), 2, 1, C4);
+
+        assertInstanceOf(Success.class, pair.composition().changeNotePitch(unrelated, D4));
+
+        assertEquals(D4, pair.voice().findNote(unrelated).pitch());
+        assertEquals(C4, pair.voice().findNote(pair.source()).pitch());
+        assertEquals(C4, pair.voice().findNote(pair.target()).pitch());
+        assertEquals(1, pair.composition().ties().size());
+    }
+
+    @Test
+    void changeTiedSourceStartPreservingEndSucceeds() {
+        TiedPair pair = tiedPair();
+
+        ScoreRange newRange = new ScoreRange(ScorePosition.of(1, 8), MusicalDuration.of(1, 8));
+
+        assertInstanceOf(Success.class, pair.composition().changeNoteRange(pair.source(), newRange));
+
+        assertEquals(newRange, pair.voice().findNote(pair.source()).range());
+        assertEquals(1, pair.composition().ties().size());
+    }
+
+    @Test
+    void changeTiedTargetEndPreservingStartSucceeds() {
+        TiedPair pair = tiedPair();
+
+        ScoreRange newRange = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 2));
+
+        assertInstanceOf(Success.class, pair.composition().changeNoteRange(pair.target(), newRange));
+
+        assertEquals(newRange, pair.voice().findNote(pair.target()).range());
+        assertEquals(1, pair.composition().ties().size());
+    }
+
+    @Test
+    void changeTiedSourceEndReturnsFailure() {
+        TiedPair pair = tiedPair();
+        ScoreRange original = pair.voice().findNote(pair.source()).range();
+
+        ScoreRange newRange = new ScoreRange(ScorePosition.ZERO, MusicalDuration.of(1, 2));
+
+        assertRejected(
+            pair.composition().changeNoteRange(pair.source(), newRange),
+            CompositionErrors.TIE_ADJACENCY_WOULD_BE_BROKEN
+        );
+
+        assertEquals(original, pair.voice().findNote(pair.source()).range());
+        assertEquals(1, pair.composition().ties().size());
+    }
+
+    @Test
+    void changeTiedTargetStartReturnsFailure() {
+        TiedPair pair = tiedPair();
+        ScoreRange original = pair.voice().findNote(pair.target()).range();
+
+        ScoreRange newRange = new ScoreRange(ScorePosition.of(1, 2), MusicalDuration.of(1, 4));
+
+        assertRejected(
+            pair.composition().changeNoteRange(pair.target(), newRange),
+            CompositionErrors.TIE_ADJACENCY_WOULD_BE_BROKEN
+        );
+
+        assertEquals(original, pair.voice().findNote(pair.target()).range());
+        assertEquals(1, pair.composition().ties().size());
+    }
+
+    @Test
+    void changeMiddleNoteRangeInTieChainRejectsBothBoundaryChanges() {
+        Composition composition = compositionWithPart();
+        VoiceId voiceId = firstVoiceId(composition);
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+
+        EventId first = addNote(composition, voiceId, 0, 1, C4);
+        EventId middle = addNote(composition, voiceId, 1, 1, C4);
+        EventId last = addNote(composition, voiceId, 2, 1, C4);
+
+        assertInstanceOf(Success.class, composition.addTie(first, middle));
+        assertInstanceOf(Success.class, composition.addTie(middle, last));
+
+        ScoreRange original = voice.findNote(middle).range();
+
+        ScoreRange changedStart = new ScoreRange(ScorePosition.of(3, 8), MusicalDuration.of(1, 8));
+
+        ScoreRange changedEnd = new ScoreRange(ScorePosition.of(1, 4), MusicalDuration.of(1, 2));
+
+        assertRejected(
+            composition.changeNoteRange(middle, changedStart),
+            CompositionErrors.TIE_ADJACENCY_WOULD_BE_BROKEN
+        );
+
+        assertRejected(
+            composition.changeNoteRange(middle, changedEnd),
+            CompositionErrors.TIE_ADJACENCY_WOULD_BE_BROKEN
+        );
+
+        assertEquals(original, voice.findNote(middle).range());
+        assertEquals(2, composition.ties().size());
+    }
+
+    private record TiedPair(Composition composition, Voice voice, EventId source, EventId target) {}
+
+    private static TiedPair tiedPair() {
+        Composition composition = compositionWithPart();
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+
+        EventId source = addNote(composition, voice.id(), 0, 1, C4);
+        EventId target = addNote(composition, voice.id(), 1, 1, C4);
+
+        assertInstanceOf(Success.class, composition.addTie(source, target));
+
+        return new TiedPair(composition, voice, source, target);
+    }
+
+    private static void assertRejected(Result<?> result, ResultError expectedError) {
+        Failure<?> failure = assertInstanceOf(Failure.class, result);
+        assertEquals(expectedError, failure.error());
     }
 }
