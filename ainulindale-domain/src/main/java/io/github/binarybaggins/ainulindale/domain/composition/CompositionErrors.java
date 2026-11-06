@@ -30,6 +30,11 @@ final class CompositionErrors {
     static final ResultError NOTE_NOT_FOUND = new ResultError("Composition.NoteNotFound");
 
     /**
+     * Error indicating that the specified tie was not found within the composition.
+     */
+    static final ResultError TIE_NOT_FOUND = new ResultError("Composition.TieNotFound");
+
+    /**
      * Error indicating that an attempt was made to remove the last remaining voice in a part.
      */
     static final ResultError CANNOT_REMOVE_LAST_VOICE = new ResultError("Composition.CannotRemoveLastVoice");
@@ -95,4 +100,25 @@ final class CompositionErrors {
      * Error indicating that the target note is already a target in another tie.
      */
     static final ResultError TIE_TARGET_ALREADY_A_TARGET = new ResultError("Composition.TieTargetAlreadyATarget");
+
+    /**
+     * Error indicating that a note participating in a tie cannot be removed from the composition.
+     */
+    static final ResultError CANNOT_REMOVE_NOTE_PARTICIPATING_IN_TIE = new ResultError(
+        "Composition.CannotRemoveNoteParticipatingInTie"
+    );
+
+    /**
+     * Error indicating that a voice containing tied notes cannot be removed from the composition.
+     */
+    static final ResultError CANNOT_REMOVE_VOICE_CONTAINING_TIED_NOTES = new ResultError(
+        "Composition.CannotRemoveVoiceContainingTiedNotes"
+    );
+
+    /**
+     * Error indicating that a part containing tied notes cannot be removed from the composition.
+     */
+    static final ResultError CANNOT_REMOVE_PART_CONTAINING_TIED_NOTES = new ResultError(
+        "Composition.CannotRemovePartContainingTiedNotes"
+    );
 }
