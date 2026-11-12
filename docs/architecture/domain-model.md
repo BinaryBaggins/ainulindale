@@ -14,12 +14,14 @@ Unresolved design questions are explicitly marked as open.
 
 The accepted model is broader than the implementation. Historical ADRs retain their original rationale; current progress is recorded here and in [module-architecture.md](module-architecture.md).
 
-- Rational, score-time values, Pitch/PitchAlteration, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented. RelationId does not imply an implementation of musical relations.
+- Rational, score-time values, Pitch/PitchAlteration, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented.
 - [Composition](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/Composition.java), Part, Voice, VoiceEvent, and NoteEvent implement structure, ordering, note creation/removal, pitch/range changes, and movement between Voices.
 - Tempo is integrated at Composition scope. Meter and KeySignature support Composition/Part/Voice state, inherited effective queries, and explicit ending/removal of overrides. Internal StateTimeline uses Set/End transitions in a TreeMap.
+- Composition metadata supports an optional title and optional Part and Voice names. Mutations are exposed through Composition, with semantic validation errors for blank values. Names are independent of entity identity, and duplicate names are permitted.
+- Composition-owned Tie and Slur relations are implemented, including referential integrity and relation-specific validation during aggregate mutations.
 - [CompositionErrors](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/CompositionErrors.java) provides semantic ResultError codes for implemented failures, using the Result infrastructure extracted into foundation.
 - PitchInterval, WrittenToSoundingTransposition, InstrumentDefinition, and InstrumentAssignment are implemented. Part-local assignment timelines support setting, ending, removing transitions, and querying through Composition. Referential integrity between InstrumentAssignment and the future Project Instrument Library is not implemented; referenced InstrumentDefinitionIds are not checked against a library.
-- PitchClass, ScaleDegree, ScaleStructure, TonalContext, relations, and Project/Arrangement/Revision/library concepts remain unimplemented. Metadata editing, Composition persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
+- PitchClass, ScaleDegree, ScaleStructure, TonalContext, and Project/Arrangement/Revision/library concepts remain unimplemented. Additional composition metadata, Composition persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
 
 The [domain tests](../../ainulindale-domain/src/test/java/io/github/binarybaggins/ainulindale/domain) cover implemented values, aggregate operations, and state behavior. This review inspected source and tests; it does not report a new test run.
 
@@ -323,21 +325,64 @@ PartId partId = voiceId;
 
 ## 8. Metadata and Names
 
-Names are metadata, not identity.
+Names are optional canonical metadata, not identity.
 
-Multiple parts may have the same name:
+The implemented model supports:
+
+- An optional Composition title.
+- An optional name for each Part.
+- An optional name for each Voice.
+
+All three properties are independent of entity identity, ownership, and ordering.
+
+### Naming Semantics
+
+An absent title or name is valid and represented by an empty `Optional<String>` when queried.
+
+Non-blank strings are valid names. Empty and whitespace-only strings are rejected with semantic Result failures.
+
+Null arguments are rejected with `NullPointerException`.
+
+Valid strings are preserved exactly, including leading and trailing whitespace. No automatic trimming or normalization is performed.
+
+Clearing an already absent title or name succeeds without changing state.
+
+### Identity and Uniqueness
+
+Names are not required to be unique.
+
+Multiple Parts may share the same name:
 
 ```text
-Lute
-Lute
-Lute
+Composition
+├── Part "Lute"
+├── Part "Lute"
+└── Part "Lute"
 ```
 
-A name may be absent where appropriate.
+Multiple Voices may also share the same name, including within the same Part.
 
-A part's identity is determined exclusively by its `PartId`.
+Identity is determined exclusively by the corresponding typed ID, never by a title or name.
 
-The same principle applies to voices.
+Changing or clearing metadata does not modify entity identity, membership, ordering, musical events, state timelines, or relations.
+
+### Mutation Boundary
+
+Metadata mutations enter through Composition as the aggregate root.
+
+Composition exposes operations for assigning and clearing its title, as well as assigning, clearing, and querying Part and Voice names through their typed IDs.
+
+Part and Voice do not expose public name mutation methods.
+
+Failed metadata mutations preserve the existing aggregate state.
+
+### Scope
+
+This implementation covers only Composition title and Part/Voice naming.
+
+Additional metadata such as authorship, descriptions, credits, and tags remains open and will be modeled when concrete domain requirements justify it.
+
+No generic metadata map or metadata framework is introduced.
 
 ---
 
