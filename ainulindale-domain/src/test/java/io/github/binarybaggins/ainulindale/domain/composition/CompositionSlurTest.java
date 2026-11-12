@@ -187,4 +187,66 @@ class CompositionSlurTest {
         assertEquals(expectedError, failure.error());
         assertEquals(originalCount, composition.slurs().size());
     }
+
+    @Test
+    void removeSlurPreservesReferencedNotes() {
+        Composition composition = compositionWithPart();
+        VoiceId voiceId = firstVoiceId(composition);
+
+        EventId start = addNote(composition, voiceId, 0, 1, C4);
+        EventId end = addNote(composition, voiceId, 1, 1, D4);
+
+        Success<?> added = assertInstanceOf(Success.class, composition.addSlur(start, end));
+        RelationId slurId = assertInstanceOf(RelationId.class, added.value());
+        Collection<Slur> view = composition.slurs();
+
+        assertInstanceOf(Success.class, composition.removeSlur(slurId));
+
+        assertTrue(view.isEmpty());
+
+        Voice voice = composition.parts().getFirst().voices().getFirst();
+        assertNotNull(voice.findNote(start));
+        assertNotNull(voice.findNote(end));
+    }
+
+    @Test
+    void removeUnknownSlurReturnsFailure() {
+        Composition composition = Composition.create();
+
+        Failure<?> failure = assertInstanceOf(Failure.class, composition.removeSlur(RelationId.create()));
+
+        assertEquals(CompositionErrors.SLUR_NOT_FOUND, failure.error());
+    }
+
+    @Test
+    void removeSlurRejectsNullId() {
+        Composition composition = Composition.create();
+
+        assertThrows(NullPointerException.class, () -> composition.removeSlur(null));
+    }
+
+    @Test
+    void removeSlurPreservesOtherSlurs() {
+        Composition composition = compositionWithPart();
+        VoiceId voiceId = firstVoiceId(composition);
+
+        EventId first = addNote(composition, voiceId, 0, 1, C4);
+        EventId middle = addNote(composition, voiceId, 1, 1, D4);
+        EventId last = addNote(composition, voiceId, 2, 1, C4);
+
+        Success<?> firstResult = assertInstanceOf(Success.class, composition.addSlur(first, middle));
+        Success<?> secondResult = assertInstanceOf(Success.class, composition.addSlur(middle, last));
+
+        RelationId firstId = assertInstanceOf(RelationId.class, firstResult.value());
+        RelationId secondId = assertInstanceOf(RelationId.class, secondResult.value());
+
+        assertInstanceOf(Success.class, composition.removeSlur(firstId));
+
+        assertEquals(1, composition.slurs().size());
+
+        Slur remaining = composition.slurs().iterator().next();
+        assertEquals(secondId, remaining.id());
+        assertEquals(middle, remaining.startNoteId());
+        assertEquals(last, remaining.endNoteId());
+    }
 }
