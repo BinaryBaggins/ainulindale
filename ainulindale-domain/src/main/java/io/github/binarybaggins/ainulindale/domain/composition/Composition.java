@@ -1199,6 +1199,24 @@ public final class Composition {
         return Result.success(slur.id());
     }
 
+    /**
+     * Removes the slur with the specified relation ID from the composition.
+     *
+     * @param relationId the ID of the slur to remove
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if relationId is null
+     */
+    public Result<Unit> removeSlur(RelationId relationId) {
+        Objects.requireNonNull(relationId, "relationId must not be null");
+
+        if (!slurs.containsKey(relationId)) {
+            return Result.failure(CompositionErrors.SLUR_NOT_FOUND);
+        }
+
+        slurs.remove(relationId);
+        return Result.success(Unit.INSTANCE);
+    }
+
     private Optional<Part> findPart(PartId partId) {
         Objects.requireNonNull(partId, "partId must not be null");
         for (Part part : parts) {

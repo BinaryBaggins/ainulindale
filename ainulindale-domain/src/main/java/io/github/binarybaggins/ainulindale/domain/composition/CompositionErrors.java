@@ -140,4 +140,9 @@ final class CompositionErrors {
      * Error indicating that the specified slur notes are not in chronological order.
      */
     static final ResultError SLUR_NOTES_NOT_CHRONOLOGICAL = new ResultError("Composition.SlurNotesNotChronological");
+
+    /**
+     * Error indicating that the specified slur was not found within the composition.
+     */
+    static final ResultError SLUR_NOT_FOUND = new ResultError("Composition.SlurNotFound");
 }
