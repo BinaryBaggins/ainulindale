@@ -44,7 +44,7 @@ public final class Composition {
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
     private final Map<RelationId, Tie> ties = new HashMap<>();
-    private final Map<RelationId, Slur> slurs = new HashMap<>(); // a dictionary of slurs 😭
+    private final Map<RelationId, Slur> slurs = new HashMap<>(); // a thesaurus of slurs 😭
 
     private Composition(CompositionId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
