@@ -63,4 +63,13 @@ public record Pitch(DiatonicStep step, PitchAlteration alteration, int octave) {
         // and the natural pitch of the target diatonic step.
         return new Pitch(targetStep, PitchAlteration.of(targetChromatic.minus(targetNatural)), targetOctave);
     }
+
+    /**
+     * Returns the octave-independent pitch class of this pitch.
+     *
+     * @return the structural pitch class
+     */
+    public PitchClass pitchClass() {
+        return PitchClass.of(step, alteration);
+    }
 }

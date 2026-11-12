@@ -184,6 +184,22 @@ class PitchTest {
         assertEquals(highest, highest.transposedBy(PitchInterval.ZERO));
     }
 
+    @Test
+    void pitchClassPreservesStepAndAlteration() {
+        Pitch pitch = new Pitch(DiatonicStep.F, PitchAlteration.of(1, 2), 4);
+
+        assertEquals(PitchClass.of(DiatonicStep.F, PitchAlteration.of(1, 2)), pitch.pitchClass());
+    }
+
+    @Test
+    void pitchClassIsIndependentOfOctave() {
+        Pitch low = new Pitch(DiatonicStep.C, PitchAlteration.of(1), 2);
+        Pitch high = new Pitch(DiatonicStep.C, PitchAlteration.of(1), 7);
+
+        assertNotEquals(low, high);
+        assertEquals(low.pitchClass(), high.pitchClass());
+    }
+
     private static Pitch pitch(DiatonicStep step, long alteration, int octave) {
         return new Pitch(step, PitchAlteration.of(alteration), octave);
     }

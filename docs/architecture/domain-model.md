@@ -14,14 +14,14 @@ Unresolved design questions are explicitly marked as open.
 
 The accepted model is broader than the implementation. Historical ADRs retain their original rationale; current progress is recorded here and in [module-architecture.md](module-architecture.md).
 
-- Rational, score-time values, Pitch/PitchAlteration, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented.
+- Rational, score-time values, Pitch/PitchClass/PitchAlteration, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented.
 - [Composition](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/Composition.java), Part, Voice, VoiceEvent, and NoteEvent implement structure, ordering, note creation/removal, pitch/range changes, and movement between Voices.
 - Tempo is integrated at Composition scope. Meter and KeySignature support Composition/Part/Voice state, inherited effective queries, and explicit ending/removal of overrides. Internal StateTimeline uses Set/End transitions in a TreeMap.
 - Composition metadata supports an optional title and optional Part and Voice names. Mutations are exposed through Composition, with semantic validation errors for blank values. Names are independent of entity identity, and duplicate names are permitted.
 - Composition-owned Tie and Slur relations are implemented, including referential integrity and relation-specific validation during aggregate mutations.
 - [CompositionErrors](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/CompositionErrors.java) provides semantic ResultError codes for implemented failures, using the Result infrastructure extracted into foundation.
 - PitchInterval, WrittenToSoundingTransposition, InstrumentDefinition, and InstrumentAssignment are implemented. Part-local assignment timelines support setting, ending, removing transitions, and querying through Composition. Referential integrity between InstrumentAssignment and the future Project Instrument Library is not implemented; referenced InstrumentDefinitionIds are not checked against a library.
-- PitchClass, ScaleDegree, ScaleStructure, TonalContext, and Project/Arrangement/Revision/library concepts remain unimplemented. Additional composition metadata, Composition persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
+- ScaleDegree, ScaleStructure, TonalContext, and Project/Arrangement/Revision/library concepts remain unimplemented. Additional composition metadata, Composition persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
 
 The [domain tests](../../ainulindale-domain/src/test/java/io/github/binarybaggins/ainulindale/domain) cover implemented values, aggregate operations, and state behavior. This review inspected source and tests; it does not report a new test run.
 
@@ -1837,7 +1837,7 @@ PitchClass
 └── PitchAlteration
 ```
 
-Equality preserves structural spelling, following canonical `Pitch`: `C♯ != D♭`, even if a particular tuning makes them acoustically equivalent. A PitchClass contains no octave, MIDI note number, frequency, or tuning information. Its exact Java representation remains open.
+Equality preserves structural spelling, following canonical `Pitch`: `C♯ != D♭`, even if a particular tuning makes them acoustically equivalent. A PitchClass contains no octave, MIDI note number, frequency, or tuning information. It is implemented as an immutable Java record with non-null `DiatonicStep` and `PitchAlteration` components and an `of` factory.
 
 A tonal center is represented by `PitchClass`, not a full `Pitch`. A separate `TonalCenter` wrapper is not introduced solely to wrap that value; a future concrete requirement could justify reconsidering it.
 
@@ -2202,10 +2202,10 @@ Conceptual Project organization, independent Arrangements with their own Composi
 - TonalContext scope and timeline semantics
 - Explicit relationships between TonalContext and KeySignature beyond their independence
 - Non-octave-periodic systems
-- Concrete Java APIs and storage for the accepted tonal and scale concepts
+- Concrete Java APIs and storage for the unimplemented tonal and scale concepts
 - Concrete format mappings and adapters, including ABC, MIDI, MusicXML, and LOTRO
 
-PitchClass, ScaleDegree, ScaleStructure, and TonalContext semantics are accepted. The additional concepts, implementation details, and adapter designs above remain open; tuning remains separate.
+PitchClass is implemented. ScaleDegree, ScaleStructure, and TonalContext semantics are accepted, but their implementation remains pending. The additional concepts, implementation details, and adapter designs above remain open; tuning remains separate.
 
 ### Tempo Notation, Expressions, and Playback
 
