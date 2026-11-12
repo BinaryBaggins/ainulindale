@@ -32,9 +32,15 @@ Future notation rules, editing policies, target validation, or a refined relatio
 
 ### Slur
 
-Slur contains RelationId, startNoteId, and endNoteId. Both anchors reference distinct existing NoteEvents, and the start note occurs before the end note in canonical score time. Tie-like adjacency is not required.
+Slur contains RelationId, startNoteId, and endNoteId. Both anchors reference distinct existing NoteEvents within the same Composition, and the start note occurs strictly before the end note in canonical score time. Tie-like adjacency and pitch equality are not required.
+
+Any operation that would violate an existing Slur's invariants must be rejected. Changes that preserve these invariants remain allowed. Removing either referenced note, directly or through removal of its containing Voice or Part, must be rejected while the Slur exists.
+
+Changing an anchor's pitch or duration is permitted provided all applicable domain invariants remain satisfied. Changing its score position must preserve the strict chronological ordering of the Slur's anchors.
 
 Temporally intermediate events are not redundantly stored as a mandatory membership list. They may be determined from canonical score structure where needed; the detailed selection semantics are not designed here.
+
+Cross-Voice Slurs are currently permitted by the domain implementation, including moving an existing anchor between Voices. This is a provisional implementation policy, not a finalized musical requirement.
 
 Same-Voice requirements, cross-Voice restrictions, nesting, overlapping Slur restrictions, notation placement, engraving direction, and playback articulation remain open. Visual curve data and engraving geometry are not part of canonical Slur.
 
