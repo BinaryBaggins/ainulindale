@@ -312,7 +312,7 @@ public final class Composition {
      * @param newPitch the new pitch for the note
      * @return a result indicating success if the pitch was successfully changed,
      *         or failure if the note was not found or the change would violate
-     *         the pitch equality of an existing tie or the chronological order
+     *         the pitch equality of an existing tie
      * @throws NullPointerException if the noteId or newPitch is null
      */
     public Result<Unit> changeNotePitch(EventId noteId, Pitch newPitch) {
