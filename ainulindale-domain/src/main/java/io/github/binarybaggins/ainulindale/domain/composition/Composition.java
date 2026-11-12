@@ -312,7 +312,7 @@ public final class Composition {
      * @param newPitch the new pitch for the note
      * @return a result indicating success if the pitch was successfully changed,
      *         or failure if the note was not found or the change would violate
-     *         the pitch equality of an existing tie or the chronological order of an existing slur
+     *         the pitch equality of an existing tie or the chronological order
      * @throws NullPointerException if the noteId or newPitch is null
      */
     public Result<Unit> changeNotePitch(EventId noteId, Pitch newPitch) {
@@ -337,24 +337,6 @@ public final class Composition {
             return Result.failure(CompositionErrors.TIE_PITCH_EQUALITY_WOULD_BE_BROKEN);
         }
 
-        for (Slur slur : slurs.values()) {
-            if (slur.startNoteId().equals(noteId)) {
-                NoteEvent end = findNote(slur.endNoteId()).orElseThrow().note();
-
-                if (noteLocation.note().range().start().compareTo(end.position()) >= 0) {
-                    return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
-                }
-            }
-
-            if (slur.endNoteId().equals(noteId)) {
-                NoteEvent start = findNote(slur.startNoteId()).orElseThrow().note();
-
-                if (start.position().compareTo(noteLocation.note().range().start()) >= 0) {
-                    return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
-                }
-            }
-        }
-
         noteLocation.voice().changeNotePitch(noteId, newPitch);
         return Result.success(Unit.INSTANCE);
     }
@@ -366,7 +348,7 @@ public final class Composition {
      * @param newRange the new score range for the note
      * @return a result indicating success if the score range was successfully changed,
      *         or failure if the note was not found or the change would violate
-     *         the adjacency of an existing tie
+     *         the adjacency of an existing tie or the chronological order of an existing slur
      * @throws NullPointerException if the noteId or newRange is null
      */
     public Result<Unit> changeNoteRange(EventId noteId, ScoreRange newRange) {
@@ -397,6 +379,24 @@ public final class Composition {
 
         if (participatesInTieAsTarget && !currentRange.start().equals(newRange.start())) {
             return Result.failure(CompositionErrors.TIE_ADJACENCY_WOULD_BE_BROKEN);
+        }
+
+        for (Slur slur : slurs.values()) {
+            if (slur.startNoteId().equals(noteId)) {
+                NoteEvent end = findNote(slur.endNoteId()).orElseThrow().note();
+
+                if (newRange.start().compareTo(end.position()) >= 0) {
+                    return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
+                }
+            }
+
+            if (slur.endNoteId().equals(noteId)) {
+                NoteEvent start = findNote(slur.startNoteId()).orElseThrow().note();
+
+                if (start.position().compareTo(newRange.start()) >= 0) {
+                    return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
+                }
+            }
         }
 
         noteLocation.voice().changeNoteRange(noteId, newRange);
