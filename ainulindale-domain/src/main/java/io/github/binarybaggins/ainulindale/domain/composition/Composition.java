@@ -39,6 +39,7 @@ import java.util.Optional;
 public final class Composition {
 
     private final CompositionId id;
+    private String title;
     private final List<Part> parts;
     private final StateTimeline<Tempo> tempoTimeline = new StateTimeline<>();
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
@@ -67,6 +68,40 @@ public final class Composition {
      */
     public CompositionId id() {
         return id;
+    }
+
+    /**
+     * Returns the optional title of this composition.
+     *
+     * @return the title, or an empty Optional if unnamed
+     */
+    public Optional<String> title() {
+        return Optional.ofNullable(title);
+    }
+
+    /**
+     * Assigns a non-blank title to this composition.
+     *
+     * @param title the title to assign
+     * @return success, or an error if the title is blank
+     * @throws NullPointerException if title is null
+     */
+    public Result<Unit> setTitle(String title) {
+        Objects.requireNonNull(title, "title must not be null");
+
+        if (title.isBlank()) {
+            return Result.failure(CompositionErrors.INVALID_TITLE);
+        }
+
+        this.title = title;
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Clears the title of this composition.
+     */
+    public void clearTitle() {
+        title = null;
     }
 
     /**

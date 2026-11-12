@@ -10,6 +10,11 @@ final class CompositionErrors {
     private CompositionErrors() {}
 
     /**
+     * Error indicating that the specified title is invalid.
+     */
+    static final ResultError INVALID_TITLE = new ResultError("Composition.InvalidTitle");
+
+    /**
      * Error indicating that the specified part was not found within the composition.
      */
     static final ResultError PART_NOT_FOUND = new ResultError("Composition.PartNotFound");
