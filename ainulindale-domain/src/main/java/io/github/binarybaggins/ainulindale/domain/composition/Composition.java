@@ -90,7 +90,7 @@ public final class Composition {
         Objects.requireNonNull(title, "title must not be null");
 
         if (title.isBlank()) {
-            return Result.failure(CompositionErrors.INVALID_TITLE);
+            return Result.failure(CompositionErrors.INVALID_COMPOSITION_TITLE);
         }
 
         this.title = title;
@@ -102,6 +102,48 @@ public final class Composition {
      */
     public void clearTitle() {
         title = null;
+    }
+
+    /**
+     * Assigns a name to the specified part within this composition.
+     *
+     * @param partId the unique identifier of the part
+     * @param name the name to assign
+     * @return a result indicating success, or an error if the name is invalid or the part was not found
+     * @throws NullPointerException if partId or name is null
+     */
+    public Result<Unit> setPartName(PartId partId, String name) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(name, "name must not be null");
+
+        if (name.isBlank()) {
+            return Result.failure(CompositionErrors.INVALID_PART_NAME);
+        }
+
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().setName(name);
+            return Result.success(Unit.INSTANCE);
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Clears the name of the specified part within this composition.
+     *
+     * @param partId the unique identifier of the part whose name will be cleared
+     * @return a result indicating success, or an error if the part was not found
+     * @throws NullPointerException if the partId is null
+     */
+    public Result<Unit> clearPartName(PartId partId) {
+        Objects.requireNonNull(partId, "partId must not be null");
+
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().setName(null);
+            return Result.success(Unit.INSTANCE);
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
     }
 
     /**

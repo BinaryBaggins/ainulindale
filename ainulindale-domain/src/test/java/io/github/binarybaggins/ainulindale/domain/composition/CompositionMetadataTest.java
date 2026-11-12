@@ -47,10 +47,10 @@ class CompositionMetadataTest {
     void emptyOrWhitespaceTitleReturnsError() {
         Composition composition = Composition.create();
         Result<?> result = composition.setTitle("");
-        assertRejected(result, CompositionErrors.INVALID_TITLE);
+        assertRejected(result, CompositionErrors.INVALID_COMPOSITION_TITLE);
         assertTrue(composition.title().isEmpty());
         result = composition.setTitle("   ");
-        assertRejected(result, CompositionErrors.INVALID_TITLE);
+        assertRejected(result, CompositionErrors.INVALID_COMPOSITION_TITLE);
         assertTrue(composition.title().isEmpty());
     }
 
@@ -74,7 +74,7 @@ class CompositionMetadataTest {
         Composition composition = Composition.create();
         composition.setTitle("Original");
         Result<?> result = composition.setTitle("   ");
-        assertRejected(result, CompositionErrors.INVALID_TITLE);
+        assertRejected(result, CompositionErrors.INVALID_COMPOSITION_TITLE);
         assertEquals(Optional.of("Original"), composition.title());
     }
 

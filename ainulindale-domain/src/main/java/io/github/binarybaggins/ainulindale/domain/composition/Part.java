@@ -18,6 +18,7 @@ import java.util.Optional;
 public final class Part {
 
     private final PartId id;
+    private String name;
     private final List<Voice> voices;
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
@@ -45,6 +46,24 @@ public final class Part {
      */
     public PartId id() {
         return id;
+    }
+
+    /**
+     * Returns the name of this part.
+     *
+     * @return the part name
+     */
+    String name() {
+        return name;
+    }
+
+    /**
+     * Sets the name of this part.
+     *
+     * @param name the new name for the part
+     */
+    void setName(String name) {
+        this.name = name;
     }
 
     /**
