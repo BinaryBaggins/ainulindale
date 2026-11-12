@@ -18,6 +18,7 @@ import java.util.Optional;
 public final class Part {
 
     private final PartId id;
+    private String name;
     private final List<Voice> voices;
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
@@ -45,6 +46,33 @@ public final class Part {
      */
     public PartId id() {
         return id;
+    }
+
+    /**
+     * Returns the name of this part.
+     *
+     * @return the part name
+     */
+    Optional<String> name() {
+        return Optional.ofNullable(name);
+    }
+
+    /**
+     * Sets the name of this part.
+     *
+     * @param name the new name for the part
+     * @throws NullPointerException if name is null
+     */
+    void setName(String name) {
+        Objects.requireNonNull(name, "name must not be null");
+        this.name = name;
+    }
+
+    /**
+     * Clears the name of this part.
+     */
+    void clearName() {
+        this.name = null;
     }
 
     /**

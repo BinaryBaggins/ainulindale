@@ -39,6 +39,7 @@ import java.util.Optional;
 public final class Composition {
 
     private final CompositionId id;
+    private String title;
     private final List<Part> parts;
     private final StateTimeline<Tempo> tempoTimeline = new StateTimeline<>();
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
@@ -67,6 +68,159 @@ public final class Composition {
      */
     public CompositionId id() {
         return id;
+    }
+
+    /**
+     * Returns the optional title of this composition.
+     *
+     * @return the title, or an empty Optional if unnamed
+     */
+    public Optional<String> title() {
+        return Optional.ofNullable(title);
+    }
+
+    /**
+     * Assigns a non-blank title to this composition.
+     *
+     * @param title the title to assign
+     * @return success, or an error if the title is blank
+     * @throws NullPointerException if title is null
+     */
+    public Result<Unit> setTitle(String title) {
+        Objects.requireNonNull(title, "title must not be null");
+
+        if (title.isBlank()) {
+            return Result.failure(CompositionErrors.INVALID_COMPOSITION_TITLE);
+        }
+
+        this.title = title;
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Clears the title of this composition.
+     */
+    public void clearTitle() {
+        title = null;
+    }
+
+    /**
+     * Retrieves the name of the specified part within this composition.
+     *
+     * @param partId the unique identifier of the part
+     * @return a result containing the part name, or an error if the part was not found
+     * @throws NullPointerException if the partId is null
+     */
+    public Result<Optional<String>> partName(PartId partId) {
+        Objects.requireNonNull(partId, "partId must not be null");
+
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            return Result.success(part.get().name());
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Assigns a name to the specified part within this composition.
+     *
+     * @param partId the unique identifier of the part
+     * @param name the name to assign
+     * @return a result indicating success, or an error if the name is invalid or the part was not found
+     * @throws NullPointerException if partId or name is null
+     */
+    public Result<Unit> setPartName(PartId partId, String name) {
+        Objects.requireNonNull(partId, "partId must not be null");
+        Objects.requireNonNull(name, "name must not be null");
+
+        if (name.isBlank()) {
+            return Result.failure(CompositionErrors.INVALID_PART_NAME);
+        }
+
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().setName(name);
+            return Result.success(Unit.INSTANCE);
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Clears the name of the specified part within this composition.
+     *
+     * @param partId the unique identifier of the part whose name will be cleared
+     * @return a result indicating success, or an error if the part was not found
+     * @throws NullPointerException if the partId is null
+     */
+    public Result<Unit> clearPartName(PartId partId) {
+        Objects.requireNonNull(partId, "partId must not be null");
+
+        Optional<Part> part = findPart(partId);
+        if (part.isPresent()) {
+            part.get().clearName();
+            return Result.success(Unit.INSTANCE);
+        }
+        return Result.failure(CompositionErrors.PART_NOT_FOUND);
+    }
+
+    /**
+     * Retrieves the name of the specified voice within this composition.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @return a result containing the voice name, or an error if the voice was not found
+     * @throws NullPointerException if the voiceId is null
+     *
+     */
+    public Result<Optional<String>> voiceName(VoiceId voiceId) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+
+        Optional<VoiceLocation> voice = findVoice(voiceId);
+        if (voice.isPresent()) {
+            return Result.success(voice.get().voice().name());
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Assigns a name to the specified voice within this composition.
+     *
+     * @param voiceId the unique identifier of the voice
+     * @param name the name to assign
+     * @return a result indicating success, or an error if the name is invalid or the voice was not found
+     * @throws NullPointerException if voiceId or name is null
+     */
+    public Result<Unit> setVoiceName(VoiceId voiceId, String name) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+        Objects.requireNonNull(name, "name must not be null");
+
+        if (name.isBlank()) {
+            return Result.failure(CompositionErrors.INVALID_VOICE_NAME);
+        }
+
+        Optional<VoiceLocation> voice = findVoice(voiceId);
+        if (voice.isPresent()) {
+            voice.get().voice().setName(name);
+            return Result.success(Unit.INSTANCE);
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
+    }
+
+    /**
+     * Clears the name of the specified voice within this composition.
+     *
+     * @param voiceId the unique identifier of the voice whose name will be cleared
+     * @return a result indicating success, or an error if the voice was not found
+     * @throws NullPointerException if the voiceId is null
+     */
+    public Result<Unit> clearVoiceName(VoiceId voiceId) {
+        Objects.requireNonNull(voiceId, "voiceId must not be null");
+
+        Optional<VoiceLocation> voice = findVoice(voiceId);
+        if (voice.isPresent()) {
+            voice.get().voice().clearName();
+            return Result.success(Unit.INSTANCE);
+        }
+        return Result.failure(CompositionErrors.VOICE_NOT_FOUND);
     }
 
     /**
