@@ -152,7 +152,7 @@ public final class Composition {
      *
      * @param eventId the unique identifier of the event to be removed
      * @return a result indicating success if the event was removed, or an error if the event was not found
-     *         or if the event is part of a tie
+     *         or if the event is part of a tie or a slur
      * @throws NullPointerException if the eventId is null
      */
     public Result<Unit> removeEvent(EventId eventId) {
@@ -161,6 +161,12 @@ public final class Composition {
         for (Tie tie : ties()) {
             if (tie.sourceNoteId().equals(eventId) || tie.targetNoteId().equals(eventId)) {
                 return Result.failure(CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
+            }
+        }
+
+        for (Slur slur : slurs.values()) {
+            if (slur.startNoteId().equals(eventId) || slur.endNoteId().equals(eventId)) {
+                return Result.failure(CompositionErrors.SLUR_NOTE_REFERENCE_WOULD_BE_BROKEN);
             }
         }
 
@@ -179,7 +185,7 @@ public final class Composition {
      *
      * @param voiceId the unique identifier of the voice to be removed
      * @return a result indicating success if the voice was removed, or an error if the voice was not found
-     *         or if attempting to remove the last remaining voice in a part or if the voice contains tied notes
+     *         or if attempting to remove the last remaining voice in a part or if the voice contains tied notes or slurred notes
      * @throws NullPointerException if the voiceId is null
      */
     public Result<Unit> removeVoice(VoiceId voiceId) {
@@ -202,6 +208,12 @@ public final class Composition {
             }
         }
 
+        for (Slur slur : slurs.values()) {
+            if (voice.findNote(slur.startNoteId()) != null || voice.findNote(slur.endNoteId()) != null) {
+                return Result.failure(CompositionErrors.SLUR_NOTE_REFERENCE_WOULD_BE_BROKEN);
+            }
+        }
+
         part.removeVoice(voiceId);
         return Result.success(Unit.INSTANCE);
     }
@@ -211,7 +223,7 @@ public final class Composition {
      *
      * @param partId the unique identifier of the part to be removed
      * @return a result indicating success if the part was removed, or an error if the part was not found
-     *         or if the part contains tied notes
+     *         or if the part contains tied notes or slurred notes
      * @throws NullPointerException if the partId is null
      */
     public Result<Unit> removePart(PartId partId) {
@@ -228,6 +240,11 @@ public final class Composition {
             for (Tie tie : ties.values()) {
                 if (voice.findNote(tie.sourceNoteId()) != null || voice.findNote(tie.targetNoteId()) != null) {
                     return Result.failure(CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
+                }
+            }
+            for (Slur slur : slurs.values()) {
+                if (voice.findNote(slur.startNoteId()) != null || voice.findNote(slur.endNoteId()) != null) {
+                    return Result.failure(CompositionErrors.SLUR_NOTE_REFERENCE_WOULD_BE_BROKEN);
                 }
             }
         }
@@ -295,7 +312,7 @@ public final class Composition {
      * @param newPitch the new pitch for the note
      * @return a result indicating success if the pitch was successfully changed,
      *         or failure if the note was not found or the change would violate
-     *         the pitch equality of an existing tie
+     *         the pitch equality of an existing tie or the chronological order of an existing slur
      * @throws NullPointerException if the noteId or newPitch is null
      */
     public Result<Unit> changeNotePitch(EventId noteId, Pitch newPitch) {
@@ -307,9 +324,8 @@ public final class Composition {
             return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
         }
 
-        NoteLocation note = location.get();
-
-        boolean pitchChanges = !note.note().pitch().equals(newPitch);
+        NoteLocation noteLocation = location.get();
+        boolean pitchChanges = !noteLocation.note().pitch().equals(newPitch);
 
         if (
             pitchChanges &&
@@ -321,7 +337,25 @@ public final class Composition {
             return Result.failure(CompositionErrors.TIE_PITCH_EQUALITY_WOULD_BE_BROKEN);
         }
 
-        note.voice().changeNotePitch(noteId, newPitch);
+        for (Slur slur : slurs.values()) {
+            if (slur.startNoteId().equals(noteId)) {
+                NoteEvent end = findNote(slur.endNoteId()).orElseThrow().note();
+
+                if (noteLocation.note().range().start().compareTo(end.position()) >= 0) {
+                    return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
+                }
+            }
+
+            if (slur.endNoteId().equals(noteId)) {
+                NoteEvent start = findNote(slur.startNoteId()).orElseThrow().note();
+
+                if (start.position().compareTo(noteLocation.note().range().start()) >= 0) {
+                    return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
+                }
+            }
+        }
+
+        noteLocation.voice().changeNotePitch(noteId, newPitch);
         return Result.success(Unit.INSTANCE);
     }
 

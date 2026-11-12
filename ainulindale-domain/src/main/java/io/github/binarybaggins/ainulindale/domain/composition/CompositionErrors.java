@@ -145,4 +145,11 @@ final class CompositionErrors {
      * Error indicating that the specified slur was not found within the composition.
      */
     static final ResultError SLUR_NOT_FOUND = new ResultError("Composition.SlurNotFound");
+
+    /**
+     * Error indicating that removing an entity would break a slur's note references.
+     */
+    static final ResultError SLUR_NOTE_REFERENCE_WOULD_BE_BROKEN = new ResultError(
+        "Composition.SlurNoteReferenceWouldBeBroken"
+    );
 }
