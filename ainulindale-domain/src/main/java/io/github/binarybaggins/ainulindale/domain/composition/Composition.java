@@ -12,6 +12,7 @@ import io.github.binarybaggins.ainulindale.domain.instrument.InstrumentAssignmen
 import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
+import io.github.binarybaggins.ainulindale.domain.relation.Slur;
 import io.github.binarybaggins.ainulindale.domain.relation.Tie;
 import io.github.binarybaggins.ainulindale.domain.tempo.Tempo;
 import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
@@ -43,6 +44,7 @@ public final class Composition {
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
     private final Map<RelationId, Tie> ties = new HashMap<>();
+    private final Map<RelationId, Slur> slurs = new HashMap<>(); // a dictionary of slurs 😭
 
     private Composition(CompositionId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -83,6 +85,15 @@ public final class Composition {
      */
     public Collection<Tie> ties() {
         return Collections.unmodifiableCollection(ties.values());
+    }
+
+    /**
+     * Returns an unmodifiable live view of the slurs contained in this composition.
+     *
+     * @return an unmodifiable collection of slurs
+     */
+    public Collection<Slur> slurs() {
+        return Collections.unmodifiableCollection(slurs.values());
     }
 
     /**
@@ -1148,6 +1159,44 @@ public final class Composition {
         }
         ties.remove(relationId);
         return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Adds a slur between two distinct notes in chronological order.
+     *
+     * <p>The notes may have different pitches, need not be adjacent,
+     * and may belong to different voices.
+     *
+     * @param startNoteId the unique identifier of the start note
+     * @param endNoteId the unique identifier of the end note
+     * @return a successful Result containing the relation ID of the created slur;
+     *         failure if either note is missing, the notes are identical,
+     *         or the start note does not precede the end note
+     * @throws NullPointerException if either argument is null
+     */
+    public Result<RelationId> addSlur(EventId startNoteId, EventId endNoteId) {
+        Objects.requireNonNull(startNoteId, "startNoteId must not be null");
+        Objects.requireNonNull(endNoteId, "endNoteId must not be null");
+
+        Optional<NoteLocation> startNote = findNote(startNoteId);
+        Optional<NoteLocation> endNote = findNote(endNoteId);
+
+        if (startNote.isEmpty() || endNote.isEmpty()) {
+            return Result.failure(CompositionErrors.NOTE_NOT_FOUND);
+        }
+
+        if (startNoteId.equals(endNoteId)) {
+            return Result.failure(CompositionErrors.SLUR_NOTES_IDENTICAL);
+        }
+
+        if (startNote.get().note().position().compareTo(endNote.get().note().position()) >= 0) {
+            return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
+        }
+
+        Slur slur = Slur.create(startNoteId, endNoteId);
+        slurs.put(slur.id(), slur);
+
+        return Result.success(slur.id());
     }
 
     private Optional<Part> findPart(PartId partId) {
