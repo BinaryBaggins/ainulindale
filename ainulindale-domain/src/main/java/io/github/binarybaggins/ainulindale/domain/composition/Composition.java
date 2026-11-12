@@ -12,6 +12,7 @@ import io.github.binarybaggins.ainulindale.domain.instrument.InstrumentAssignmen
 import io.github.binarybaggins.ainulindale.domain.key.KeySignature;
 import io.github.binarybaggins.ainulindale.domain.meter.Meter;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
+import io.github.binarybaggins.ainulindale.domain.relation.Slur;
 import io.github.binarybaggins.ainulindale.domain.relation.Tie;
 import io.github.binarybaggins.ainulindale.domain.tempo.Tempo;
 import io.github.binarybaggins.ainulindale.domain.time.ScorePosition;
@@ -43,6 +44,7 @@ public final class Composition {
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
     private final Map<RelationId, Tie> ties = new HashMap<>();
+    private final Map<RelationId, Slur> slurs = new HashMap<>(); // a thesaurus of slurs 😭
 
     private Composition(CompositionId id) {
         this.id = Objects.requireNonNull(id, "id must not be null");
@@ -83,6 +85,15 @@ public final class Composition {
      */
     public Collection<Tie> ties() {
         return Collections.unmodifiableCollection(ties.values());
+    }
+
+    /**
+     * Returns an unmodifiable live view of the slurs contained in this composition.
+     *
+     * @return an unmodifiable collection of slurs
+     */
+    public Collection<Slur> slurs() {
+        return Collections.unmodifiableCollection(slurs.values());
     }
 
     /**
@@ -141,7 +152,7 @@ public final class Composition {
      *
      * @param eventId the unique identifier of the event to be removed
      * @return a result indicating success if the event was removed, or an error if the event was not found
-     *         or if the event is part of a tie
+     *         or if the event is part of a tie or a slur
      * @throws NullPointerException if the eventId is null
      */
     public Result<Unit> removeEvent(EventId eventId) {
@@ -150,6 +161,12 @@ public final class Composition {
         for (Tie tie : ties()) {
             if (tie.sourceNoteId().equals(eventId) || tie.targetNoteId().equals(eventId)) {
                 return Result.failure(CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
+            }
+        }
+
+        for (Slur slur : slurs.values()) {
+            if (slur.startNoteId().equals(eventId) || slur.endNoteId().equals(eventId)) {
+                return Result.failure(CompositionErrors.SLUR_NOTE_REFERENCE_WOULD_BE_BROKEN);
             }
         }
 
@@ -168,7 +185,7 @@ public final class Composition {
      *
      * @param voiceId the unique identifier of the voice to be removed
      * @return a result indicating success if the voice was removed, or an error if the voice was not found
-     *         or if attempting to remove the last remaining voice in a part or if the voice contains tied notes
+     *         or if attempting to remove the last remaining voice in a part or if the voice contains tied notes or slurred notes
      * @throws NullPointerException if the voiceId is null
      */
     public Result<Unit> removeVoice(VoiceId voiceId) {
@@ -191,6 +208,12 @@ public final class Composition {
             }
         }
 
+        for (Slur slur : slurs.values()) {
+            if (voice.findNote(slur.startNoteId()) != null || voice.findNote(slur.endNoteId()) != null) {
+                return Result.failure(CompositionErrors.SLUR_NOTE_REFERENCE_WOULD_BE_BROKEN);
+            }
+        }
+
         part.removeVoice(voiceId);
         return Result.success(Unit.INSTANCE);
     }
@@ -200,7 +223,7 @@ public final class Composition {
      *
      * @param partId the unique identifier of the part to be removed
      * @return a result indicating success if the part was removed, or an error if the part was not found
-     *         or if the part contains tied notes
+     *         or if the part contains tied notes or slurred notes
      * @throws NullPointerException if the partId is null
      */
     public Result<Unit> removePart(PartId partId) {
@@ -217,6 +240,11 @@ public final class Composition {
             for (Tie tie : ties.values()) {
                 if (voice.findNote(tie.sourceNoteId()) != null || voice.findNote(tie.targetNoteId()) != null) {
                     return Result.failure(CompositionErrors.TIE_NOTE_REFERENCE_WOULD_BE_BROKEN);
+                }
+            }
+            for (Slur slur : slurs.values()) {
+                if (voice.findNote(slur.startNoteId()) != null || voice.findNote(slur.endNoteId()) != null) {
+                    return Result.failure(CompositionErrors.SLUR_NOTE_REFERENCE_WOULD_BE_BROKEN);
                 }
             }
         }
@@ -296,9 +324,8 @@ public final class Composition {
             return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
         }
 
-        NoteLocation note = location.get();
-
-        boolean pitchChanges = !note.note().pitch().equals(newPitch);
+        NoteLocation noteLocation = location.get();
+        boolean pitchChanges = !noteLocation.note().pitch().equals(newPitch);
 
         if (
             pitchChanges &&
@@ -310,7 +337,7 @@ public final class Composition {
             return Result.failure(CompositionErrors.TIE_PITCH_EQUALITY_WOULD_BE_BROKEN);
         }
 
-        note.voice().changeNotePitch(noteId, newPitch);
+        noteLocation.voice().changeNotePitch(noteId, newPitch);
         return Result.success(Unit.INSTANCE);
     }
 
@@ -321,7 +348,7 @@ public final class Composition {
      * @param newRange the new score range for the note
      * @return a result indicating success if the score range was successfully changed,
      *         or failure if the note was not found or the change would violate
-     *         the adjacency of an existing tie
+     *         the adjacency of an existing tie or the chronological order of an existing slur
      * @throws NullPointerException if the noteId or newRange is null
      */
     public Result<Unit> changeNoteRange(EventId noteId, ScoreRange newRange) {
@@ -352,6 +379,24 @@ public final class Composition {
 
         if (participatesInTieAsTarget && !currentRange.start().equals(newRange.start())) {
             return Result.failure(CompositionErrors.TIE_ADJACENCY_WOULD_BE_BROKEN);
+        }
+
+        for (Slur slur : slurs.values()) {
+            if (slur.startNoteId().equals(noteId)) {
+                NoteEvent end = findNote(slur.endNoteId()).orElseThrow().note();
+
+                if (newRange.start().compareTo(end.position()) >= 0) {
+                    return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
+                }
+            }
+
+            if (slur.endNoteId().equals(noteId)) {
+                NoteEvent start = findNote(slur.startNoteId()).orElseThrow().note();
+
+                if (start.position().compareTo(newRange.start()) >= 0) {
+                    return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
+                }
+            }
         }
 
         noteLocation.voice().changeNoteRange(noteId, newRange);
@@ -1147,6 +1192,62 @@ public final class Composition {
             return Result.failure(CompositionErrors.TIE_NOT_FOUND);
         }
         ties.remove(relationId);
+        return Result.success(Unit.INSTANCE);
+    }
+
+    /**
+     * Adds a slur between two distinct notes in chronological order.
+     *
+     * <p>The notes may have different pitches, need not be adjacent,
+     * and may belong to different voices.
+     *
+     * @param startNoteId the unique identifier of the start note
+     * @param endNoteId the unique identifier of the end note
+     * @return a successful Result containing the relation ID of the created slur;
+     *         failure if either note is missing, the notes are identical,
+     *         or the start note does not precede the end note
+     * @throws NullPointerException if either argument is null
+     */
+    public Result<RelationId> addSlur(EventId startNoteId, EventId endNoteId) {
+        Objects.requireNonNull(startNoteId, "startNoteId must not be null");
+        Objects.requireNonNull(endNoteId, "endNoteId must not be null");
+
+        Optional<NoteLocation> startNote = findNote(startNoteId);
+        Optional<NoteLocation> endNote = findNote(endNoteId);
+
+        if (startNote.isEmpty() || endNote.isEmpty()) {
+            return Result.failure(CompositionErrors.NOTE_NOT_FOUND);
+        }
+
+        if (startNoteId.equals(endNoteId)) {
+            return Result.failure(CompositionErrors.SLUR_NOTES_IDENTICAL);
+        }
+
+        if (startNote.get().note().position().compareTo(endNote.get().note().position()) >= 0) {
+            return Result.failure(CompositionErrors.SLUR_NOTES_NOT_CHRONOLOGICAL);
+        }
+
+        Slur slur = Slur.create(startNoteId, endNoteId);
+        slurs.put(slur.id(), slur);
+
+        return Result.success(slur.id());
+    }
+
+    /**
+     * Removes the slur with the specified relation ID from the composition.
+     *
+     * @param relationId the ID of the slur to remove
+     * @return a Result indicating success or failure
+     * @throws NullPointerException if relationId is null
+     */
+    public Result<Unit> removeSlur(RelationId relationId) {
+        Objects.requireNonNull(relationId, "relationId must not be null");
+
+        if (!slurs.containsKey(relationId)) {
+            return Result.failure(CompositionErrors.SLUR_NOT_FOUND);
+        }
+
+        slurs.remove(relationId);
         return Result.success(Unit.INSTANCE);
     }
 

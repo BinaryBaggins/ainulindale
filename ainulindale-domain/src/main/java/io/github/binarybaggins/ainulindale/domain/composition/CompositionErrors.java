@@ -130,4 +130,26 @@ final class CompositionErrors {
     static final ResultError TIE_VOICE_CONSTRAINT_WOULD_BE_BROKEN = new ResultError(
         "Composition.TieVoiceConstraintWouldBeBroken"
     );
+
+    /**
+     * Error indicating that the specified slur notes are identical.
+     */
+    static final ResultError SLUR_NOTES_IDENTICAL = new ResultError("Composition.SlurNotesIdentical");
+
+    /**
+     * Error indicating that the specified slur notes are not in chronological order.
+     */
+    static final ResultError SLUR_NOTES_NOT_CHRONOLOGICAL = new ResultError("Composition.SlurNotesNotChronological");
+
+    /**
+     * Error indicating that the specified slur was not found within the composition.
+     */
+    static final ResultError SLUR_NOT_FOUND = new ResultError("Composition.SlurNotFound");
+
+    /**
+     * Error indicating that removing an entity would break a slur's note references.
+     */
+    static final ResultError SLUR_NOTE_REFERENCE_WOULD_BE_BROKEN = new ResultError(
+        "Composition.SlurNoteReferenceWouldBeBroken"
+    );
 }
