@@ -83,15 +83,12 @@ class CompositionMetadataTest {
         assertEquals(Optional.of("Original"), composition.title());
     }
 
-    // Part name tests
-
     @Test
     void testPartNameUnset() {
         Composition composition = Composition.create();
         composition.addPart();
         Result<Optional<String>> result = composition.partName(composition.parts().get(0).id());
-        assertInstanceOf(Success.class, result);
-        assertTrue(((Success<Optional<String>>) result).value().isEmpty());
+        assertTrue(getNameValue(result).isEmpty());
     }
 
     @Test
@@ -102,8 +99,7 @@ class CompositionMetadataTest {
         Result<Unit> setResult = composition.setPartName(partId, "Violin");
         assertInstanceOf(Success.class, setResult);
         Result<Optional<String>> getResult = composition.partName(partId);
-        assertInstanceOf(Success.class, getResult);
-        assertEquals(Optional.of("Violin"), ((Success<Optional<String>>) getResult).value());
+        assertEquals(Optional.of("Violin"), getNameValue(getResult));
     }
 
     @Test
@@ -114,7 +110,7 @@ class CompositionMetadataTest {
         composition.setPartName(partId, "Violin");
         composition.clearPartName(partId);
         Result<Optional<String>> result = composition.partName(partId);
-        assertTrue(((Success<Optional<String>>) result).value().isEmpty());
+        assertTrue(getNameValue(result).isEmpty());
     }
 
     @Test
@@ -134,12 +130,10 @@ class CompositionMetadataTest {
         PartId partId = composition.parts().get(0).id();
         Result<Unit> result = composition.setPartName(partId, "");
         assertRejected(result, CompositionErrors.INVALID_PART_NAME);
-        Result<Optional<String>> getResult = composition.partName(partId);
-        assertTrue(((Success<Optional<String>>) getResult).value().isEmpty());
+        assertTrue(getNameValue(composition.partName(partId)).isEmpty());
         result = composition.setPartName(partId, "   ");
         assertRejected(result, CompositionErrors.INVALID_PART_NAME);
-        getResult = composition.partName(partId);
-        assertTrue(((Success<Optional<String>>) getResult).value().isEmpty());
+        assertTrue(getNameValue(composition.partName(partId)).isEmpty());
     }
 
     @Test
@@ -150,7 +144,7 @@ class CompositionMetadataTest {
         composition.setPartName(partId, "Violin I");
         composition.setPartName(partId, "Violin II");
         Result<Optional<String>> result = composition.partName(partId);
-        assertEquals(Optional.of("Violin II"), ((Success<Optional<String>>) result).value());
+        assertEquals(Optional.of("Violin II"), getNameValue(result));
     }
 
     @Test
@@ -160,7 +154,7 @@ class CompositionMetadataTest {
         PartId partId = composition.parts().get(0).id();
         composition.setPartName(partId, "  Violin  ");
         Result<Optional<String>> result = composition.partName(partId);
-        assertEquals(Optional.of("  Violin  "), ((Success<Optional<String>>) result).value());
+        assertEquals(Optional.of("  Violin  "), getNameValue(result));
     }
 
     @Test
@@ -172,10 +166,8 @@ class CompositionMetadataTest {
         Result<Unit> result = composition.setPartName(partId, "   ");
         assertRejected(result, CompositionErrors.INVALID_PART_NAME);
         Result<Optional<String>> getResult = composition.partName(partId);
-        assertEquals(Optional.of("Original"), ((Success<Optional<String>>) getResult).value());
+        assertEquals(Optional.of("Original"), getNameValue(getResult));
     }
-
-    // Voice name tests
 
     @Test
     void testVoiceNameUnset() {
@@ -183,8 +175,7 @@ class CompositionMetadataTest {
         composition.addPart();
         VoiceId voiceId = composition.parts().get(0).voices().get(0).id();
         Result<Optional<String>> result = composition.voiceName(voiceId);
-        assertInstanceOf(Success.class, result);
-        assertTrue(((Success<Optional<String>>) result).value().isEmpty());
+        assertTrue(getNameValue(result).isEmpty());
     }
 
     @Test
@@ -195,8 +186,7 @@ class CompositionMetadataTest {
         Result<Unit> setResult = composition.setVoiceName(voiceId, "Soprano");
         assertInstanceOf(Success.class, setResult);
         Result<Optional<String>> getResult = composition.voiceName(voiceId);
-        assertInstanceOf(Success.class, getResult);
-        assertEquals(Optional.of("Soprano"), ((Success<Optional<String>>) getResult).value());
+        assertEquals(Optional.of("Soprano"), getNameValue(getResult));
     }
 
     @Test
@@ -207,7 +197,7 @@ class CompositionMetadataTest {
         composition.setVoiceName(voiceId, "Soprano");
         composition.clearVoiceName(voiceId);
         Result<Optional<String>> result = composition.voiceName(voiceId);
-        assertTrue(((Success<Optional<String>>) result).value().isEmpty());
+        assertTrue(getNameValue(result).isEmpty());
     }
 
     @Test
@@ -227,12 +217,10 @@ class CompositionMetadataTest {
         VoiceId voiceId = composition.parts().get(0).voices().get(0).id();
         Result<Unit> result = composition.setVoiceName(voiceId, "");
         assertRejected(result, CompositionErrors.INVALID_VOICE_NAME);
-        Result<Optional<String>> getResult = composition.voiceName(voiceId);
-        assertTrue(((Success<Optional<String>>) getResult).value().isEmpty());
+        assertTrue(getNameValue(composition.voiceName(voiceId)).isEmpty());
         result = composition.setVoiceName(voiceId, "   ");
         assertRejected(result, CompositionErrors.INVALID_VOICE_NAME);
-        getResult = composition.voiceName(voiceId);
-        assertTrue(((Success<Optional<String>>) getResult).value().isEmpty());
+        assertTrue(getNameValue(composition.voiceName(voiceId)).isEmpty());
     }
 
     @Test
@@ -243,7 +231,7 @@ class CompositionMetadataTest {
         composition.setVoiceName(voiceId, "Soprano");
         composition.setVoiceName(voiceId, "Alto");
         Result<Optional<String>> result = composition.voiceName(voiceId);
-        assertEquals(Optional.of("Alto"), ((Success<Optional<String>>) result).value());
+        assertEquals(Optional.of("Alto"), getNameValue(result));
     }
 
     @Test
@@ -253,7 +241,7 @@ class CompositionMetadataTest {
         VoiceId voiceId = composition.parts().get(0).voices().get(0).id();
         composition.setVoiceName(voiceId, "  Soprano  ");
         Result<Optional<String>> result = composition.voiceName(voiceId);
-        assertEquals(Optional.of("  Soprano  "), ((Success<Optional<String>>) result).value());
+        assertEquals(Optional.of("  Soprano  "), getNameValue(result));
     }
 
     @Test
@@ -265,12 +253,7 @@ class CompositionMetadataTest {
         Result<Unit> result = composition.setVoiceName(voiceId, "   ");
         assertRejected(result, CompositionErrors.INVALID_VOICE_NAME);
         Result<Optional<String>> getResult = composition.voiceName(voiceId);
-        assertEquals(Optional.of("Original"), ((Success<Optional<String>>) getResult).value());
-    }
-
-    private static void assertRejected(Result<?> result, ResultError expectedError) {
-        Failure<?> failure = assertInstanceOf(Failure.class, result);
-        assertEquals(expectedError, failure.error());
+        assertEquals(Optional.of("Original"), getNameValue(getResult));
     }
 
     @Test
@@ -379,5 +362,17 @@ class CompositionMetadataTest {
         assertDoesNotThrow(composition::clearTitle);
 
         assertEquals(Optional.empty(), composition.title());
+    }
+
+    // Test helpers
+
+    private static Optional<String> getNameValue(Result<Optional<String>> result) {
+        assertInstanceOf(Success.class, result);
+        return ((Success<Optional<String>>) result).value();
+    }
+
+    private static void assertRejected(Result<?> result, ResultError expectedError) {
+        Failure<?> failure = assertInstanceOf(Failure.class, result);
+        assertEquals(expectedError, failure.error());
     }
 }
