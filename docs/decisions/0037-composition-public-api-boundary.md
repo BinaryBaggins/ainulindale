@@ -32,6 +32,18 @@ Programming-contract violations and broken internal invariants are distinct and 
 
 The existing Result abstraction should be reused where suitable and domain-independent, as specified in [ADR-0038](0038-reuse-domain-independent-infrastructure.md). No generic signature or new result framework is introduced.
 
+### Fail-Fast Validation
+
+Domain mutations use fail-fast validation. An operation may reject a mutation as soon as a violation sufficient to prevent it has been detected.
+
+The reported error identifies one applicable violation. It does not imply that all possible violations have been evaluated or that no additional violations exist.
+
+Validation generally proceeds from broad operation preconditions toward specific domain invariants. No universal precedence between equally applicable domain errors is prescribed. Where multiple violations are possible, the reported error may depend on the evaluation order.
+
+Rejected mutations must leave the aggregate unchanged, regardless of which violation is reported.
+
+Exhaustive validation and impact analysis are separate concerns. They may be introduced through read operations when concrete requirements justify them, without requiring changes to the existing Result abstraction.
+
 ## Consequences
 
 - Read traversal remains natural while mutation stays centralized and invariant-safe.
