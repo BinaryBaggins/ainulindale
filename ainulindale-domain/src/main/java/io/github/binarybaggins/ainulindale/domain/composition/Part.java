@@ -53,17 +53,26 @@ public final class Part {
      *
      * @return the part name
      */
-    String name() {
-        return name;
+    Optional<String> name() {
+        return Optional.ofNullable(name);
     }
 
     /**
      * Sets the name of this part.
      *
      * @param name the new name for the part
+     * @throws NullPointerException if name is null
      */
     void setName(String name) {
+        Objects.requireNonNull(name, "name must not be null");
         this.name = name;
+    }
+
+    /**
+     * Clears the name of this part.
+     */
+    void clearName() {
+        this.name = null;
     }
 
     /**

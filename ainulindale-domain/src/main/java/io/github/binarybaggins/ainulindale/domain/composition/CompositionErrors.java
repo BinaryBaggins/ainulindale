@@ -20,6 +20,11 @@ final class CompositionErrors {
     static final ResultError INVALID_PART_NAME = new ResultError("Composition.InvalidPartName");
 
     /**
+     * Error indicating that the specified voice name is invalid.
+     */
+    static final ResultError INVALID_VOICE_NAME = new ResultError("Composition.InvalidVoiceName");
+
+    /**
      * Error indicating that the specified part was not found within the composition.
      */
     static final ResultError PART_NOT_FOUND = new ResultError("Composition.PartNotFound");

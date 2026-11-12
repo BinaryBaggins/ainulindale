@@ -23,6 +23,7 @@ import java.util.Optional;
 public final class Voice {
 
     private final VoiceId id;
+    private String name;
     private final Map<EventId, VoiceEvent> events;
     private final StateTimeline<Meter> meterTimeline = new StateTimeline<>();
     private final StateTimeline<KeySignature> keySignatureTimeline = new StateTimeline<>();
@@ -48,6 +49,33 @@ public final class Voice {
      */
     public VoiceId id() {
         return id;
+    }
+
+    /**
+     * Returns the name of this voice.
+     *
+     * @return the voice name
+     */
+    Optional<String> name() {
+        return Optional.ofNullable(name);
+    }
+
+    /**
+     * Sets the name of this voice.
+     *
+     * @param name the new name for the voice
+     * @throws NullPointerException if the name is null
+     */
+    void setName(String name) {
+        Objects.requireNonNull(name, "name must not be null");
+        this.name = name;
+    }
+
+    /**
+     * Clears the name of this voice.
+     */
+    void clearName() {
+        this.name = null;
     }
 
     /**
