@@ -14,14 +14,14 @@ Unresolved design questions are explicitly marked as open.
 
 The accepted model is broader than the implementation. Historical ADRs retain their original rationale; current progress is recorded here and in [module-architecture.md](module-architecture.md).
 
-- Rational, score-time values, Pitch/PitchClass/PitchAlteration, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented.
+- Rational, score-time values, Pitch/PitchClass/PitchAlteration, ScaleDegree, ScaleStructure, TonalContext, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented. The tonal and scale types currently provide immutable value models; derived operations and TonalContext integration into Composition remain open.
 - [Composition](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/Composition.java), Part, Voice, VoiceEvent, and NoteEvent implement structure, ordering, note creation/removal, pitch/range changes, and movement between Voices.
 - Tempo is integrated at Composition scope. Meter and KeySignature support Composition/Part/Voice state, inherited effective queries, and explicit ending/removal of overrides. Internal StateTimeline uses Set/End transitions in a TreeMap.
 - Composition metadata supports an optional title and optional Part and Voice names. Mutations are exposed through Composition, with semantic validation errors for blank values. Names are independent of entity identity, and duplicate names are permitted.
 - Composition-owned Tie and Slur relations are implemented, including referential integrity and relation-specific validation during aggregate mutations.
 - [CompositionErrors](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/CompositionErrors.java) provides semantic ResultError codes for implemented failures, using the Result infrastructure extracted into foundation.
 - PitchInterval, WrittenToSoundingTransposition, InstrumentDefinition, and InstrumentAssignment are implemented. Part-local assignment timelines support setting, ending, removing transitions, and querying through Composition. Referential integrity between InstrumentAssignment and the future Project Instrument Library is not implemented; referenced InstrumentDefinitionIds are not checked against a library.
-- ScaleDegree, ScaleStructure, TonalContext, and Project/Arrangement/Revision/library concepts remain unimplemented. Additional composition metadata, Composition persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
+- Project/Arrangement/Revision/library concepts remain unimplemented. Additional composition metadata, Composition persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
 
 The [domain tests](../../ainulindale-domain/src/test/java/io/github/binarybaggins/ainulindale/domain) cover implemented values, aggregate operations, and state behavior. This review inspected source and tests; it does not report a new test run.
 
@@ -1843,7 +1843,9 @@ A tonal center is represented by `PitchClass`, not a full `Pitch`. A separate `T
 
 ### ScaleDegree
 
-A `ScaleDegree` preserves both diatonic and chromatic structure:
+A `ScaleDegree` preserves both diatonic and chromatic structure. It is implemented as an immutable record with an `int diatonicOffset`, a non-null `Rational chromaticOffset`, and an `of` factory. The record rejects negative diatonic offsets; the octave-period bounds below are enforced by ScaleStructure.
+
+Its components represent:
 
 ```text
 diatonicOffset ∈ nonnegative integers
@@ -1872,7 +1874,7 @@ Rational offsets preserve microtonal structures, for example `(1, 3/2)`. Floatin
 
 `ScaleStructure` is an immutable value object containing an ordered sequence of scale degrees relative to a tonal center. The sequence represents first degree, second degree, and so on; ordering is canonical musical semantics, not incidental insertion order.
 
-Accepted invariants:
+Implemented invariants:
 
 - At least one degree
 - First degree is `(0, 0)`
@@ -1880,7 +1882,9 @@ Accepted invariants:
 - Chromatic offsets strictly increase
 - Duplicate degrees are not allowed
 
-Degrees must not be silently inferred, reordered, sorted, normalized, or merged. Invalid input must not be transformed into a different valid structure through automatic normalization. Concrete Java types, collection storage, and APIs remain open.
+ScaleStructure is implemented as a record with a `List<ScaleDegree>` component and an `of` factory. Construction makes a defensive immutable copy using `List.copyOf`, rejects null lists and elements, and validates the root, ordering, and octave-period invariants.
+
+Degrees are not inferred, reordered, sorted, normalized, or merged. Invalid input is rejected rather than transformed into a different valid structure. This implements the value model; derived operations such as realizing degrees as concrete pitches or testing scale membership remain future work.
 
 ### Current Octave-Periodic Scope
 
@@ -1915,7 +1919,7 @@ TonalContext
 └── scaleStructure: ScaleStructure
 ```
 
-The exact Java API remains an implementation detail. For example:
+The implemented record has non-null `PitchClass center` and `ScaleStructure scaleStructure` components and an `of` factory. It provides the immutable value model, without derived musical operations. For example:
 
 ```text
 center = PitchClass(D, 0)
@@ -1931,6 +1935,12 @@ scale structure:
 ```
 
 This describes the structure commonly classified as D Dorian. Its canonical meaning does not depend on the string "Dorian".
+
+### Value Model and Future Operations
+
+TonalContext currently combines a tonal center and a validated scale structure. It does not determine whether a concrete note belongs to that scale. Such an operation requires separate decisions about applying octave periodicity to concrete pitches, preserving enharmonic spelling, and treating chromatic equivalence. The implemented one-octave bounds of ScaleStructure do not by themselves define those membership semantics.
+
+Assignment of TonalContext within a Composition, its scope, and changes over score time are also undecided. These are separate aggregate-design questions, outside the implemented value model and this implementation scope; no Composition assignment or timeline API is introduced.
 
 ### Mode Names and Classification
 
@@ -2202,10 +2212,10 @@ Conceptual Project organization, independent Arrangements with their own Composi
 - TonalContext scope and timeline semantics
 - Explicit relationships between TonalContext and KeySignature beyond their independence
 - Non-octave-periodic systems
-- Concrete Java APIs and storage for the unimplemented tonal and scale concepts
+- Derived scale and tonal operations, including concrete-note membership and its octave-periodicity, enharmonic-spelling, and chromatic-equivalence semantics
 - Concrete format mappings and adapters, including ABC, MIDI, MusicXML, and LOTRO
 
-PitchClass is implemented. ScaleDegree, ScaleStructure, and TonalContext semantics are accepted, but their implementation remains pending. The additional concepts, implementation details, and adapter designs above remain open; tuning remains separate.
+PitchClass, ScaleDegree, ScaleStructure, and TonalContext are implemented as immutable value models. Derived operations and TonalContext assignment and timeline integration within Composition remain pending. The additional concepts, implementation details, and adapter designs above remain open; tuning remains separate.
 
 ### Tempo Notation, Expressions, and Playback
 
