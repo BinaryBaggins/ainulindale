@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.binarybaggins.ainulindale.core.result.Failure;
 import io.github.binarybaggins.ainulindale.core.result.Result;
+import io.github.binarybaggins.ainulindale.core.result.ResultError;
 import io.github.binarybaggins.ainulindale.core.result.Success;
 import io.github.binarybaggins.ainulindale.domain.identity.EventId;
-import io.github.binarybaggins.ainulindale.domain.identity.VoiceId;
 import io.github.binarybaggins.ainulindale.domain.pitch.DiatonicStep;
 import io.github.binarybaggins.ainulindale.domain.pitch.Pitch;
 import io.github.binarybaggins.ainulindale.domain.pitch.PitchAlteration;
@@ -169,10 +169,7 @@ class CompositionBatchPitchTest {
         return new Fixture(composition, voice);
     }
 
-    private static void assertRejected(
-        Result<?> result,
-        io.github.binarybaggins.ainulindale.core.result.ResultError error
-    ) {
+    private static void assertRejected(Result<?> result, ResultError error) {
         Failure<?> failure = assertInstanceOf(Failure.class, result);
         assertEquals(error, failure.error());
     }
