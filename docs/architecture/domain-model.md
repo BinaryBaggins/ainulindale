@@ -22,7 +22,8 @@ The accepted model is broader than the implementation. Historical ADRs retain th
 - Composition-owned Tie and Slur relations are implemented, including referential integrity and relation-specific validation during aggregate mutations.
 - [CompositionErrors](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/CompositionErrors.java) provides semantic ResultError codes for implemented failures, using the Result infrastructure extracted into foundation.
 - PitchInterval, WrittenToSoundingTransposition, InstrumentDefinition, and InstrumentAssignment are implemented. Part-local assignment timelines support setting, ending, removing transitions, and querying through Composition. Referential integrity between InstrumentAssignment and the future Project Instrument Library is not implemented; referenced InstrumentDefinitionIds are not checked against a library.
-- Project/Arrangement/Revision/library concepts remain unimplemented. Additional composition metadata, Composition persistence reconstruction, and substantive greenfield editing/adapters/application integration remain pending.
+- Structural pitch transposition through `Pitch.transposedBy(PitchInterval)` and selection-based editing through `NoteTransposition.transpose(...)` are implemented. Editing computes replacement pitches and delegates to the atomic Composition batch operation; selection remains outside the domain aggregate.
+- Project/Arrangement/Revision/library concepts remain unimplemented. Additional composition metadata, Composition persistence reconstruction, and further greenfield editing operations, adapters, and application integration remain pending.
 
 The [domain tests](../../ainulindale-domain/src/test/java/io/github/binarybaggins/ainulindale/domain) cover implemented values, aggregate operations, and state behavior. This review inspected source and tests; it does not report a new test run.
 
@@ -524,7 +525,7 @@ The implemented `changeNotePitches(Map<EventId, Pitch>)` operation validates all
 
 An empty batch succeeds. Assigning an existing pitch is valid; note IDs, score ranges, Voice ownership, and relations remain unchanged. Map iteration order does not affect the resulting musical state. `changeNotePitch` delegates to this batch operation. This implements [ADR-0042](../decisions/0042-atomic-batch-pitch-changes-within-composition.md) without introducing generic transactions or undo/redo.
 
-Selection-driven transpose, quantize, move, duplicate section, paste, editing transactions, and undo/redo belong to the future editing layer. Selection is not Composition state, so an API such as `composition.transposeSelectedNotes(...)` is not introduced. Editing resolves session state into entity IDs and may orchestrate multiple domain operations.
+Selection-driven transpose, quantize, move, duplicate section, paste, editing transactions, and undo/redo belong to the editing layer. Selection-based transposition is implemented by `NoteTransposition`; the other operations remain pending. Selection is not Composition state, so an API such as `composition.transposeSelectedNotes(...)` is not introduced. Editing resolves session state into entity IDs and may orchestrate multiple domain operations.
 
 Composition does not expose generic `beginTransaction()`, `commit()`, or `rollback()` APIs. Higher-level transaction grouping belongs to editing, while the domain guarantees consistency of each individual operation. Exact editing transaction and undo/redo semantics remain open.
 
@@ -2030,7 +2031,7 @@ written C4 → sounding C5: PitchInterval(+7, +12)
 written C4 → sounding C3: PitchInterval(-7, -12)
 ```
 
-No separate octave-transposition field is stored. Application and mutation APIs remain open.
+No separate octave-transposition field is stored. `Pitch.transposedBy(PitchInterval)` implements interval application as an immutable value operation, including rational chromatic offsets and octave movement. An unrepresentable target octave raises ArithmeticException. `Composition.changeNotePitches(...)` applies replacement pitches atomically; the editing-layer `NoteTransposition` calculates these pitches for selected note IDs. These operations do not determine scale membership or introduce TonalContext assignment or timeline semantics.
 
 ### WrittenToSoundingTransposition
 

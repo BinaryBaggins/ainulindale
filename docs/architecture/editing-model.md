@@ -4,7 +4,7 @@
 
 This document collects the accepted editing constraints. The editing model is still
 being designed; transactions and undo/redo remain open decisions.
-Their placement in editing is accepted; their exact semantics and implementation remain open. The ainulindale-editing module exists as scaffolding without Java implementation. Legacy selection and undo code does not constitute implementation of the greenfield editing model.
+Their placement in editing is accepted; their exact semantics and implementation remain open. The ainulindale-editing module implements selection-based note transposition with tests. Legacy selection and undo code does not constitute implementation of the greenfield editing model.
 These concerns belong in `ainulindale-editing`, which depends on domain without a reverse dependency. See [module-architecture.md](module-architecture.md).
 
 ## Accepted Constraints
@@ -37,6 +37,18 @@ a generic begin/commit/rollback transaction API. Exact grouping, failure recover
 and undo/redo implementation remain open.
 
 See [ADR-0037](../decisions/0037-composition-public-api-boundary.md).
+
+## Implemented Note Transposition
+
+`NoteTransposition.transpose(Composition, Set<EventId>, PitchInterval)` accepts the selected note IDs without owning selection or UI state. It computes each target pitch using `Pitch.transposedBy`, then delegates the complete replacement map to `Composition.changeNotePitches` in one atomic domain operation.
+
+- Empty selections succeed without mutation; a zero interval preserves pitches.
+- Selected IDs must resolve to NoteEvents in the supplied Composition. Otherwise the operation returns `Editing.SelectedNoteNotFound` without mutation.
+- Null arguments or selected IDs raise NullPointerException. An unrepresentable target octave raises ArithmeticException before any mutation.
+- Composition validates affected Tie invariants against the complete proposed final state. Tied notes can be transposed together; a partial selection that breaks Tie pitch equality is rejected without applying any changes. Domain failures are returned unchanged.
+- Fractional chromatic intervals, octave crossings, and selections spanning multiple Voices are supported. Note identities, ranges, ownership, and relations are preserved.
+
+The tests cover these cases, including Tie chains and failed operations leaving unrelated notes unchanged. This documents source and test coverage, not a new test run. General editing transactions, undo/redo, and workspace/UI integration remain pending. See [ADR-0042](../decisions/0042-atomic-batch-pitch-changes-within-composition.md).
 
 ## Open Questions
 
