@@ -162,6 +162,55 @@ class CompositionBatchPitchTest {
         assertEquals(C4, fixture.pitchOf(existing));
     }
 
+    @Test
+    void changesTieChainOfThreeNotes() {
+        Fixture fixture = fixture();
+        EventId first = fixture.addNote(0);
+        EventId second = fixture.addNote(1);
+        EventId third = fixture.addNote(2);
+        fixture.tie(first, second);
+        fixture.tie(second, third);
+
+        assertInstanceOf(Success.class, fixture.composition().changeNotePitches(Map.of(first, D4, second, D4, third, D4)));
+
+        assertEquals(D4, fixture.pitchOf(first));
+        assertEquals(D4, fixture.pitchOf(second));
+        assertEquals(D4, fixture.pitchOf(third));
+        assertEquals(2, fixture.composition().ties().size());
+    }
+
+    @Test
+    void successfulBatchChangeAcrossMultipleVoices() {
+        Composition composition = Composition.create();
+        composition.addPart();
+        Part part = composition.parts().getFirst();
+        Voice voice1 = part.voices().getFirst();
+        composition.addVoice(part.id());
+        assertInstanceOf(Success.class, composition.addVoice(part.id()));
+        Voice voice2 = part.voices().get(1);
+
+        EventId note1 = addNoteToVoice(composition, voice1, 0);
+        EventId note2 = addNoteToVoice(composition, voice1, 1);
+        EventId note3 = addNoteToVoice(composition, voice2, 0);
+        EventId note4 = addNoteToVoice(composition, voice2, 1);
+
+        assertInstanceOf(
+            Success.class,
+            composition.changeNotePitches(Map.of(note1, D4, note2, D4, note3, D4, note4, D4))
+        );
+
+        assertEquals(D4, voice1.findNote(note1).pitch());
+        assertEquals(D4, voice1.findNote(note2).pitch());
+        assertEquals(D4, voice2.findNote(note3).pitch());
+        assertEquals(D4, voice2.findNote(note4).pitch());
+    }
+
+    private static EventId addNoteToVoice(Composition composition, Voice voice, long startQuarters) {
+        ScoreRange range = new ScoreRange(ScorePosition.of(startQuarters, 4), MusicalDuration.of(1, 4));
+        Success<?> result = assertInstanceOf(Success.class, composition.addNote(voice.id(), range, C4));
+        return assertInstanceOf(EventId.class, result.value());
+    }
+
     private static Fixture fixture() {
         Composition composition = Composition.create();
         composition.addPart();
