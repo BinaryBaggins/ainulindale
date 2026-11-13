@@ -185,7 +185,6 @@ class CompositionBatchPitchTest {
         composition.addPart();
         Part part = composition.parts().getFirst();
         Voice voice1 = part.voices().getFirst();
-        composition.addVoice(part.id());
         assertInstanceOf(Success.class, composition.addVoice(part.id()));
         Voice voice2 = part.voices().get(1);
 

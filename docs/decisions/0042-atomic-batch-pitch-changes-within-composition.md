@@ -100,4 +100,4 @@ This decision introduces no generic transaction API, snapshot mechanism, rollbac
 - [ADR-0034 – Composition-Owned Musical Relations](0034-composition-owned-musical-relations.md)
 - [ADR-0035 – Tie and Slur Relations](0035-tie-and-slur-relations.md)
 - [ADR-0037 – Composition Public API Boundary](0037-composition-public-api-boundary.md)
-- [Editing Model](.../architecture/editing-model.md)
+- [Editing Model](../architecture/editing-model.md)
