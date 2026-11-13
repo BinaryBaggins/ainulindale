@@ -2,7 +2,7 @@
 
 ## Status
 
-This document describes the accepted Maven architecture and current implementation. The seven-module reactor and legacy source relocation are implemented. Foundation and domain contain production code; editing, ABC, MIDI, and desktop currently provide module scaffolding without Java implementation.
+This document describes the accepted Maven architecture and current implementation. The seven-module reactor and legacy source relocation are implemented. Foundation, domain, and editing contain production code; ABC, MIDI, and desktop currently provide module scaffolding without Java implementation.
 
 See [ADR-0039](../decisions/0039-maven-multi-module-architecture.md) and [ADR-0040](../decisions/0040-foundation-module-boundary.md). These refine the initial module direction in [ADR-0019](../decisions/0019-maven-multi-module-architecture.md) and infrastructure reuse in [ADR-0038](../decisions/0038-reuse-domain-independent-infrastructure.md).
 
@@ -51,7 +51,7 @@ Domain must not depend on editing, ABC, MIDI, desktop/Swing, legacy, settings, i
 
 Editing depends on domain and owns higher-level user editing semantics: selection-driven editing, multi-event operations, quantization, editing policies, transaction grouping, undo/redo, and editing commands.
 
-Domain changes canonical entities while preserving invariants. Editing performs user intentions that may involve multiple domain mutations. Domain never depends back on editing. Editing may initially remain small or nearly empty until the domain core is stable. See [editing-model.md](editing-model.md).
+Domain changes canonical entities while preserving invariants. Editing performs user intentions that may involve multiple domain mutations. Domain never depends back on editing. Editing currently implements selection-based `NoteTransposition`: it calculates target pitches for supplied EventIds and delegates to Composition's atomic batch pitch operation. It does not own selection state. Quantization, other editing operations, transaction grouping, and undo/redo remain pending. See [editing-model.md](editing-model.md).
 
 ### ainulindale-abc
 
@@ -140,7 +140,8 @@ The first migration does not introduce JPMS or `module-info.java`. Maven modules
 | Basic Composition aggregate                 | Structure, ordering, note editing/movement, atomic batch pitch changes with final-state Tie validation, Tempo, hierarchical Meter/KeySignature state, Part-local InstrumentAssignment state, and Composition/Part/Voice naming are implemented with tests. Additional metadata remains open. |
 | Instruments                                 | InstrumentDefinition, InstrumentAssignment, and WrittenToSoundingTransposition are implemented with tests; assignment timelines support set/end/remove/query through Composition.                                                |
 | Relations                                   | Composition-owned Tie and Slur relations are implemented with validation and referential integrity. Additional relation types remain pending.                                                                                    |
-| Editing, adapters, and desktop              | Module scaffolding exists; substantive implementation and settings/i18n integration remain pending.                                                                                                                              |
+| Editing                                     | Selection-based NoteTransposition is implemented with tests, using structural pitch transposition and atomic Composition batch mutation. Further editing operations, transactions, and undo/redo remain pending. |
+| Adapters and desktop                        | Module scaffolding exists; substantive implementation and settings/i18n integration remain pending.                                                                                                                              |
 | Project, Arrangement, Revision, and library | Accepted conceptual direction only; implementation, including referential integrity between InstrumentAssignment and the Project Instrument Library, remains pending.                                                            |
 
 Detailed coding order may evolve with implementation feedback; dependency direction remains stable. See the [domain implementation status](domain-model.md#current-implementation-status) for source references.
