@@ -460,38 +460,83 @@ public final class Composition {
     }
 
     /**
-     * Changes the pitch of an existing note in this composition.
+     * Changes the pitch of an existing note.
      *
-     * @param noteId the unique identifier of the note event to be changed
-     * @param newPitch the new pitch for the note
-     * @return a result indicating success if the pitch was successfully changed,
-     *         or failure if the note was not found or the change would violate
-     *         the pitch equality of an existing tie
-     * @throws NullPointerException if the noteId or newPitch is null
+     * @param noteId the note to change
+     * @param newPitch the replacement pitch
+     * @return success or a semantic domain failure
+     * @throws NullPointerException if either argument is null
      */
     public Result<Unit> changeNotePitch(EventId noteId, Pitch newPitch) {
         Objects.requireNonNull(noteId, "noteId must not be null");
         Objects.requireNonNull(newPitch, "newPitch must not be null");
 
-        Optional<NoteLocation> location = findNote(noteId);
-        if (location.isEmpty()) {
-            return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+        return changeNotePitches(Map.of(noteId, newPitch));
+    }
+
+    /**
+     * Atomically changes the pitches of multiple notes.
+     *
+     * <p>All note references and affected Tie pitch invariants are
+     * validated against the proposed final state before mutation.
+     * A rejected operation leaves the composition unchanged.
+     *
+     * @param changes note IDs mapped to their replacement pitches
+     * @return success or a semantic domain failure
+     * @throws NullPointerException if the map contains null keys
+     *         or values, or if the map itself is null
+     */
+    public Result<Unit> changeNotePitches(Map<EventId, Pitch> changes) {
+        Objects.requireNonNull(changes, "changes must not be null");
+
+        Map<EventId, Pitch> requested = Map.copyOf(changes);
+
+        if (requested.isEmpty()) {
+            return Result.success(Unit.INSTANCE);
         }
 
-        NoteLocation noteLocation = location.get();
-        boolean pitchChanges = !noteLocation.note().pitch().equals(newPitch);
+        Map<EventId, NoteLocation> locations = new HashMap<>();
 
-        if (
-            pitchChanges &&
-            ties
-                .values()
-                .stream()
-                .anyMatch(tie -> tie.sourceNoteId().equals(noteId) || tie.targetNoteId().equals(noteId))
-        ) {
-            return Result.failure(CompositionErrors.TIE_PITCH_EQUALITY_WOULD_BE_BROKEN);
+        // Phase 1: Resolve every affected note.
+        for (EventId noteId : requested.keySet()) {
+            Optional<NoteLocation> location = findNote(noteId);
+
+            if (location.isEmpty()) {
+                return Result.failure(CompositionErrors.EVENT_NOT_FOUND);
+            }
+
+            locations.put(noteId, location.get());
         }
 
-        noteLocation.voice().changeNotePitch(noteId, newPitch);
+        // Phase 2: Validate Tie equality against the final state.
+        for (Tie tie : ties.values()) {
+            boolean sourceChanges = requested.containsKey(tie.sourceNoteId());
+            boolean targetChanges = requested.containsKey(tie.targetNoteId());
+
+            if (!sourceChanges && !targetChanges) {
+                continue;
+            }
+
+            Pitch sourcePitch = sourceChanges
+                ? requested.get(tie.sourceNoteId())
+                : findNote(tie.sourceNoteId()).orElseThrow().note().pitch();
+
+            Pitch targetPitch = targetChanges
+                ? requested.get(tie.targetNoteId())
+                : findNote(tie.targetNoteId()).orElseThrow().note().pitch();
+
+            if (!sourcePitch.equals(targetPitch)) {
+                return Result.failure(CompositionErrors.TIE_PITCH_EQUALITY_WOULD_BE_BROKEN);
+            }
+        }
+
+        // Phase 3: Commit only after complete validation.
+        for (Map.Entry<EventId, Pitch> entry : requested.entrySet()) {
+            NoteLocation location = locations.get(entry.getKey());
+
+            location.voice().changeNotePitch(entry.getKey(), entry.getValue());
+        }
+
         return Result.success(Unit.INSTANCE);
     }
 
