@@ -47,12 +47,13 @@ The current domain specification is in [domain-model.md](../architecture/domain-
 - [ADR-0039 – Greenfield Architecture Uses Focused Maven Modules Alongside Temporary Legacy](0039-maven-multi-module-architecture.md)
 - [ADR-0040 – Foundation Contains Only Minimal Domain-Independent Shared Primitives](0040-foundation-module-boundary.md)
 - [ADR-0041 – Project Organizes Arrangements, Revisions, and Shared Instrument Definitions](0041-project-arrangements-revisions-and-instrument-library.md)
+- [ADR-0042 – Atomic Batch Pitch Changes Within Composition](0042-atomic-batch-pitch-changes-within-composition.md)
 
 ## Implementation Status
 
 Accepted ADRs retain their historical decision context. Their original references to open implementation choices are not a current task list. See the [domain implementation status](../architecture/domain-model.md#current-implementation-status) and [module progress](../architecture/module-architecture.md#implementation-progress-and-remaining-work).
 
-The Maven reactor and child POMs, legacy relocation, Result extraction, fundamental values and IDs, basic Composition/Part/Voice/note operations, and Tempo/Meter/KeySignature integration are implemented. Meter and KeySignature include explicit override endings and inheritance resolution. PitchInterval, WrittenToSoundingTransposition, InstrumentDefinition, and InstrumentAssignment are also implemented. Part-local assignment timelines support setting, ending, removing transitions, and querying through Composition. Relations and Project/Arrangement/Revision/library concepts remain pending. Referential integrity between InstrumentAssignment and the future Project Instrument Library is not implemented; referenced InstrumentDefinitionIds are not checked against a library.
+The Maven reactor and child POMs, legacy relocation, Result extraction, fundamental values and IDs, basic Composition/Part/Voice/note operations, and Tempo/Meter/KeySignature integration are implemented. Meter and KeySignature include explicit override endings and inheritance resolution. PitchInterval, WrittenToSoundingTransposition, InstrumentDefinition, and InstrumentAssignment are also implemented. Part-local assignment timelines support setting, ending, removing transitions, and querying through Composition. Composition title and Part/Voice names, Composition-owned Ties and Slurs with validation and referential integrity, and the immutable PitchClass, ScaleDegree, ScaleStructure, and TonalContext value models are implemented. Atomic batch pitch changes validate note references and affected Tie invariants against the proposed final state before mutation; single-note pitch changes delegate to the batch operation. Derived tonal operations, TonalContext aggregate integration, and Project/Arrangement/Revision/library concepts remain pending. Referential integrity between InstrumentAssignment and the future Project Instrument Library is not implemented; referenced InstrumentDefinitionIds are not checked against a library.
 
 ## Open Decisions
 
@@ -72,8 +73,8 @@ In particular, the following have not yet been finalized:
 - TupletGroup concrete model, including membership, ratios, nesting, and notation relationships
 - Explicit rest representation
 - Detailed Slur restrictions and any future justified same-Voice Tie restriction
-- Relation-specific deletion, cascade, or transformation policies
-- Relation storage, indexing, and technical ordering
+- Additional relation deletion, cascade, or transformation policies; existing Tie/Slur references block note, Voice, and Part deletion
+- Additional relation indexes and technical ordering; Ties and Slurs use separate RelationId-keyed HashMaps
 - Playback and notation interpretation of relations
 - Lyrics association
 - Dynamics scope and temporal model
@@ -103,7 +104,7 @@ In particular, the following have not yet been finalized:
 - TonalContext scope and timeline semantics
 - Explicit relationships between TonalContext and KeySignature beyond their independence
 - Non-octave-periodic systems
-- Concrete Java APIs and storage for the accepted tonal and scale concepts
+- Derived tonal and scale operations, including note membership semantics; PitchClass, ScaleDegree, ScaleStructure, and TonalContext value models are implemented
 - Concrete format mappings and adapters
 - Public state-timeline read models and APIs for future state types; Part-local InstrumentAssignment set/end/remove/query operations are implemented
 - MusicalForm

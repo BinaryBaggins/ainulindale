@@ -16,6 +16,7 @@ The accepted model is broader than the implementation. Historical ADRs retain th
 
 - Rational, score-time values, Pitch/PitchClass/PitchAlteration, ScaleDegree, ScaleStructure, TonalContext, Tempo, Meter, KeySignature, and six UUID-backed identity types are implemented. The tonal and scale types currently provide immutable value models; derived operations and TonalContext integration into Composition remain open.
 - [Composition](../../ainulindale-domain/src/main/java/io/github/binarybaggins/ainulindale/domain/composition/Composition.java), Part, Voice, VoiceEvent, and NoteEvent implement structure, ordering, note creation/removal, pitch/range changes, and movement between Voices.
+- Atomic batch pitch changes through `Composition.changeNotePitches(Map<EventId, Pitch>)` are implemented with tests. Note references and affected Tie invariants are validated against the proposed final state before any mutation; rejected batches leave the aggregate unchanged. See [ADR-0042](../decisions/0042-atomic-batch-pitch-changes-within-composition.md).
 - Tempo is integrated at Composition scope. Meter and KeySignature support Composition/Part/Voice state, inherited effective queries, and explicit ending/removal of overrides. Internal StateTimeline uses Set/End transitions in a TreeMap.
 - Composition metadata supports an optional title and optional Part and Voice names. Mutations are exposed through Composition, with semantic validation errors for blank values. Names are independent of entity identity, and duplicate names are permitted.
 - Composition-owned Tie and Slur relations are implemented, including referential integrity and relation-specific validation during aggregate mutations.
@@ -503,13 +504,13 @@ These examples correspond to implemented operations; they are not a complete API
 
 Internally, `Composition` may delegate to nested entities. `Part`, `Voice`, `VoiceEvent`, `NoteEvent`, and `MusicalRelation` may be externally readable, but must not expose unrestricted public setters or mutation paths that bypass the root. For example, `note.setPitch(...)`, `note.setRange(...)`, `part.voices().add(...)`, and `voice.events().remove(...)` are not public command boundaries. The current implementation delegates to package-private Part and Voice operations. NoteEvent is immutable: aggregate updates replace the stored instance while preserving EventId. Its public withPitch/withRange methods create copies without mutating the aggregate. Visibility details for future relations remain open.
 
-This protects composition-wide invariants, including `EventId` uniqueness, valid ownership, and relation referential integrity. Relation references must resolve to entities of the correct type in the same Composition, and relation-specific invariants must hold. Further cross-entity invariants and relation-specific deletion behavior remain open.
+This protects composition-wide invariants, including `EventId` uniqueness, valid ownership, and relation referential integrity. Relation references must resolve to entities of the correct type in the same Composition, and relation-specific invariants must hold. Deletion of notes, Voices, or Parts referenced by existing Ties or Slurs is rejected. Additional cross-entity invariants and deletion policies for future relations remain open.
 
 ### Queries and Identity-Based Commands
 
 Reads may naturally traverse `Composition → Part → Voice → VoiceEvent`. Conceptual queries such as `composition.parts()`, `part.voices()`, `voice.events()`, `note.pitch()`, and `note.range()` do not all need flat root-level equivalents. Returned collections and entities must not permit unrestricted aggregate mutation. The implemented collection queries return unmodifiable live views. NoteEvent instances are immutable, so an earlier note reference does not change when the aggregate replaces that note. Public state-timeline read models and views for future concepts remain open.
 
-Commands addressing existing entities use stable typed IDs such as PartId, VoiceId, EventId, RelationId, and InstrumentDefinitionId, rather than Java object identity or mutable entity references as the primary boundary. Implemented creation returns `PartId` from `addPart()`, `Result<VoiceId>` from `addVoice(...)`, and `Result<EventId>` from `addNote(...)`. Structural removals, moves, and note changes return `Result<Unit>`. State APIs are described in sections 38–42; APIs for future instruments and relations remain open.
+Commands addressing existing entities use stable typed IDs such as PartId, VoiceId, EventId, RelationId, and InstrumentDefinitionId, rather than Java object identity or mutable entity references as the primary boundary. Implemented creation returns `PartId` from `addPart()`, `Result<VoiceId>` from `addVoice(...)`, and `Result<EventId>` from `addNote(...)`. Structural removals, moves, and note changes return `Result<Unit>`. State APIs are described in sections 38–42; Part-local instrument assignment and Tie/Slur creation and removal APIs are implemented; APIs for future instrument and relation capabilities remain open.
 
 Normal domain creation creates new identities. Persistence rehydration restores existing identities through a separate reconstruction mechanism, not ordinary editing. A factory, builder, repository mapper, or dedicated path may later be suitable. Persistence-oriented operations such as `addPartWithId(...)` or `addNoteWithExistingId(...)` are not introduced into the normal editing API without implementation evidence justifying them.
 
@@ -519,19 +520,23 @@ The domain exposes primitive, invariant-safe operations expressing musical inten
 
 A single public domain operation preserves aggregate validity atomically from the caller's perspective. Its invariant-relevant effects must not expose an intermediate invalid state. A genuine operation may affect multiple entities where its semantics require it; there is no artificial one-entity-per-operation constraint.
 
+The implemented `changeNotePitches(Map<EventId, Pitch>)` operation validates all requested note references and affected Tie pitch-equality invariants before applying changes. Tie endpoints are evaluated using their proposed final pitches, including unchanged endpoints outside the batch. Structural Pitch equality is required; enharmonic equivalence is insufficient. Unknown notes or broken Tie equality produce semantic Result failures without changing notes or relations. Null maps, keys, and values are rejected with NullPointerException.
+
+An empty batch succeeds. Assigning an existing pitch is valid; note IDs, score ranges, Voice ownership, and relations remain unchanged. Map iteration order does not affect the resulting musical state. `changeNotePitch` delegates to this batch operation. This implements [ADR-0042](../decisions/0042-atomic-batch-pitch-changes-within-composition.md) without introducing generic transactions or undo/redo.
+
 Selection-driven transpose, quantize, move, duplicate section, paste, editing transactions, and undo/redo belong to the future editing layer. Selection is not Composition state, so an API such as `composition.transposeSelectedNotes(...)` is not introduced. Editing resolves session state into entity IDs and may orchestrate multiple domain operations.
 
 Composition does not expose generic `beginTransaction()`, `commit()`, or `rollback()` APIs. Higher-level transaction grouping belongs to editing, while the domain guarantees consistency of each individual operation. Exact editing transaction and undo/redo semantics remain open.
 
 ### Expected Rejection and Programming Errors
 
-Predictable domain rejection is represented explicitly as a result. Examples include an unknown entity ID, removing a part's last voice, an invalid Tie, removal blocked by referential integrity, or an invalid state transition. These examples do not choose a relation deletion policy.
+Predictable domain rejection is represented explicitly as a result. Examples include an unknown entity ID, removing a part's last voice, an invalid Tie, removal blocked by referential integrity, or an invalid state transition. Existing Tie and Slur references block deletion of their notes or containing Voices and Parts.
 
 Programming-contract violations and broken internal invariants are a different category and may use exceptions where appropriate. Expected domain rejection is not a programming error.
 
 The domain reuses foundation's `Result<T>` abstraction; no competing framework is introduced for the greenfield domain. Canonical domain errors are semantic, programmatically distinguishable values carried by that abstraction.
 
-CompositionErrors currently defines ResultError codes for missing Parts, Voices, Events, and state changes, invalid Part/Voice indices, and last-Voice removal. Missing instrument-assignment transitions use Composition.InstrumentAssignmentChangeNotFound. Relation errors and instrument-library reference validation remain unimplemented. Localized strings are not the primary error contract. Application/UI code maps semantic errors to messages through existing i18n infrastructure, outside the domain. The domain does not depend on ResourceBundle semantics, UI locale, or translated messages.
+CompositionErrors currently defines ResultError codes for missing Parts, Voices, Events, and state changes, invalid Part/Voice indices, and last-Voice removal. Missing instrument-assignment transitions use Composition.InstrumentAssignmentChangeNotFound. Metadata validation and Tie/Slur validation, referential-integrity, and batch Tie pitch-equality failures also have semantic error codes. Instrument-library reference validation remains unimplemented. Localized strings are not the primary error contract. Application/UI code maps semantic errors to messages through existing i18n infrastructure, outside the domain. The domain does not depend on ResourceBundle semantics, UI locale, or translated messages.
 
 Value objects remain immutable.
 
@@ -2103,7 +2108,7 @@ Deleting a referenced entity must not leave invalid references. Whether a mutati
 
 ### Collection Semantics
 
-Relation collection/index order does not define musical ordering. Relations carry identity and type-specific references. Deterministic ordering for serialization, tests, export, or persistence is technical processing, not automatically musical semantics. Concrete storage and indexing remain open.
+Relation collection/index order does not define musical ordering. Relations carry identity and type-specific references. Deterministic ordering for serialization, tests, export, or persistence is technical processing, not automatically musical semantics. The implementation stores Ties and Slurs in separate HashMaps keyed by RelationId. Additional indexes and deterministic technical ordering remain open.
 
 See [ADR-0034](../decisions/0034-composition-owned-musical-relations.md).
 
@@ -2261,13 +2266,13 @@ The following remain open:
 - Explicit rest representation, including rests within tuplets
 - Detailed Slur restrictions, including Voice boundaries, nesting, and overlap
 - Any future same-Voice Tie restriction justified by concrete requirements
-- Relation-specific deletion, cascade, or transformation policies
-- Relation storage, indexing, and technical ordering
-- Exact aggregate relation mutation APIs
+- Additional relation deletion, cascade, or transformation policies; existing Tie/Slur references block note, Voice, and Part deletion
+- Additional relation indexes and technical ordering; Ties and Slurs use separate RelationId-keyed HashMaps
+- Aggregate mutation APIs for future relation capabilities; Tie/Slur creation and removal are implemented
 - Playback and notation interpretation of relations
 - Lyrics association
 
-Composition ownership, relation identity, ID references, referential integrity, and the basic Tie and Slur structures are accepted. The details above remain open.
+Composition ownership, relation identity, ID references, referential integrity, and the basic Tie and Slur structures are implemented. The details above remain open.
 
 ### Tuning and Technical Pitch Mapping
 
