@@ -1,6 +1,6 @@
 # ADR-0042 – Atomic Batch Pitch Changes Within Composition
 
-**Status:** Accepted
+**Status:** Accepted until superseded
 
 ## Context
 
